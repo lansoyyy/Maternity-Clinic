@@ -4,6 +4,7 @@ import 'contact_us_screen.dart';
 import 'about_us_screen.dart';
 import 'services_screen.dart';
 import 'signup_screen.dart';
+import 'user_dashboard_screen.dart';
 import '../widgets/forgot_password_dialog.dart';
 import '../widgets/admin_login_dialog.dart';
 
@@ -437,7 +438,11 @@ class _HomeScreenState extends State<HomeScreen> {
           // Sign In Button
           ElevatedButton(
             onPressed: () {
-              // Handle sign in
+              // Navigate to user dashboard
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const UserDashboardScreen()),
+              );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: primary,
