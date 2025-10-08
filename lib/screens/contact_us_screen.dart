@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../utils/colors.dart';
+import 'home_screen.dart';
+import 'about_us_screen.dart';
+import 'services_screen.dart';
 
 class ContactUsScreen extends StatefulWidget {
   const ContactUsScreen({super.key});
@@ -102,7 +105,7 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
               _buildNavItem('HOME', false),
               _buildNavItem('ABOUT US', false),
               _buildNavItem('SERVICES', false),
-              _buildNavItem('STAFF & DOCTORS', false),
+            
               _buildNavItem('CONTACT US', true),
             ],
           ),
@@ -134,17 +137,24 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
   void _handleNavigation(String title) {
     switch (title) {
       case 'HOME':
-        Navigator.pop(context);
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+        );
         break;
       case 'ABOUT US':
-        // TODO: Navigate to About Us screen
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const AboutUsScreen()),
+        );
         break;
       case 'SERVICES':
-        // TODO: Navigate to Services screen
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const ServicesScreen()),
+        );
         break;
-      case 'STAFF & DOCTORS':
-        // TODO: Navigate to Staff & Doctors screen
-        break;
+ 
       case 'CONTACT US':
         // Already on contact us screen
         break;

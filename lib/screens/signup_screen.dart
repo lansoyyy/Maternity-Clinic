@@ -3,25 +3,24 @@ import '../utils/colors.dart';
 import 'contact_us_screen.dart';
 import 'about_us_screen.dart';
 import 'services_screen.dart';
-import 'signup_screen.dart';
-import '../widgets/forgot_password_dialog.dart';
-import '../widgets/admin_login_dialog.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+class SignupScreen extends StatefulWidget {
+  const SignupScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<SignupScreen> createState() => _SignupScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  bool _rememberMe = false;
+  String _selectedGender = 'PRENATAL';
 
   @override
   void dispose() {
     _emailController.dispose();
+    _nameController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -94,7 +93,6 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildNavItem('HOME', true),
               _buildNavItem('ABOUT US', false),
               _buildNavItem('SERVICES', false),
-        
               _buildNavItem('CONTACT US', false),
             ],
           ),
@@ -126,23 +124,22 @@ class _HomeScreenState extends State<HomeScreen> {
   void _handleNavigation(String title) {
     switch (title) {
       case 'HOME':
-        // Already on home screen
+        Navigator.pop(context);
         break;
       case 'ABOUT US':
-        Navigator.push(
+        Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const AboutUsScreen()),
         );
         break;
       case 'SERVICES':
-        Navigator.push(
+        Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const ServicesScreen()),
         );
         break;
-     
       case 'CONTACT US':
-        Navigator.push(
+        Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const ContactUsScreen()),
         );
@@ -153,13 +150,11 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildDesktopLayout(double screenWidth, double screenHeight) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
-
       children: [
         // Left Section - Services
         Expanded(
           flex: 3,
           child: Column(
-            
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildServiceItem(
@@ -194,10 +189,10 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
 
-        // Right Section - Sign In Form
+        // Right Section - Register Form
         Expanded(
           flex: 3,
-          child: _buildSignInCard(),
+          child: _buildRegisterCard(),
         ),
       ],
     );
@@ -206,7 +201,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildMobileLayout(double screenWidth, double screenHeight) {
     return Column(
       children: [
-        _buildSignInCard(),
+        _buildRegisterCard(),
         const SizedBox(height: 40),
         Image.asset(
           'assets/images/figure.png',
@@ -253,7 +248,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildSignInCard() {
+  Widget _buildRegisterCard() {
     return Container(
       padding: const EdgeInsets.all(30),
       decoration: BoxDecoration(
@@ -272,21 +267,16 @@ class _HomeScreenState extends State<HomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Welcome Header
-          Row(
+          const Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text(
-                'WELCOME ',
+              Text(
+                'WELCOME',
                 style: TextStyle(
                   fontSize: 22,
                   fontFamily: 'Regular',
                   color: Colors.black,
                 ),
-              ),
-              Icon(
-                Icons.favorite_border,
-                color: Colors.grey.shade700,
-                size: 24,
               ),
             ],
           ),
@@ -303,9 +293,9 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 30),
 
-          // Sign In Title
+          // Register Title
           Text(
-            'SIGN IN',
+            'REGISTER',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 24,
@@ -321,6 +311,38 @@ class _HomeScreenState extends State<HomeScreen> {
             controller: _emailController,
             decoration: InputDecoration(
               hintText: 'Email address',
+              hintStyle: TextStyle(
+                color: Colors.grey.shade500,
+                fontFamily: 'Regular',
+                fontSize: 14,
+              ),
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 15,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: primary, width: 2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 15),
+
+          // Name Field
+          TextField(
+            controller: _nameController,
+            decoration: InputDecoration(
+              hintText: 'Name',
               hintStyle: TextStyle(
                 color: Colors.grey.shade500,
                 fontFamily: 'Regular',
@@ -379,65 +401,78 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 20),
 
-          // Forget Password
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => const ForgotPasswordDialog(),
-                );
-              },
-              child: const Text(
-                'Forget Password?',
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontFamily: 'Regular',
-                  fontSize: 13,
-                ),
-              ),
-            ),
-          ),
-
-          // Remember Me Checkbox
+          // Gender Selection
           Row(
             children: [
-              SizedBox(
-                width: 20,
-                height: 20,
-                child: Checkbox(
-                  value: _rememberMe,
-                  onChanged: (value) {
-                    setState(() {
-                      _rememberMe = value ?? false;
-                    });
-                  },
-                  activeColor: primary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(4),
-                  ),
+              Expanded(
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: Radio<String>(
+                        value: 'PRENATAL',
+                        groupValue: _selectedGender,
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedGender = value!;
+                          });
+                        },
+                        activeColor: primary,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'PRENATAL',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontFamily: 'Regular',
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 8),
-              const Text(
-                'Remember me',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontFamily: 'Regular',
-                  fontSize: 14,
+              Expanded(
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: Radio<String>(
+                        value: 'POSTNATAL',
+                        groupValue: _selectedGender,
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedGender = value!;
+                          });
+                        },
+                        activeColor: primary,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'POSTNATAL',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontFamily: 'Regular',
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 25),
 
-          // Sign In Button
+          // Go to Sign In Button
           ElevatedButton(
             onPressed: () {
-              // Handle sign in
+              // Handle registration
+              Navigator.pop(context);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: primary,
@@ -448,69 +483,10 @@ class _HomeScreenState extends State<HomeScreen> {
               elevation: 0,
             ),
             child: const Text(
-              'SIGN IN',
+              'SIGN UP',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 16,
-                fontFamily: 'Bold',
-                letterSpacing: 1,
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // Create Account Link
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text(
-                'New here? ',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontFamily: 'Regular',
-                  fontSize: 14,
-                ),
-              ),
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const SignupScreen()),
-                  );
-                },
-                child: Text(
-                  'Create an Account',
-                  style: TextStyle(
-                    color: primary,
-                    fontFamily: 'Medium',
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 15),
-
-          // Admin Button
-          OutlinedButton(
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => const AdminLoginDialog(),
-              );
-            },
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              side: BorderSide(color: primary, width: 2),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: Text(
-              'ADMIN',
-              style: TextStyle(
-                color: primary,
-                fontSize: 14,
                 fontFamily: 'Bold',
                 letterSpacing: 1,
               ),
