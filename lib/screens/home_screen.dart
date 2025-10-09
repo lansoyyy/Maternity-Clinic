@@ -4,7 +4,8 @@ import 'contact_us_screen.dart';
 import 'about_us_screen.dart';
 import 'services_screen.dart';
 import 'signup_screen.dart';
-import 'user_dashboard_screen.dart';
+import 'prenatal_dashboard_screen.dart';
+import 'postnatal_dashboard_screen.dart';
 import '../widgets/forgot_password_dialog.dart';
 import '../widgets/admin_login_dialog.dart';
 
@@ -19,6 +20,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _rememberMe = false;
+  String _selectedPatientType = 'PRENATAL';
 
   @override
   void dispose() {
@@ -403,6 +405,71 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
 
+          // Patient Type Selection
+          Row(
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: Radio<String>(
+                        value: 'PRENATAL',
+                        groupValue: _selectedPatientType,
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedPatientType = value!;
+                          });
+                        },
+                        activeColor: primary,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'PRENATAL',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontFamily: 'Regular',
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: Radio<String>(
+                        value: 'POSTNATAL',
+                        groupValue: _selectedPatientType,
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedPatientType = value!;
+                          });
+                        },
+                        activeColor: primary,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'POSTNATAL',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontFamily: 'Regular',
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 15),
+
           // Remember Me Checkbox
           Row(
             children: [
@@ -438,11 +505,18 @@ class _HomeScreenState extends State<HomeScreen> {
           // Sign In Button
           ElevatedButton(
             onPressed: () {
-              // Navigate to user dashboard
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const UserDashboardScreen()),
-              );
+              // Navigate to appropriate dashboard based on patient type
+              if (_selectedPatientType == 'PRENATAL') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const PrenatalDashboardScreen()),
+                );
+              } else {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const PostnatalDashboardScreen()),
+                );
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: primary,

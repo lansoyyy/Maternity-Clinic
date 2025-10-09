@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../utils/colors.dart';
 
-class UserDashboardScreen extends StatefulWidget {
-  const UserDashboardScreen({super.key});
+class AdminDashboardScreen extends StatefulWidget {
+  const AdminDashboardScreen({super.key});
 
   @override
-  State<UserDashboardScreen> createState() => _UserDashboardScreenState();
+  State<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
 }
 
-class _UserDashboardScreenState extends State<UserDashboardScreen> {
+class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -76,7 +76,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: const [
                 Text(
-                  'DELA CRUZ,',
+                  'ADMIN',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -84,15 +84,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                     letterSpacing: 0.5,
                   ),
                 ),
-                Text(
-                  'JUAN B.',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontFamily: 'Bold',
-                    letterSpacing: 0.5,
-                  ),
-                ),
+             
               ],
             ),
           ),

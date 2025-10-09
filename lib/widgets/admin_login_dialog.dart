@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:maternity_clinic/screens/ADMIN_dashboard_screen.dart';
 import '../utils/colors.dart';
+
 
 class AdminLoginDialog extends StatefulWidget {
   const AdminLoginDialog({super.key});
@@ -224,24 +226,20 @@ class _AdminLoginDialogState extends State<AdminLoginDialog> {
             ElevatedButton(
               onPressed: () {
                 // Handle admin login
-                if (_usernameController.text.isNotEmpty &&
-                    _passwordController.text.isNotEmpty) {
-                  // TODO: Implement admin authentication
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text(
-                        'Admin login successful!',
-                        style: TextStyle(fontFamily: 'Regular'),
-                      ),
-                      backgroundColor: primary,
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
+                // if (_usernameController.text.isNotEmpty &&
+                //     _passwordController.text.isNotEmpty) {
+                //   // Navigate to admin dashboard
+                //   Navigator.pop(context); // Close dialog
+                //   Navigator.push(
+                //     context,
+                //     MaterialPageRoute(builder: (context) => const UserDashboardScreen()),
+                //   );
+                // }
+                 Navigator.pop(context); // Close dialog
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const AdminDashboardScreen()),
                   );
-                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: primary,
