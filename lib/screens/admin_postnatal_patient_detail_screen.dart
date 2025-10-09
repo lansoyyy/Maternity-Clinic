@@ -30,6 +30,30 @@ class _AdminPostnatalPatientDetailScreenState extends State<AdminPostnatalPatien
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Back Button
+                  Row(
+                    children: [
+                      IconButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        icon: const Icon(Icons.arrow_back, size: 28),
+                        color: Colors.black87,
+                        tooltip: 'Back to Records',
+                      ),
+                      const SizedBox(width: 10),
+                      const Text(
+                        'Patient Details',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontFamily: 'Bold',
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+
                   // Top Section - Information Cards
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,

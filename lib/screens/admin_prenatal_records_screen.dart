@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../utils/colors.dart';
 import 'admin_prenatal_patient_detail_screen.dart';
-import 'admin_dashboard_screen.dart';
 import 'admin_postnatal_records_screen.dart';
 import 'admin_appointment_scheduling_screen.dart';
 
@@ -217,10 +216,7 @@ class _AdminPrenatalRecordsScreenState extends State<AdminPrenatalRecordsScreen>
   void _handleNavigation(String title) {
     switch (title) {
       case 'DATA GRAPHS':
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const AdminDashboardScreen()),
-        );
+        Navigator.pop(context);
         break;
       case 'PRENATAL PATIENT\nRECORD':
         // Already on this screen

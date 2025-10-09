@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../utils/colors.dart';
-import 'admin_dashboard_screen.dart';
 import 'admin_prenatal_records_screen.dart';
 import 'admin_postnatal_records_screen.dart';
 
@@ -152,10 +151,7 @@ class _AdminAppointmentSchedulingScreenState extends State<AdminAppointmentSched
   void _handleNavigation(String title) {
     switch (title) {
       case 'DATA GRAPHS':
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const AdminDashboardScreen()),
-        );
+        Navigator.pop(context);
         break;
       case 'PRENATAL PATIENT\nRECORD':
         Navigator.pushReplacement(
