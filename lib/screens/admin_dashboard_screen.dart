@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../utils/colors.dart';
+import 'admin_prenatal_records_screen.dart';
+import 'admin_postnatal_records_screen.dart';
+import 'admin_appointment_scheduling_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -140,13 +143,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         // Already on this screen, do nothing
         return;
       case 'PRENATAL PATIENT\nRECORD':
-        screen = const PrenatalPatientRecordPlaceholder();
+        screen = const AdminPrenatalRecordsScreen();
         break;
       case 'POSTNATAL PATIENT\nRECORD':
-        screen = const PostnatalPatientRecordPlaceholder();
+        screen = const AdminPostnatalRecordsScreen();
         break;
       case 'APPOINTMENT\nSCHEDULING':
-        screen = const AppointmentSchedulingPlaceholder();
+        screen = const AdminAppointmentSchedulingScreen();
         break;
       default:
         return;
