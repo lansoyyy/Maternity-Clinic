@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../utils/colors.dart';
 import 'contact_us_screen.dart';
 import 'about_us_screen.dart';
@@ -16,6 +18,9 @@ class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   String _selectedGender = 'PRENATAL';
+  bool _isLoading = false;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   @override
   void dispose() {
@@ -145,6 +150,113 @@ class _SignupScreenState extends State<SignupScreen> {
         );
         break;
     }
+  }
+
+  Future<void> _handleSignup() async {
+    // Validate inputs
+    if (_emailController.text.trim().isEmpty) {
+      _showErrorDialog('Please enter your email address');
+      return;
+    }
+    if (_nameController.text.trim().isEmpty) {
+      _showErrorDialog('Please enter your name');
+      return;
+    }
+    if (_passwordController.text.trim().isEmpty) {
+      _showErrorDialog('Please enter a password');
+      return;
+    }
+    if (_passwordController.text.length < 6) {
+      _showErrorDialog('Password must be at least 6 characters');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Create user with Firebase Auth
+      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+
+      // Store user data in Firestore
+      await _firestore.collection('users').doc(userCredential.user!.uid).set({
+        'email': _emailController.text.trim(),
+        'name': _nameController.text.trim(),
+        'patientType': _selectedGender,
+        'createdAt': FieldValue.serverTimestamp(),
+        'role': 'patient',
+      });
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              'Account created successfully! Please sign in.',
+              style: TextStyle(fontFamily: 'Regular'),
+            ),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        
+        // Navigate back to login
+        Navigator.pop(context);
+      }
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+
+      String errorMessage = 'An error occurred';
+      if (e.code == 'weak-password') {
+        errorMessage = 'The password provided is too weak';
+      } else if (e.code == 'email-already-in-use') {
+        errorMessage = 'An account already exists for this email';
+      } else if (e.code == 'invalid-email') {
+        errorMessage = 'Invalid email address';
+      }
+
+      _showErrorDialog(errorMessage);
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      _showErrorDialog('An unexpected error occurred. Please try again.');
+    }
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+          'Error',
+          style: TextStyle(fontFamily: 'Bold'),
+        ),
+        content: Text(
+          message,
+          style: const TextStyle(fontFamily: 'Regular'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'OK',
+              style: TextStyle(color: primary, fontFamily: 'Bold'),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildDesktopLayout(double screenWidth, double screenHeight) {
@@ -470,10 +582,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
           // Go to Sign In Button
           ElevatedButton(
-            onPressed: () {
-              // Handle registration
-              Navigator.pop(context);
-            },
+            onPressed: _isLoading ? null : _handleSignup,
             style: ElevatedButton.styleFrom(
               backgroundColor: primary,
               padding: const EdgeInsets.symmetric(vertical: 15),
@@ -482,15 +591,24 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
               elevation: 0,
             ),
-            child: const Text(
-              'SIGN UP',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontFamily: 'Bold',
-                letterSpacing: 1,
-              ),
-            ),
+            child: _isLoading
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : const Text(
+                    'SIGN UP',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontFamily: 'Bold',
+                      letterSpacing: 1,
+                    ),
+                  ),
           ),
         ],
       ),

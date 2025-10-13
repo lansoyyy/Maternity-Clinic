@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../utils/colors.dart';
 
 class ForgotPasswordDialog extends StatefulWidget {
@@ -10,11 +11,97 @@ class ForgotPasswordDialog extends StatefulWidget {
 
 class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
   final TextEditingController _emailController = TextEditingController();
+  bool _isLoading = false;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   @override
   void dispose() {
     _emailController.dispose();
     super.dispose();
+  }
+
+  Future<void> _handlePasswordReset() async {
+    // Validate email
+    if (_emailController.text.trim().isEmpty) {
+      _showErrorDialog('Please enter your email address');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Send password reset email
+      await _auth.sendPasswordResetEmail(
+        email: _emailController.text.trim(),
+      );
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      // Show success message
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              'Password reset link sent to your email!',
+              style: TextStyle(fontFamily: 'Regular'),
+            ),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+
+      String errorMessage = 'An error occurred';
+      if (e.code == 'user-not-found') {
+        errorMessage = 'No account found with this email';
+      } else if (e.code == 'invalid-email') {
+        errorMessage = 'Invalid email address';
+      }
+
+      _showErrorDialog(errorMessage);
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      _showErrorDialog('An unexpected error occurred. Please try again.');
+    }
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+          'Error',
+          style: TextStyle(fontFamily: 'Bold'),
+        ),
+        content: Text(
+          message,
+          style: const TextStyle(fontFamily: 'Regular'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'OK',
+              style: TextStyle(color: primary, fontFamily: 'Bold'),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -143,26 +230,7 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
 
             // Send Reset Link Button
             ElevatedButton(
-              onPressed: () {
-                // Handle password reset
-                if (_emailController.text.isNotEmpty) {
-                  // Show success message
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text(
-                        'Password reset link sent to your email!',
-                        style: TextStyle(fontFamily: 'Regular'),
-                      ),
-                      backgroundColor: primary,
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  );
-                }
-              },
+              onPressed: _isLoading ? null : _handlePasswordReset,
               style: ElevatedButton.styleFrom(
                 backgroundColor: primary,
                 padding: const EdgeInsets.symmetric(vertical: 16),
@@ -171,15 +239,24 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
                 ),
                 elevation: 0,
               ),
-              child: const Text(
-                'Send Reset Link',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontFamily: 'Bold',
-                  letterSpacing: 0.5,
-                ),
-              ),
+              child: _isLoading
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Text(
+                      'Send Reset Link',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontFamily: 'Bold',
+                        letterSpacing: 0.5,
+                      ),
+                    ),
             ),
             const SizedBox(height: 15),
 

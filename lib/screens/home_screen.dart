@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../utils/colors.dart';
 import 'contact_us_screen.dart';
 import 'about_us_screen.dart';
@@ -20,7 +22,9 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _rememberMe = false;
-  String _selectedPatientType = 'PRENATAL';
+  bool _isLoading = false;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   @override
   void dispose() {
@@ -151,6 +155,131 @@ class _HomeScreenState extends State<HomeScreen> {
         );
         break;
     }
+  }
+
+  Future<void> _handleSignIn() async {
+    // Validate inputs
+    if (_emailController.text.trim().isEmpty) {
+      _showErrorDialog('Please enter your email address');
+      return;
+    }
+    if (_passwordController.text.trim().isEmpty) {
+      _showErrorDialog('Please enter your password');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Sign in with Firebase Auth
+      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+
+      // Get user data from Firestore
+      DocumentSnapshot userDoc = await _firestore
+          .collection('users')
+          .doc(userCredential.user!.uid)
+          .get();
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (userDoc.exists) {
+        Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+        String patientType = userData['patientType'] ?? 'PRENATAL';
+        String role = userData['role'] ?? 'patient';
+
+        // Check if user is admin (should use admin login)
+        if (role == 'admin') {
+          await _auth.signOut();
+          _showErrorDialog('Please use Admin Login for admin accounts.');
+          return;
+        }
+
+        // Navigate to appropriate dashboard based on patient type from Firestore
+        if (mounted) {
+          if (patientType == 'PRENATAL') {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const PrenatalDashboardScreen()),
+            );
+          } else {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const PostnatalDashboardScreen()),
+            );
+          }
+        }
+      } else {
+        // User authenticated but no Firestore data - create basic record
+        await _firestore.collection('users').doc(userCredential.user!.uid).set({
+          'email': _emailController.text.trim(),
+          'name': userCredential.user!.email?.split('@')[0] ?? 'User',
+          'patientType': 'PRENATAL',
+          'createdAt': FieldValue.serverTimestamp(),
+          'role': 'patient',
+        });
+        
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const PrenatalDashboardScreen()),
+          );
+        }
+      }
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+
+      String errorMessage = 'An error occurred';
+      if (e.code == 'user-not-found') {
+        errorMessage = 'No account found with this email';
+      } else if (e.code == 'wrong-password') {
+        errorMessage = 'Incorrect password';
+      } else if (e.code == 'invalid-email') {
+        errorMessage = 'Invalid email address';
+      } else if (e.code == 'user-disabled') {
+        errorMessage = 'This account has been disabled';
+      }
+
+      _showErrorDialog(errorMessage);
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      _showErrorDialog('An unexpected error occurred. Please try again.');
+    }
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+          'Error',
+          style: TextStyle(fontFamily: 'Bold'),
+        ),
+        content: Text(
+          message,
+          style: const TextStyle(fontFamily: 'Regular'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'OK',
+              style: TextStyle(color: primary, fontFamily: 'Bold'),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildDesktopLayout(double screenWidth, double screenHeight) {
@@ -404,71 +533,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-
-          // Patient Type Selection
-          Row(
-            children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: Radio<String>(
-                        value: 'PRENATAL',
-                        groupValue: _selectedPatientType,
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedPatientType = value!;
-                          });
-                        },
-                        activeColor: primary,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'PRENATAL',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontFamily: 'Regular',
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: Radio<String>(
-                        value: 'POSTNATAL',
-                        groupValue: _selectedPatientType,
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedPatientType = value!;
-                          });
-                        },
-                        activeColor: primary,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'POSTNATAL',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontFamily: 'Regular',
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 15),
+          const SizedBox(height: 5),
 
           // Remember Me Checkbox
           Row(
@@ -504,20 +569,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
           // Sign In Button
           ElevatedButton(
-            onPressed: () {
-              // Navigate to appropriate dashboard based on patient type
-              if (_selectedPatientType == 'PRENATAL') {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const PrenatalDashboardScreen()),
-                );
-              } else {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const PostnatalDashboardScreen()),
-                );
-              }
-            },
+            onPressed: _isLoading ? null : _handleSignIn,
             style: ElevatedButton.styleFrom(
               backgroundColor: primary,
               padding: const EdgeInsets.symmetric(vertical: 15),
@@ -526,15 +578,24 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               elevation: 0,
             ),
-            child: const Text(
-              'SIGN IN',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontFamily: 'Bold',
-                letterSpacing: 1,
-              ),
-            ),
+            child: _isLoading
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : const Text(
+                    'SIGN IN',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontFamily: 'Bold',
+                      letterSpacing: 1,
+                    ),
+                  ),
           ),
           const SizedBox(height: 20),
 
