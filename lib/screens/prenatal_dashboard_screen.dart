@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../utils/colors.dart';
 import 'prenatal_history_checkup_screen.dart';
 import 'notification_appointment_screen.dart';
@@ -12,6 +14,39 @@ class PrenatalDashboardScreen extends StatefulWidget {
 }
 
 class _PrenatalDashboardScreenState extends State<PrenatalDashboardScreen> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  String _userName = 'Loading...';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserName();
+  }
+
+  Future<void> _loadUserName() async {
+    try {
+      User? user = _auth.currentUser;
+      if (user != null) {
+        DocumentSnapshot userDoc = await _firestore
+            .collection('users')
+            .doc(user.uid)
+            .get();
+        
+        if (userDoc.exists) {
+          Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+          setState(() {
+            _userName = userData['name'] ?? 'User';
+          });
+        }
+      }
+    } catch (e) {
+      setState(() {
+        _userName = 'User';
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -70,22 +105,23 @@ class _PrenatalDashboardScreenState extends State<PrenatalDashboardScreen> {
             padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 Text(
-                  'DELA CRUZ,',
-                  style: TextStyle(
+                  _userName.toUpperCase(),
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                     fontFamily: 'Bold',
                     letterSpacing: 0.5,
                   ),
                 ),
-                Text(
-                  'JUAN B.',
+                const SizedBox(height: 5),
+                const Text(
+                  'PRENATAL PATIENT',
                   style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontFamily: 'Bold',
+                    color: Colors.white70,
+                    fontSize: 12,
+                    fontFamily: 'Regular',
                     letterSpacing: 0.5,
                   ),
                 ),
