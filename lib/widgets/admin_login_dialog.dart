@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:maternity_clinic/screens/ADMIN_dashboard_screen.dart';
+import 'package:maternity_clinic/screens/admin/admin_dashboard_screen.dart';
+
 import '../utils/colors.dart';
 
 

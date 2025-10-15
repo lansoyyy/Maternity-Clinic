@@ -35,15 +35,19 @@ class _PrenatalDashboardScreenState extends State<PrenatalDashboardScreen> {
         
         if (userDoc.exists) {
           Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
-          setState(() {
-            _userName = userData['name'] ?? 'User';
-          });
+          if (mounted) {
+            setState(() {
+              _userName = userData['name'] ?? 'User';
+            });
+          }
         }
       }
     } catch (e) {
-      setState(() {
-        _userName = 'User';
-      });
+      if (mounted) {
+        setState(() {
+          _userName = 'User';
+        });
+      }
     }
   }
 

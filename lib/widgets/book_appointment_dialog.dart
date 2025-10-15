@@ -89,15 +89,18 @@ class _BookAppointmentDialogState extends State<BookAppointmentDialog> {
         });
 
         if (mounted) {
-          Navigator.pop(context);
+          Navigator.pop(context, true); // Return true to indicate success
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
+            SnackBar(
+              content: const Text(
                 'Appointment booked successfully!',
                 style: TextStyle(fontFamily: 'Regular'),
               ),
               backgroundColor: Colors.green,
               behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
           );
         }
