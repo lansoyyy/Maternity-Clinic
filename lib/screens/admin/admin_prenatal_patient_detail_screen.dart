@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../utils/colors.dart';
+import '../../utils/colors.dart';
 
 class AdminPrenatalPatientDetailScreen extends StatefulWidget {
   final Map<String, String> patientData;

@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
-import '../utils/colors.dart';
-import 'admin_postnatal_patient_detail_screen.dart';
-import 'admin_prenatal_records_screen.dart';
+import 'package:maternity_clinic/screens/admin/admin_prenatal_patient_detail_screen.dart';
+import 'package:maternity_clinic/utils/colors.dart';
+
+import 'admin_postnatal_records_screen.dart';
 import 'admin_appointment_scheduling_screen.dart';
 
-class AdminPostnatalRecordsScreen extends StatefulWidget {
-  const AdminPostnatalRecordsScreen({super.key});
+class AdminPrenatalRecordsScreen extends StatefulWidget {
+  const AdminPrenatalRecordsScreen({super.key});
 
   @override
-  State<AdminPostnatalRecordsScreen> createState() => _AdminPostnatalRecordsScreenState();
+  State<AdminPrenatalRecordsScreen> createState() => _AdminPrenatalRecordsScreenState();
 }
 
-class _AdminPostnatalRecordsScreenState extends State<AdminPostnatalRecordsScreen> {
+class _AdminPrenatalRecordsScreenState extends State<AdminPrenatalRecordsScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _selectedFilter = 'ACTIVE';
 
@@ -170,8 +171,8 @@ class _AdminPostnatalRecordsScreenState extends State<AdminPostnatalRecordsScree
 
           // Menu Items
           _buildMenuItem('DATA GRAPHS', false),
-          _buildMenuItem('PRENATAL PATIENT\nRECORD', false),
-          _buildMenuItem('POSTNATAL PATIENT\nRECORD', true),
+          _buildMenuItem('PRENATAL PATIENT\nRECORD', true),
+          _buildMenuItem('POSTNATAL PATIENT\nRECORD', false),
           _buildMenuItem('APPOINTMENT\nSCHEDULING', false),
         ],
       ),
@@ -219,13 +220,13 @@ class _AdminPostnatalRecordsScreenState extends State<AdminPostnatalRecordsScree
         Navigator.pop(context);
         break;
       case 'PRENATAL PATIENT\nRECORD':
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const AdminPrenatalRecordsScreen()),
-        );
+        // Already on this screen
         break;
       case 'POSTNATAL PATIENT\nRECORD':
-        // Already on this screen
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const AdminPostnatalRecordsScreen()),
+        );
         break;
       case 'APPOINTMENT\nSCHEDULING':
         Navigator.pushReplacement(
@@ -239,94 +240,104 @@ class _AdminPostnatalRecordsScreenState extends State<AdminPostnatalRecordsScree
   Widget _buildPatientTable() {
     final patients = [
       {
-        'patientId': 'PNL-2025-001',
-        'name': 'Maria Dela Cruz',
-        'age': '38',
-        'deliveryType': 'Cesarean',
-        'dateOfDelivery': '8/20/2025',
-        'address': '123 Sampaguita St., QC',
-        'contact': '0919-336-6789',
-      },
-      {
-        'patientId': 'PNL-2025-002',
-        'name': 'Ana Santos',
-        'age': '32',
-        'deliveryType': 'Normal',
-        'dateOfDelivery': '8/15/2025',
-        'address': '45 Mabini St., Manila',
-        'contact': '0921-567-3348',
-      },
-      {
-        'patientId': 'PNL-2025-003',
-        'name': 'Liza Reyes',
-        'age': '24',
-        'deliveryType': 'Normal',
-        'dateOfDelivery': '7/30/2025',
-        'address': '67 Rizal Ave., Caloocan',
-        'contact': '0958-221-7658',
-      },
-      {
-        'patientId': 'PNL-2025-004',
-        'name': 'Joanna Mendoza',
-        'age': '30',
-        'deliveryType': 'Cesarean',
-        'dateOfDelivery': '8/5/2025',
-        'address': '15 Katipunan Rd., QC',
-        'contact': '0917-665-8435',
-      },
-      {
-        'patientId': 'PNL-2025-005',
-        'name': 'Christine Bautista',
+        'status': 'Active',
+        'childBirth': 'Active',
+        'patientId': 'P-2025-001',
+        'name': 'Maria Santos',
+        'address': '123 Mabini St. Brgy. San Isidro, Quezon City',
+        'contact': '0917-123-4567',
+        'gestation': '20 Weeks 2 Days',
         'age': '27',
-        'deliveryType': 'Normal',
-        'dateOfDelivery': '7/28/2025',
-        'address': '78 Boni Ave., Mandaluyong',
-        'contact': '0932-876-1109',
       },
       {
-        'patientId': 'PNL-2025-006',
-        'name': 'Camille Garcia',
-        'age': '35',
-        'deliveryType': 'Cesarean',
-        'dateOfDelivery': '8/10/2025',
-        'address': '89 Taft Ave., Manila',
-        'contact': '0918-223-8821',
-      },
-      {
-        'patientId': 'PNL-2025-007',
-        'name': 'Erika Villanueva',
-        'age': '29',
-        'deliveryType': 'Normal',
-        'dateOfDelivery': '8/18/2025',
-        'address': '23 P. Tuazon, Cubao',
-        'contact': '0976-332-1190',
-      },
-      {
-        'patientId': 'PNL-2025-008',
-        'name': 'Grace Fernandez',
+        'status': 'Delivered',
+        'childBirth': 'Delivered',
+        'patientId': 'P-2025-002',
+        'name': 'Ana Cruz',
+        'address': '45 Rizal Ave. Brgy. 5, Manila',
+        'contact': '0918-234-5678',
+        'gestation': '39 Weeks',
         'age': '31',
-        'deliveryType': 'Cesarean',
-        'dateOfDelivery': '7/25/2025',
-        'address': '16 Melchor St.,Pasig',
-        'contact': '0918-552-7788',
       },
       {
-        'patientId': 'PNL-2025-009',
-        'name': 'Janine Cruz',
-        'age': '26',
-        'deliveryType': 'Normal',
-        'dateOfDelivery': '8/12/2025',
-        'address': '54 Aurora Blvd., Marikina',
-        'contact': '0991-728-4960',
+        'status': 'Active',
+        'childBirth': 'Active',
+        'patientId': 'P-2025-003',
+        'name': 'Liza Dela Peña',
+        'address': '99 Legaspi St. Brgy. Pio Del Pilar, Makati',
+        'contact': '0921-345-6789',
+        'gestation': '3 Weeks 4 Days',
+        'age': '24',
       },
       {
-        'patientId': 'PNL-2025-010',
-        'name': 'Michelle Torres',
+        'status': 'Active',
+        'childBirth': 'Active',
+        'patientId': 'P-2025-004',
+        'name': 'Jenny Robles',
+        'address': '56 Melchor St. Brgy. 12, Quezon City',
+        'contact': '0919-456-7890',
+        'gestation': '8 Weeks 3 Days',
+        'age': '29',
+      },
+      {
+        'status': 'Active',
+        'childBirth': 'Active',
+        'patientId': 'P-2025-005',
+        'name': 'Karen Villanueva',
+        'address': '210 M. Roxas St. Brgy. San Antonio, Pasig City',
+        'contact': '0922-567-8901',
+        'gestation': '5 Weeks 6 Days',
         'age': '33',
-        'deliveryType': 'Normal',
-        'dateOfDelivery': '7/22/2025',
-        'address': '34 Roxas Blvd., Pasay',
-        'contact': '0924-119-5678',
+      },
+      {
+        'status': 'Active',
+        'childBirth': 'Active',
+        'patientId': 'P-2025-006',
+        'name': 'Michelle Flores',
+        'address': '8 Luna St. Brgy. 1, Taguig City',
+        'contact': '0917-678-9012',
+        'gestation': '4 Weeks 5 Days',
+        'age': '26',
+      },
+      {
+        'status': 'Delivered',
+        'childBirth': 'Delivered',
+        'patientId': 'P-2025-007',
+        'name': 'Rose Ann Mendoza',
+        'address': '33 Aguinaldo Hwy. Brgy. 5, Lucena City',
+        'contact': '0923-789-0123',
+        'gestation': '39 Weeks',
+        'age': '35',
+      },
+      {
+        'status': 'Active',
+        'childBirth': 'Active',
+        'patientId': 'P-2025-008',
+        'name': 'Carla Gutierrez',
+        'address': '99 National Hwy. Brgy. San Pedro, Laguna',
+        'contact': '0918-890-1234',
+        'gestation': '2 Weeks 2 Days',
+        'age': '28',
+      },
+      {
+        'status': 'Active',
+        'childBirth': 'Active',
+        'patientId': 'P-2025-009',
+        'name': 'Joyce Ramirez',
+        'address': '77 Bonifacio St. Brgy. Halsey, Bacoor, Cavite',
+        'contact': '0924-901-2345',
+        'gestation': '5 Weeks 2 Days',
+        'age': '32',
+      },
+      {
+        'status': 'Delivered',
+        'childBirth': 'Delivered',
+        'patientId': 'P-2025-010',
+        'name': 'Angelica Torres',
+        'address': '67 Mabuhay St. Brgy. Barangka, Bulacan',
+        'contact': '0917-012-3456',
+        'gestation': '39 Weeks',
+        'age': '30',
       },
     ];
 
@@ -344,13 +355,13 @@ class _AdminPostnatalRecordsScreenState extends State<AdminPostnatalRecordsScree
           ),
           child: Row(
             children: [
-              _buildHeaderCell('PATIENT ID', flex: 2),
+              _buildHeaderCell('CHILD BIRTH', flex: 1),
+              _buildHeaderCell('PATIENT ID', flex: 1),
               _buildHeaderCell('NAME', flex: 2),
-              _buildHeaderCell('Age', flex: 1),
-              _buildHeaderCell('Delivery Type', flex: 2),
-              _buildHeaderCell('Date of Delivery', flex: 2),
-              _buildHeaderCell('Address', flex: 3),
-              _buildHeaderCell('Contact No.', flex: 2),
+              _buildHeaderCell('ADDRESS', flex: 3),
+              _buildHeaderCell('CONTACT NO.', flex: 2),
+              _buildHeaderCell('AGE OF GESTATION', flex: 2),
+              _buildHeaderCell('AGE', flex: 1),
             ],
           ),
         ),
@@ -358,13 +369,14 @@ class _AdminPostnatalRecordsScreenState extends State<AdminPostnatalRecordsScree
         // Table Rows
         ...patients.map((patient) {
           return _buildTableRow(
+            patient['status']!,
+            patient['childBirth']!,
             patient['patientId']!,
             patient['name']!,
-            patient['age']!,
-            patient['deliveryType']!,
-            patient['dateOfDelivery']!,
             patient['address']!,
             patient['contact']!,
+            patient['gestation']!,
+            patient['age']!,
           );
         }).toList(),
       ],
@@ -387,14 +399,31 @@ class _AdminPostnatalRecordsScreenState extends State<AdminPostnatalRecordsScree
   }
 
   Widget _buildTableRow(
+    String status,
+    String childBirth,
     String patientId,
     String name,
-    String age,
-    String deliveryType,
-    String dateOfDelivery,
     String address,
     String contact,
+    String gestation,
+    String age,
   ) {
+    Color statusColor;
+    if (childBirth == 'Active') {
+      statusColor = Colors.green;
+    } else if (childBirth == 'Delivered') {
+      statusColor = Colors.red;
+    } else {
+      statusColor = Colors.grey;
+    }
+
+    Color gestationColor;
+    if (gestation.contains('39 Weeks')) {
+      gestationColor = Colors.red;
+    } else {
+      gestationColor = Colors.green;
+    }
+
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
@@ -402,15 +431,15 @@ class _AdminPostnatalRecordsScreenState extends State<AdminPostnatalRecordsScree
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => AdminPostnatalPatientDetailScreen(
+              builder: (context) => AdminPrenatalPatientDetailScreen(
                 patientData: {
                   'patientId': patientId,
                   'name': name,
                   'age': age,
-                  'deliveryType': deliveryType,
-                  'dateOfDelivery': dateOfDelivery,
                   'address': address,
                   'contact': contact,
+                  'gestation': gestation,
+                  'status': status,
                 },
               ),
             ),
@@ -424,16 +453,42 @@ class _AdminPostnatalRecordsScreenState extends State<AdminPostnatalRecordsScree
             ),
           ),
           child: Row(
-            children: [
-              _buildTableCell(patientId, flex: 2),
-              _buildTableCell(name, flex: 2),
-              _buildTableCell(age, flex: 1),
-              _buildTableCell(deliveryType, flex: 2),
-              _buildTableCell(dateOfDelivery, flex: 2),
-              _buildTableCell(address, flex: 3),
-              _buildTableCell(contact, flex: 2),
-            ],
+        children: [
+          Expanded(
+            flex: 1,
+            child: Center(
+              child: Text(
+                childBirth,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontFamily: 'Bold',
+                  color: statusColor,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
           ),
+          _buildTableCell(patientId, flex: 1),
+          _buildTableCell(name, flex: 2),
+          _buildTableCell(address, flex: 3),
+          _buildTableCell(contact, flex: 2),
+          Expanded(
+            flex: 2,
+            child: Center(
+              child: Text(
+                gestation,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontFamily: 'Regular',
+                  color: gestationColor,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+          _buildTableCell(age, flex: 1),
+        ],
+      ),
         ),
       ),
     );

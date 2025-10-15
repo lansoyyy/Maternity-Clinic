@@ -1,27 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../utils/colors.dart';
+import '../../utils/colors.dart';
 import 'contact_us_screen.dart';
 import 'about_us_screen.dart';
 import 'services_screen.dart';
-import 'signup_screen.dart';
-import 'prenatal_dashboard_screen.dart';
-import 'postnatal_dashboard_screen.dart';
-import '../widgets/forgot_password_dialog.dart';
-import '../widgets/admin_login_dialog.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+class SignupScreen extends StatefulWidget {
+  const SignupScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<SignupScreen> createState() => _SignupScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  bool _rememberMe = false;
+  String _selectedGender = 'PRENATAL';
   bool _isLoading = false;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -29,6 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _emailController.dispose();
+    _nameController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -101,7 +98,6 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildNavItem('HOME', true),
               _buildNavItem('ABOUT US', false),
               _buildNavItem('SERVICES', false),
-        
               _buildNavItem('CONTACT US', false),
             ],
           ),
@@ -133,23 +129,22 @@ class _HomeScreenState extends State<HomeScreen> {
   void _handleNavigation(String title) {
     switch (title) {
       case 'HOME':
-        // Already on home screen
+        Navigator.pop(context);
         break;
       case 'ABOUT US':
-        Navigator.push(
+        Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const AboutUsScreen()),
         );
         break;
       case 'SERVICES':
-        Navigator.push(
+        Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const ServicesScreen()),
         );
         break;
-     
       case 'CONTACT US':
-        Navigator.push(
+        Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const ContactUsScreen()),
         );
@@ -157,14 +152,22 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _handleSignIn() async {
+  Future<void> _handleSignup() async {
     // Validate inputs
     if (_emailController.text.trim().isEmpty) {
       _showErrorDialog('Please enter your email address');
       return;
     }
+    if (_nameController.text.trim().isEmpty) {
+      _showErrorDialog('Please enter your name');
+      return;
+    }
     if (_passwordController.text.trim().isEmpty) {
-      _showErrorDialog('Please enter your password');
+      _showErrorDialog('Please enter a password');
+      return;
+    }
+    if (_passwordController.text.length < 6) {
+      _showErrorDialog('Password must be at least 6 characters');
       return;
     }
 
@@ -173,64 +176,40 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     try {
-      // Sign in with Firebase Auth
-      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+      // Create user with Firebase Auth
+      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
 
-      // Get user data from Firestore
-      DocumentSnapshot userDoc = await _firestore
-          .collection('users')
-          .doc(userCredential.user!.uid)
-          .get();
+      // Store user data in Firestore
+      await _firestore.collection('users').doc(userCredential.user!.uid).set({
+        'email': _emailController.text.trim(),
+        'name': _nameController.text.trim(),
+        'patientType': _selectedGender,
+        'createdAt': FieldValue.serverTimestamp(),
+        'role': 'patient',
+      });
 
       setState(() {
         _isLoading = false;
       });
 
-      if (userDoc.exists) {
-        Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
-        String patientType = userData['patientType'] ?? 'PRENATAL';
-        String role = userData['role'] ?? 'patient';
-
-        // Check if user is admin (should use admin login)
-        if (role == 'admin') {
-          await _auth.signOut();
-          _showErrorDialog('Please use Admin Login for admin accounts.');
-          return;
-        }
-
-        // Navigate to appropriate dashboard based on patient type from Firestore
-        if (mounted) {
-          if (patientType == 'PRENATAL') {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const PrenatalDashboardScreen()),
-            );
-          } else {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const PostnatalDashboardScreen()),
-            );
-          }
-        }
-      } else {
-        // User authenticated but no Firestore data - create basic record
-        await _firestore.collection('users').doc(userCredential.user!.uid).set({
-          'email': _emailController.text.trim(),
-          'name': userCredential.user!.email?.split('@')[0] ?? 'User',
-          'patientType': 'PRENATAL',
-          'createdAt': FieldValue.serverTimestamp(),
-          'role': 'patient',
-        });
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              'Account created successfully! Please sign in.',
+              style: TextStyle(fontFamily: 'Regular'),
+            ),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
         
-        if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const PrenatalDashboardScreen()),
-          );
-        }
+        // Navigate back to login
+        Navigator.pop(context);
       }
     } on FirebaseAuthException catch (e) {
       setState(() {
@@ -238,14 +217,12 @@ class _HomeScreenState extends State<HomeScreen> {
       });
 
       String errorMessage = 'An error occurred';
-      if (e.code == 'user-not-found') {
-        errorMessage = 'No account found with this email';
-      } else if (e.code == 'wrong-password') {
-        errorMessage = 'Incorrect password';
+      if (e.code == 'weak-password') {
+        errorMessage = 'The password provided is too weak';
+      } else if (e.code == 'email-already-in-use') {
+        errorMessage = 'An account already exists for this email';
       } else if (e.code == 'invalid-email') {
         errorMessage = 'Invalid email address';
-      } else if (e.code == 'user-disabled') {
-        errorMessage = 'This account has been disabled';
       }
 
       _showErrorDialog(errorMessage);
@@ -285,13 +262,11 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildDesktopLayout(double screenWidth, double screenHeight) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
-
       children: [
         // Left Section - Services
         Expanded(
           flex: 3,
           child: Column(
-            
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildServiceItem(
@@ -326,10 +301,10 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
 
-        // Right Section - Sign In Form
+        // Right Section - Register Form
         Expanded(
           flex: 3,
-          child: _buildSignInCard(),
+          child: _buildRegisterCard(),
         ),
       ],
     );
@@ -338,7 +313,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildMobileLayout(double screenWidth, double screenHeight) {
     return Column(
       children: [
-        _buildSignInCard(),
+        _buildRegisterCard(),
         const SizedBox(height: 40),
         Image.asset(
           'assets/images/figure.png',
@@ -385,7 +360,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildSignInCard() {
+  Widget _buildRegisterCard() {
     return Container(
       padding: const EdgeInsets.all(30),
       decoration: BoxDecoration(
@@ -404,21 +379,16 @@ class _HomeScreenState extends State<HomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Welcome Header
-          Row(
+          const Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text(
-                'WELCOME ',
+              Text(
+                'WELCOME',
                 style: TextStyle(
                   fontSize: 22,
                   fontFamily: 'Regular',
                   color: Colors.black,
                 ),
-              ),
-              Icon(
-                Icons.favorite_border,
-                color: Colors.grey.shade700,
-                size: 24,
               ),
             ],
           ),
@@ -435,9 +405,9 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 30),
 
-          // Sign In Title
+          // Register Title
           Text(
-            'SIGN IN',
+            'REGISTER',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 24,
@@ -453,6 +423,38 @@ class _HomeScreenState extends State<HomeScreen> {
             controller: _emailController,
             decoration: InputDecoration(
               hintText: 'Email address',
+              hintStyle: TextStyle(
+                color: Colors.grey.shade500,
+                fontFamily: 'Regular',
+                fontSize: 14,
+              ),
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 15,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: primary, width: 2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 15),
+
+          // Name Field
+          TextField(
+            controller: _nameController,
+            decoration: InputDecoration(
+              hintText: 'Name',
               hintStyle: TextStyle(
                 color: Colors.grey.shade500,
                 fontFamily: 'Regular',
@@ -511,65 +513,76 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 20),
 
-          // Forget Password
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => const ForgotPasswordDialog(),
-                );
-              },
-              child: const Text(
-                'Forget Password?',
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontFamily: 'Regular',
-                  fontSize: 13,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 5),
-
-          // Remember Me Checkbox
+          // Gender Selection
           Row(
             children: [
-              SizedBox(
-                width: 20,
-                height: 20,
-                child: Checkbox(
-                  value: _rememberMe,
-                  onChanged: (value) {
-                    setState(() {
-                      _rememberMe = value ?? false;
-                    });
-                  },
-                  activeColor: primary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(4),
-                  ),
+              Expanded(
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: Radio<String>(
+                        value: 'PRENATAL',
+                        groupValue: _selectedGender,
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedGender = value!;
+                          });
+                        },
+                        activeColor: primary,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'PRENATAL',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontFamily: 'Regular',
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 8),
-              const Text(
-                'Remember me',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontFamily: 'Regular',
-                  fontSize: 14,
+              Expanded(
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: Radio<String>(
+                        value: 'POSTNATAL',
+                        groupValue: _selectedGender,
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedGender = value!;
+                          });
+                        },
+                        activeColor: primary,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'POSTNATAL',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontFamily: 'Regular',
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 25),
 
-          // Sign In Button
+          // Go to Sign In Button
           ElevatedButton(
-            onPressed: _isLoading ? null : _handleSignIn,
+            onPressed: _isLoading ? null : _handleSignup,
             style: ElevatedButton.styleFrom(
               backgroundColor: primary,
               padding: const EdgeInsets.symmetric(vertical: 15),
@@ -588,7 +601,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   )
                 : const Text(
-                    'SIGN IN',
+                    'SIGN UP',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,
@@ -596,65 +609,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       letterSpacing: 1,
                     ),
                   ),
-          ),
-          const SizedBox(height: 20),
-
-          // Create Account Link
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text(
-                'New here? ',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontFamily: 'Regular',
-                  fontSize: 14,
-                ),
-              ),
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const SignupScreen()),
-                  );
-                },
-                child: Text(
-                  'Create an Account',
-                  style: TextStyle(
-                    color: primary,
-                    fontFamily: 'Medium',
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 15),
-
-          // Admin Button
-          OutlinedButton(
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => const AdminLoginDialog(),
-              );
-            },
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              side: BorderSide(color: primary, width: 2),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: Text(
-              'ADMIN',
-              style: TextStyle(
-                color: primary,
-                fontSize: 14,
-                fontFamily: 'Bold',
-                letterSpacing: 1,
-              ),
-            ),
           ),
         ],
       ),

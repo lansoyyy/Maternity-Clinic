@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../utils/colors.dart';
 import 'prenatal_dashboard_screen.dart';
 import 'postnatal_dashboard_screen.dart';
 import 'prenatal_history_checkup_screen.dart';
 import 'postnatal_history_checkup_screen.dart';
 import 'transfer_record_request_screen.dart';
+import '../widgets/book_appointment_dialog.dart';
 
 class NotificationAppointmentScreen extends StatefulWidget {
   final String patientType; // 'PRENATAL' or 'POSTNATAL'
@@ -19,10 +22,62 @@ class NotificationAppointmentScreen extends StatefulWidget {
 }
 
 class _NotificationAppointmentScreenState extends State<NotificationAppointmentScreen> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  String _userName = 'Loading...';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserName();
+  }
+
+  Future<void> _loadUserName() async {
+    try {
+      User? user = _auth.currentUser;
+      if (user != null) {
+        DocumentSnapshot userDoc = await _firestore
+            .collection('users')
+            .doc(user.uid)
+            .get();
+        
+        if (userDoc.exists) {
+          Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+          setState(() {
+            _userName = userData['name'] ?? 'User';
+          });
+        }
+      }
+    } catch (e) {
+      setState(() {
+        _userName = 'User';
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          showDialog(
+            context: context,
+            builder: (context) => BookAppointmentDialog(
+              patientType: widget.patientType,
+            ),
+          );
+        },
+        backgroundColor: primary,
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text(
+          'Book Appointment',
+          style: TextStyle(
+            color: Colors.white,
+            fontFamily: 'Bold',
+          ),
+        ),
+      ),
       body: Row(
         children: [
           // Sidebar
@@ -106,22 +161,23 @@ class _NotificationAppointmentScreenState extends State<NotificationAppointmentS
             padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 Text(
-                  'DELA CRUZ,',
-                  style: TextStyle(
+                  _userName.toUpperCase(),
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                     fontFamily: 'Bold',
                     letterSpacing: 0.5,
                   ),
                 ),
+                const SizedBox(height: 5),
                 Text(
-                  'JUAN B.',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontFamily: 'Bold',
+                  '${widget.patientType} PATIENT',
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12,
+                    fontFamily: 'Regular',
                     letterSpacing: 0.5,
                   ),
                 ),

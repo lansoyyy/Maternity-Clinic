@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import '../utils/colors.dart';
-import 'admin_prenatal_records_screen.dart';
-import 'admin_postnatal_records_screen.dart';
-import 'admin_appointment_scheduling_screen.dart';
+import 'package:maternity_clinic/screens/admin/admin_appointment_scheduling_screen.dart';
+import 'package:maternity_clinic/screens/admin/admin_postnatal_records_screen.dart';
+import 'package:maternity_clinic/screens/admin/admin_prenatal_records_screen.dart';
+import '../../utils/colors.dart';
+
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
