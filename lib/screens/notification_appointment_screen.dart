@@ -65,25 +65,32 @@ class _NotificationAppointmentScreenState extends State<NotificationAppointmentS
   Future<void> _loadUserAppointments() async {
     try {
       User? user = _auth.currentUser;
-      if (user != null) { 
+      if (user != null) {
+        print('Current User UID: ${user.uid}');
 
-
-     
-
+        // Query without orderBy to avoid index requirement
         QuerySnapshot appointmentSnapshot = await _firestore
             .collection('appointments')
             .where('userId', isEqualTo: user.uid)
-            .orderBy('createdAt', descending: true)
             .get();
+
+        print('Appointments found for current user: ${appointmentSnapshot.docs.length}');
 
         List<Map<String, dynamic>> appointments = [];
         for (var doc in appointmentSnapshot.docs) {
           Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
           data['id'] = doc.id;
           appointments.add(data);
+          print('Appointment: ${data['reason']} - Status: ${data['status']}');
         }
 
-        
+        // Sort in memory instead of in query
+        appointments.sort((a, b) {
+          var aTime = a['createdAt'];
+          var bTime = b['createdAt'];
+          if (aTime == null || bTime == null) return 0;
+          return (bTime as Timestamp).compareTo(aTime as Timestamp);
+        });
 
         if (mounted) {
           setState(() {
@@ -93,6 +100,7 @@ class _NotificationAppointmentScreenState extends State<NotificationAppointmentS
         }
       }
     } catch (e) {
+      print('Error loading appointments: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;

@@ -17,11 +17,16 @@ class _PrenatalHistoryCheckupScreenState extends State<PrenatalHistoryCheckupScr
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   String _userName = 'Loading...';
+  Map<String, dynamic>? _userData;
+  List<Map<String, dynamic>> _completedAppointments = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _loadUserName();
+    _loadUserData();
+    _loadCompletedAppointments();
   }
 
   Future<void> _loadUserName() async {
@@ -51,6 +56,68 @@ class _PrenatalHistoryCheckupScreenState extends State<PrenatalHistoryCheckupScr
     }
   }
 
+  Future<void> _loadUserData() async {
+    try {
+      User? user = _auth.currentUser;
+      if (user != null) {
+        DocumentSnapshot userDoc = await _firestore
+            .collection('users')
+            .doc(user.uid)
+            .get();
+        
+        if (userDoc.exists && mounted) {
+          setState(() {
+            _userData = userDoc.data() as Map<String, dynamic>;
+          });
+        }
+      }
+    } catch (e) {
+      print('Error loading user data: $e');
+    }
+  }
+
+  Future<void> _loadCompletedAppointments() async {
+    try {
+      User? user = _auth.currentUser;
+      if (user != null) {
+        QuerySnapshot appointmentSnapshot = await _firestore
+            .collection('appointments')
+            .where('userId', isEqualTo: user.uid)
+            .where('status', isEqualTo: 'Completed')
+            .get();
+
+        List<Map<String, dynamic>> appointments = [];
+        for (var doc in appointmentSnapshot.docs) {
+          Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+          data['id'] = doc.id;
+          appointments.add(data);
+        }
+
+        // Sort in memory by createdAt
+        appointments.sort((a, b) {
+          var aTime = a['createdAt'];
+          var bTime = b['createdAt'];
+          if (aTime == null || bTime == null) return 0;
+          return (aTime as Timestamp).compareTo(bTime as Timestamp);
+        });
+
+        if (mounted) {
+          setState(() {
+            _completedAppointments = appointments;
+            _isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+      print('Error loading appointments: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -67,22 +134,63 @@ class _PrenatalHistoryCheckupScreenState extends State<PrenatalHistoryCheckupScr
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Top Section - Patient Information Cards
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(child: _buildPatientInfoCard()),
-                      const SizedBox(width: 20),
-                      Expanded(child: _buildObstetricHistoryCard()),
-                      const SizedBox(width: 20),
-                      Expanded(child: _buildMedicalHistoryCard()),
-                      const SizedBox(width: 20),
-                      Expanded(child: _buildLaboratoryResultsCard()),
-                    ],
+                  // Page Title
+                  const Text(
+                    'Prenatal Checkup History',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontFamily: 'Bold',
+                      color: Colors.black,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'View your completed prenatal appointments and checkup records',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontFamily: 'Regular',
+                      color: Colors.grey.shade600,
+                    ),
                   ),
                   const SizedBox(height: 30),
 
+                  // Patient Information Card
+                  _buildPatientInfoCard(),
+                  const SizedBox(height: 30),
+
+                  // All Completed Appointments Summary
+                  if (_completedAppointments.isNotEmpty) ...[
+                    const Text(
+                      'Completed Appointments Summary',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontFamily: 'Bold',
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+                    ..._completedAppointments.asMap().entries.map((entry) {
+                      int index = entry.key;
+                      Map<String, dynamic> appointment = entry.value;
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 20),
+                        child: _buildAppointmentSummaryCard(appointment, index + 1),
+                      );
+                    }).toList(),
+                    const SizedBox(height: 30),
+                  ],
+
                   // Checkup History Table
+                  const Text(
+                    'Appointment History',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontFamily: 'Bold',
+                      color: Colors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 15),
                   _buildCheckupHistoryTable(),
                 ],
               ),
@@ -210,115 +318,293 @@ class _PrenatalHistoryCheckupScreenState extends State<PrenatalHistoryCheckupScr
 
   Widget _buildPatientInfoCard() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(25),
       decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(10),
+        gradient: LinearGradient(
+          colors: [primary.withOpacity(0.1), secondary.withOpacity(0.05)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: primary.withOpacity(0.3)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          const Text(
-            'PATIENT INFORMATION',
-            style: TextStyle(
-              fontSize: 14,
-              fontFamily: 'Bold',
-              color: Colors.black,
+          // Icon
+          Container(
+            padding: const EdgeInsets.all(15),
+            decoration: BoxDecoration(
+              color: primary,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.person,
+              color: Colors.white,
+              size: 32,
             ),
           ),
-          const SizedBox(height: 15),
-          _buildInfoRow('Patient ID:', 'P-00255-001'),
-          _buildInfoRow('Name:', 'Maria Santos'),
-          _buildInfoRow('Age:', '27'),
-          _buildInfoRow('Address:', '123 Maharlika St., Brgy. San Isidro, Quezon City'),
-          _buildInfoRow('Contact:', '0912-123-4567'),
+          const SizedBox(width: 20),
+          // Info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _userData?['name'] ?? 'Loading...',
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontFamily: 'Bold',
+                    color: Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(Icons.email, size: 16, color: Colors.grey.shade600),
+                    const SizedBox(width: 6),
+                    Text(
+                      _userData?['email'] ?? 'N/A',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontFamily: 'Regular',
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                    const SizedBox(width: 20),
+                    Icon(Icons.phone, size: 16, color: Colors.grey.shade600),
+                    const SizedBox(width: 6),
+                    Text(
+                      _userData?['contact'] ?? 'N/A',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontFamily: 'Regular',
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          // Stats
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  '${_completedAppointments.length}',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontFamily: 'Bold',
+                    color: primary,
+                  ),
+                ),
+                Text(
+                  'Completed',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontFamily: 'Regular',
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildObstetricHistoryCard() {
+  Widget _buildAppointmentSummaryCard(Map<String, dynamic> appointment, int visitNumber) {
+    String date = 'N/A';
+    if (appointment['createdAt'] != null) {
+      try {
+        DateTime dateTime = (appointment['createdAt'] as Timestamp).toDate();
+        date = '${dateTime.day}/${dateTime.month}/${dateTime.year}';
+      } catch (e) {
+        date = 'N/A';
+      }
+    }
+
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(25),
       decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'OBSTETRIC HISTORY',
-            style: TextStyle(
-              fontSize: 14,
-              fontFamily: 'Bold',
-              color: Colors.black,
-            ),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: Colors.grey.shade300),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade200,
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
-          const SizedBox(height: 15),
-          _buildInfoRow('Gravida:', '2'),
-          _buildInfoRow('Para:', '1'),
-          _buildInfoRow('Last Delivery:', 'Normal'),
-          _buildInfoRow('Complications:', 'None'),
-          _buildInfoRow('Last Menstrual Period:', 'January 15, 2024'),
-          _buildInfoRow('Expected Date of Delivery (EDD):', 'October 22, 2024'),
         ],
       ),
-    );
-  }
-
-  Widget _buildMedicalHistoryCard() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(10),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'MEDICAL HISTORY',
-            style: TextStyle(
-              fontSize: 14,
-              fontFamily: 'Bold',
-              color: Colors.black,
-            ),
+          // Header
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: primary,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '#$visitNumber',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontFamily: 'Bold',
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 15),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      appointment['appointmentType'] ?? 'Clinic',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontFamily: 'Bold',
+                        color: Colors.black,
+                      ),
+                    ),
+                    Text(
+                      'Completed on $date',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontFamily: 'Regular',
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade100,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  appointment['status'] ?? 'Completed',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontFamily: 'Bold',
+                    color: Colors.green.shade700,
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 15),
-          _buildInfoRow('Past Illnesses:', 'NONE'),
-          _buildInfoRow('Past Surgeries:', 'NONE'),
-          _buildInfoRow('Allergies:', 'No known drug allergies'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLaboratoryResultsCard() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'LABORATORY RESULTS',
-            style: TextStyle(
-              fontSize: 14,
-              fontFamily: 'Bold',
-              color: Colors.black,
-            ),
+          const SizedBox(height: 20),
+          
+          // Details in 3 columns
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Column 1: Schedule
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.calendar_today, size: 16, color: primary),
+                        const SizedBox(width: 6),
+                        const Text(
+                          'Schedule',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontFamily: 'Bold',
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    _buildInfoRow('Day:', appointment['day'] ?? 'N/A'),
+                    _buildInfoRow('Time:', appointment['timeSlot'] ?? 'N/A'),
+                  ],
+                ),
+              ),
+              // Column 2: Reason
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.medical_services, size: 16, color: primary),
+                        const SizedBox(width: 6),
+                        const Text(
+                          'Reason',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontFamily: 'Bold',
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      appointment['reason'] ?? 'Not specified',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontFamily: 'Regular',
+                        color: Colors.grey.shade700,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Column 3: Notes
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.note_alt, size: 16, color: primary),
+                        const SizedBox(width: 6),
+                        const Text(
+                          'Notes',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontFamily: 'Bold',
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      appointment['notes']?.toString().isNotEmpty == true
+                          ? appointment['notes']
+                          : 'No notes',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontFamily: 'Regular',
+                        color: Colors.grey.shade700,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 15),
-          _buildInfoRow('CBC:', 'Within normal limits'),
-          _buildInfoRow('Urinalysis:', 'No proteins, no glucose'),
-          _buildInfoRow('Blood Type:', 'O+'),
-          _buildInfoRow('HbsAg:', 'Non-reactive'),
-          _buildInfoRow('HIV:', 'Non-reactive'),
-          _buildInfoRow('Ultrasound:', 'Normal findings'),
         ],
       ),
     );
@@ -375,25 +661,46 @@ class _PrenatalHistoryCheckupScreenState extends State<PrenatalHistoryCheckupScr
               children: [
                 _buildTableHeaderCell('Visit No.', flex: 1),
                 _buildTableHeaderCell('Date', flex: 2),
-                _buildTableHeaderCell('Age of Gestation', flex: 2),
-                _buildTableHeaderCell('Weight (kg)', flex: 2),
-                _buildTableHeaderCell('BP (mmHg)', flex: 2),
-                _buildTableHeaderCell('Fundic Height (cm)', flex: 2),
-                _buildTableHeaderCell('Fetal Heart Rate (bpm)', flex: 2),
-                _buildTableHeaderCell('Remarks', flex: 2),
-                _buildTableHeaderCell('Risk Classification', flex: 2),
+                _buildTableHeaderCell('Day', flex: 2),
+                _buildTableHeaderCell('Time Slot', flex: 2),
+                _buildTableHeaderCell('Type', flex: 2),
+                _buildTableHeaderCell('Reason', flex: 3),
+                _buildTableHeaderCell('Notes', flex: 3),
               ],
             ),
           ),
 
-          // Table Rows
-          _buildTableRow('1', 'Feb 15, 2024', '4 weeks', '52', '110/70', 'N/A', 'N/A', 'Initial checkup', 'Low Risk'),
-          _buildTableRow('2', 'Mar 18, 2024', '10 weeks', '54', '115/75', 'N/A', 'N/A', 'Advised vitamins', 'Low Risk'),
-          _buildTableRow('3', 'Apr 8, 2024', '15 weeks', '57', '110/70', '10', '145', 'Normal progress', 'Low Risk'),
-          _buildTableRow('4', 'May 6, 2024', '18 weeks', '58', '110/75', '16', '150', 'Normal ultrasound', 'Low Risk'),
-          _buildTableRow('5', 'May 27, 2024', '22 weeks', '59', '108/70', '20', '155', 'Anatomy scan done', 'Low Risk'),
-          _buildTableRow('6', 'Jul 8, 2024', '26 weeks', '61', '120/80', '24', '160', 'Normal progress', 'Low Risk'),
-          _buildTableRow('7', 'Aug 5, 2024', '30 weeks', '63', '125/85', '28', '155', 'Encouraged rest', 'High Risk'),
+          // Table Rows - Dynamic from Firestore
+          if (_isLoading)
+            Padding(
+              padding: const EdgeInsets.all(40),
+              child: Center(
+                child: CircularProgressIndicator(color: primary),
+              ),
+            )
+          else if (_completedAppointments.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(40),
+              child: Center(
+                child: Text(
+                  'No completed checkups yet',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontFamily: 'Regular',
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ),
+            )
+          else
+            ..._completedAppointments.asMap().entries.map((entry) {
+              int index = entry.key;
+              Map<String, dynamic> appointment = entry.value;
+              return _buildTableRowFromAppointment(
+                (index + 1).toString(),
+                appointment,
+              );
+            }).toList(),
         ],
       ),
     );
@@ -414,17 +721,22 @@ class _PrenatalHistoryCheckupScreenState extends State<PrenatalHistoryCheckupScr
     );
   }
 
-  Widget _buildTableRow(
-    String visitNo,
-    String date,
-    String ageOfGestation,
-    String weight,
-    String bp,
-    String fundicHeight,
-    String fetalHeartRate,
-    String remarks,
-    String riskClassification,
-  ) {
+  Widget _buildTableRowFromAppointment(String visitNo, Map<String, dynamic> appointment) {
+    String date = 'N/A';
+    if (appointment['createdAt'] != null) {
+      try {
+        DateTime dateTime;
+        if (appointment['createdAt'] is Timestamp) {
+          dateTime = (appointment['createdAt'] as Timestamp).toDate();
+        } else {
+          dateTime = DateTime.now();
+        }
+        date = '${dateTime.day}/${dateTime.month}/${dateTime.year}';
+      } catch (e) {
+        date = 'N/A';
+      }
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
       decoration: BoxDecoration(
@@ -436,13 +748,11 @@ class _PrenatalHistoryCheckupScreenState extends State<PrenatalHistoryCheckupScr
         children: [
           _buildTableCell(visitNo, flex: 1),
           _buildTableCell(date, flex: 2),
-          _buildTableCell(ageOfGestation, flex: 2),
-          _buildTableCell(weight, flex: 2),
-          _buildTableCell(bp, flex: 2),
-          _buildTableCell(fundicHeight, flex: 2),
-          _buildTableCell(fetalHeartRate, flex: 2),
-          _buildTableCell(remarks, flex: 2),
-          _buildTableCell(riskClassification, flex: 2),
+          _buildTableCell(appointment['day'] ?? 'N/A', flex: 2),
+          _buildTableCell(appointment['timeSlot'] ?? 'N/A', flex: 2),
+          _buildTableCell(appointment['appointmentType'] ?? 'N/A', flex: 2),
+          _buildTableCell(appointment['reason'] ?? 'N/A', flex: 3),
+          _buildTableCell(appointment['notes'] ?? '-', flex: 3),
         ],
       ),
     );
