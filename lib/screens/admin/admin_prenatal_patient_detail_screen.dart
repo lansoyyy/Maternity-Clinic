@@ -187,11 +187,16 @@ class _AdminPrenatalPatientDetailScreenState extends State<AdminPrenatalPatientD
             ),
           ),
           const SizedBox(height: 15),
-          _buildInfoRow('Patient ID:', widget.patientData['patientId'] ?? 'P-2025-001'),
-          _buildInfoRow('Name:', widget.patientData['name'] ?? 'Maria Santos'),
-          _buildInfoRow('Age:', widget.patientData['age'] ?? '27'),
-          _buildInfoRow('Address:', widget.patientData['address'] ?? '123 Mabini St., Brgy. San Isidro, Quezon City'),
-          _buildInfoRow('Contact:', widget.patientData['contact'] ?? '0917-123-4567'),
+          if (widget.patientData['patientId'] != null && widget.patientData['patientId']!.isNotEmpty)
+            _buildInfoRow('Patient ID:', widget.patientData['patientId']!),
+          if (widget.patientData['name'] != null && widget.patientData['name']!.isNotEmpty)
+            _buildInfoRow('Name:', widget.patientData['name']!),
+          if (widget.patientData['age'] != null && widget.patientData['age']!.isNotEmpty)
+            _buildInfoRow('Age:', widget.patientData['age']!),
+          if (widget.patientData['address'] != null && widget.patientData['address']!.isNotEmpty)
+            _buildInfoRow('Address:', widget.patientData['address']!),
+          if (widget.patientData['contact'] != null && widget.patientData['contact']!.isNotEmpty)
+            _buildInfoRow('Contact:', widget.patientData['contact']!),
         ],
       ),
     );
@@ -346,8 +351,8 @@ class _AdminPrenatalPatientDetailScreenState extends State<AdminPrenatalPatientD
           ),
 
           // Table Rows
-          _buildTableRow('1', 'Feb 20, 2025', '4 weeks', '55', '110/70', 'N/A', 'N/A', 'Initial check-up', 'Low Risk'),
-          _buildTableRow('2', 'Mar 18, 2025', '10 weeks', '56', '110/70', 'N/A', 'N/A', 'Advised vitamins', 'Low Risk'),
+          _buildTableRow('1', 'Feb 20, 2025', '4 weeks', '55', '110/70', '-', '-', 'Initial check-up', 'Low Risk'),
+          _buildTableRow('2', 'Mar 18, 2025', '10 weeks', '56', '110/70', '-', '-', 'Advised vitamins', 'Low Risk'),
           _buildTableRow('3', 'Apr 8, 2025', '12 weeks', '57', '110/70', '12', '140', 'Normal findings', 'Low Risk'),
           _buildTableRow('4', 'May 6, 2025', '16 weeks', '58', '110/70', '16', '145', 'Normal, ultrasound', 'Low Risk'),
           _buildTableRow('5', 'Jun 3, 2025', '20 weeks', '59', '115/75', '20', '148', 'Anatomy scan done', 'Low Risk'),

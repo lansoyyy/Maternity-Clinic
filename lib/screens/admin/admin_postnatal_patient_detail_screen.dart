@@ -187,11 +187,16 @@ class _AdminPostnatalPatientDetailScreenState extends State<AdminPostnatalPatien
             ),
           ),
           const SizedBox(height: 15),
-          _buildInfoRow('Patient ID:', widget.patientData['patientId'] ?? 'PNL-2025-001'),
-          _buildInfoRow('Name:', widget.patientData['name'] ?? 'Maria Dela Cruz'),
-          _buildInfoRow('Age:', widget.patientData['age'] ?? '38'),
-          _buildInfoRow('Address:', widget.patientData['address'] ?? '123 Sampaguita St., QC'),
-          _buildInfoRow('Contact:', widget.patientData['contact'] ?? '0919-336-6789'),
+          if (widget.patientData['patientId'] != null && widget.patientData['patientId']!.isNotEmpty)
+            _buildInfoRow('Patient ID:', widget.patientData['patientId']!),
+          if (widget.patientData['name'] != null && widget.patientData['name']!.isNotEmpty)
+            _buildInfoRow('Name:', widget.patientData['name']!),
+          if (widget.patientData['age'] != null && widget.patientData['age']!.isNotEmpty)
+            _buildInfoRow('Age:', widget.patientData['age']!),
+          if (widget.patientData['address'] != null && widget.patientData['address']!.isNotEmpty)
+            _buildInfoRow('Address:', widget.patientData['address']!),
+          if (widget.patientData['contact'] != null && widget.patientData['contact']!.isNotEmpty)
+            _buildInfoRow('Contact:', widget.patientData['contact']!),
         ],
       ),
     );
@@ -218,8 +223,10 @@ class _AdminPostnatalPatientDetailScreenState extends State<AdminPostnatalPatien
           const SizedBox(height: 15),
           _buildInfoRow('Gravida:', '2'),
           _buildInfoRow('Para:', '1'),
-          _buildInfoRow('Last Delivery:', widget.patientData['deliveryType'] ?? 'Cesarean'),
-          _buildInfoRow('Date of Delivery:', widget.patientData['dateOfDelivery'] ?? '8/20/2025'),
+          if (widget.patientData['deliveryType'] != null && widget.patientData['deliveryType']!.isNotEmpty)
+            _buildInfoRow('Last Delivery:', widget.patientData['deliveryType']!),
+          if (widget.patientData['dateOfDelivery'] != null && widget.patientData['dateOfDelivery']!.isNotEmpty)
+            _buildInfoRow('Date of Delivery:', widget.patientData['dateOfDelivery']!),
           _buildInfoRow('Last Menstrual Period (LMP):', 'January 15, 2025'),
           _buildInfoRow('Expected Date of Delivery (EDD):', 'October 22, 2025'),
         ],

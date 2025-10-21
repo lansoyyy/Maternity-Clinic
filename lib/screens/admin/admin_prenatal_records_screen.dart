@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:maternity_clinic/screens/admin/admin_prenatal_patient_detail_screen.dart';
 import 'package:maternity_clinic/utils/colors.dart';
 
@@ -13,8 +14,94 @@ class AdminPrenatalRecordsScreen extends StatefulWidget {
 }
 
 class _AdminPrenatalRecordsScreenState extends State<AdminPrenatalRecordsScreen> {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final TextEditingController _searchController = TextEditingController();
   String _selectedFilter = 'ACTIVE';
+  List<Map<String, dynamic>> _patients = [];
+  List<Map<String, dynamic>> _filteredPatients = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchPatients();
+    _searchController.addListener(_filterPatients);
+  }
+
+  Future<void> _fetchPatients() async {
+    try {
+      final snapshot = await _firestore
+          .collection('users')
+          .where('patientType', isEqualTo: 'PRENATAL')
+          .get();
+
+      List<Map<String, dynamic>> patients = [];
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+        // Only include fields that have actual data
+        Map<String, dynamic> patient = {
+          'id': doc.id,
+          'patientId': data['patientId'] ?? doc.id,
+        };
+        
+        // Only add fields if they exist and are not empty
+        if (data['name'] != null && data['name'].toString().isNotEmpty) {
+          patient['name'] = data['name'];
+        }
+        if (data['email'] != null && data['email'].toString().isNotEmpty) {
+          patient['email'] = data['email'];
+        }
+        if (data['address'] != null && data['address'].toString().isNotEmpty) {
+          patient['address'] = data['address'];
+        }
+        if (data['phone'] != null && data['phone'].toString().isNotEmpty) {
+          patient['contact'] = data['phone'];
+        }
+        if (data['gestationAge'] != null && data['gestationAge'].toString().isNotEmpty) {
+          patient['gestation'] = data['gestationAge'];
+        }
+        if (data['age'] != null && data['age'].toString().isNotEmpty) {
+          patient['age'] = data['age'].toString();
+        }
+        if (data['deliveryStatus'] != null && data['deliveryStatus'].toString().isNotEmpty) {
+          patient['childBirth'] = data['deliveryStatus'];
+        } else {
+          patient['childBirth'] = 'Active'; // Default status for prenatal patients
+        }
+        
+        patients.add(patient);
+      }
+
+      if (mounted) {
+        setState(() {
+          _patients = patients;
+          _filteredPatients = patients;
+          _isLoading = false;
+        });
+        _filterPatients();
+      }
+    } catch (e) {
+      print('Error fetching prenatal patients: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _filterPatients() {
+    String query = _searchController.text.toLowerCase();
+    setState(() {
+      _filteredPatients = _patients.where((patient) {
+        bool matchesSearch = patient['name']?.toString().toLowerCase().contains(query) ?? false;
+        bool matchesFilter = _selectedFilter == 'ACTIVE'
+            ? (patient['childBirth'] == 'Active' || patient['childBirth'] == null)
+            : patient['childBirth'] == 'Delivered';
+        return matchesSearch && matchesFilter;
+      }).toList();
+    });
+  }
 
   @override
   void dispose() {
@@ -77,6 +164,7 @@ class _AdminPrenatalRecordsScreenState extends State<AdminPrenatalRecordsScreen>
                         onPressed: () {
                           setState(() {
                             _selectedFilter = 'ACTIVE';
+                            _filterPatients();
                           });
                         },
                         style: ElevatedButton.styleFrom(
@@ -112,9 +200,22 @@ class _AdminPrenatalRecordsScreenState extends State<AdminPrenatalRecordsScreen>
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: SingleChildScrollView(
-                        child: _buildPatientTable(),
-                      ),
+                      child: _isLoading
+                          ? Center(child: CircularProgressIndicator(color: primary))
+                          : _filteredPatients.isEmpty
+                              ? const Center(
+                                  child: Text(
+                                    'No patients found',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontFamily: 'Regular',
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                )
+                              : SingleChildScrollView(
+                                  child: _buildPatientTable(),
+                                ),
                     ),
                   ),
                 ],
@@ -238,109 +339,6 @@ class _AdminPrenatalRecordsScreenState extends State<AdminPrenatalRecordsScreen>
   }
 
   Widget _buildPatientTable() {
-    final patients = [
-      {
-        'status': 'Active',
-        'childBirth': 'Active',
-        'patientId': 'P-2025-001',
-        'name': 'Maria Santos',
-        'address': '123 Mabini St. Brgy. San Isidro, Quezon City',
-        'contact': '0917-123-4567',
-        'gestation': '20 Weeks 2 Days',
-        'age': '27',
-      },
-      {
-        'status': 'Delivered',
-        'childBirth': 'Delivered',
-        'patientId': 'P-2025-002',
-        'name': 'Ana Cruz',
-        'address': '45 Rizal Ave. Brgy. 5, Manila',
-        'contact': '0918-234-5678',
-        'gestation': '39 Weeks',
-        'age': '31',
-      },
-      {
-        'status': 'Active',
-        'childBirth': 'Active',
-        'patientId': 'P-2025-003',
-        'name': 'Liza Dela Peña',
-        'address': '99 Legaspi St. Brgy. Pio Del Pilar, Makati',
-        'contact': '0921-345-6789',
-        'gestation': '3 Weeks 4 Days',
-        'age': '24',
-      },
-      {
-        'status': 'Active',
-        'childBirth': 'Active',
-        'patientId': 'P-2025-004',
-        'name': 'Jenny Robles',
-        'address': '56 Melchor St. Brgy. 12, Quezon City',
-        'contact': '0919-456-7890',
-        'gestation': '8 Weeks 3 Days',
-        'age': '29',
-      },
-      {
-        'status': 'Active',
-        'childBirth': 'Active',
-        'patientId': 'P-2025-005',
-        'name': 'Karen Villanueva',
-        'address': '210 M. Roxas St. Brgy. San Antonio, Pasig City',
-        'contact': '0922-567-8901',
-        'gestation': '5 Weeks 6 Days',
-        'age': '33',
-      },
-      {
-        'status': 'Active',
-        'childBirth': 'Active',
-        'patientId': 'P-2025-006',
-        'name': 'Michelle Flores',
-        'address': '8 Luna St. Brgy. 1, Taguig City',
-        'contact': '0917-678-9012',
-        'gestation': '4 Weeks 5 Days',
-        'age': '26',
-      },
-      {
-        'status': 'Delivered',
-        'childBirth': 'Delivered',
-        'patientId': 'P-2025-007',
-        'name': 'Rose Ann Mendoza',
-        'address': '33 Aguinaldo Hwy. Brgy. 5, Lucena City',
-        'contact': '0923-789-0123',
-        'gestation': '39 Weeks',
-        'age': '35',
-      },
-      {
-        'status': 'Active',
-        'childBirth': 'Active',
-        'patientId': 'P-2025-008',
-        'name': 'Carla Gutierrez',
-        'address': '99 National Hwy. Brgy. San Pedro, Laguna',
-        'contact': '0918-890-1234',
-        'gestation': '2 Weeks 2 Days',
-        'age': '28',
-      },
-      {
-        'status': 'Active',
-        'childBirth': 'Active',
-        'patientId': 'P-2025-009',
-        'name': 'Joyce Ramirez',
-        'address': '77 Bonifacio St. Brgy. Halsey, Bacoor, Cavite',
-        'contact': '0924-901-2345',
-        'gestation': '5 Weeks 2 Days',
-        'age': '32',
-      },
-      {
-        'status': 'Delivered',
-        'childBirth': 'Delivered',
-        'patientId': 'P-2025-010',
-        'name': 'Angelica Torres',
-        'address': '67 Mabuhay St. Brgy. Barangka, Bulacan',
-        'contact': '0917-012-3456',
-        'gestation': '39 Weeks',
-        'age': '30',
-      },
-    ];
-
     return Column(
       children: [
         // Table Header
@@ -355,28 +353,23 @@ class _AdminPrenatalRecordsScreenState extends State<AdminPrenatalRecordsScreen>
           ),
           child: Row(
             children: [
-              _buildHeaderCell('CHILD BIRTH', flex: 1),
-              _buildHeaderCell('PATIENT ID', flex: 1),
-              _buildHeaderCell('NAME', flex: 2),
-              _buildHeaderCell('ADDRESS', flex: 3),
-              _buildHeaderCell('CONTACT NO.', flex: 2),
-              _buildHeaderCell('AGE OF GESTATION', flex: 2),
-              _buildHeaderCell('AGE', flex: 1),
+              _buildHeaderCell('PATIENT ID', flex: 2),
+              _buildHeaderCell('NAME', flex: 3),
+              _buildHeaderCell('EMAIL', flex: 3),
+              _buildHeaderCell('PATIENT TYPE', flex: 2),
+              _buildHeaderCell('STATUS', flex: 2),
             ],
           ),
         ),
 
         // Table Rows
-        ...patients.map((patient) {
+        ..._filteredPatients.map((patient) {
           return _buildTableRow(
-            patient['status']!,
-            patient['childBirth']!,
-            patient['patientId']!,
-            patient['name']!,
-            patient['address']!,
-            patient['contact']!,
-            patient['gestation']!,
-            patient['age']!,
+            patient['patientId'] ?? 'N/A',
+            patient['name'] ?? 'Unknown',
+            patient['email'] ?? '',
+            'PRENATAL',
+            patient['childBirth'] ?? 'Active',
           );
         }).toList(),
       ],
@@ -399,29 +392,19 @@ class _AdminPrenatalRecordsScreenState extends State<AdminPrenatalRecordsScreen>
   }
 
   Widget _buildTableRow(
-    String status,
-    String childBirth,
     String patientId,
     String name,
-    String address,
-    String contact,
-    String gestation,
-    String age,
+    String email,
+    String patientType,
+    String status,
   ) {
     Color statusColor;
-    if (childBirth == 'Active') {
+    if (status == 'Active') {
       statusColor = Colors.green;
-    } else if (childBirth == 'Delivered') {
+    } else if (status == 'Delivered') {
       statusColor = Colors.red;
     } else {
       statusColor = Colors.grey;
-    }
-
-    Color gestationColor;
-    if (gestation.contains('39 Weeks')) {
-      gestationColor = Colors.red;
-    } else {
-      gestationColor = Colors.green;
     }
 
     return MouseRegion(
@@ -435,10 +418,7 @@ class _AdminPrenatalRecordsScreenState extends State<AdminPrenatalRecordsScreen>
                 patientData: {
                   'patientId': patientId,
                   'name': name,
-                  'age': age,
-                  'address': address,
-                  'contact': contact,
-                  'gestation': gestation,
+                  'email': email,
                   'status': status,
                 },
               ),
@@ -454,11 +434,15 @@ class _AdminPrenatalRecordsScreenState extends State<AdminPrenatalRecordsScreen>
           ),
           child: Row(
         children: [
+          _buildTableCell(patientId, flex: 2),
+          _buildTableCell(name, flex: 3),
+          _buildTableCell(email, flex: 3),
+          _buildTableCell(patientType, flex: 2),
           Expanded(
-            flex: 1,
+            flex: 2,
             child: Center(
               child: Text(
-                childBirth,
+                status,
                 style: TextStyle(
                   fontSize: 11,
                   fontFamily: 'Bold',
@@ -468,25 +452,6 @@ class _AdminPrenatalRecordsScreenState extends State<AdminPrenatalRecordsScreen>
               ),
             ),
           ),
-          _buildTableCell(patientId, flex: 1),
-          _buildTableCell(name, flex: 2),
-          _buildTableCell(address, flex: 3),
-          _buildTableCell(contact, flex: 2),
-          Expanded(
-            flex: 2,
-            child: Center(
-              child: Text(
-                gestation,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontFamily: 'Regular',
-                  color: gestationColor,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ),
-          _buildTableCell(age, flex: 1),
         ],
       ),
         ),
@@ -498,11 +463,11 @@ class _AdminPrenatalRecordsScreenState extends State<AdminPrenatalRecordsScreen>
     return Expanded(
       flex: flex,
       child: Text(
-        text,
+        text.isNotEmpty ? text : '-',
         style: TextStyle(
           fontSize: 11,
           fontFamily: 'Regular',
-          color: Colors.grey.shade700,
+          color: text.isNotEmpty ? Colors.grey.shade700 : Colors.grey.shade400,
         ),
         textAlign: TextAlign.center,
       ),

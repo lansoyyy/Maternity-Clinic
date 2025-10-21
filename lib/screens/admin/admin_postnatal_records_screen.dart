@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:maternity_clinic/screens/admin/admin_postnatal_patient_detail_screen.dart';
 import 'package:maternity_clinic/utils/colors.dart';
 
@@ -13,8 +14,89 @@ class AdminPostnatalRecordsScreen extends StatefulWidget {
 }
 
 class _AdminPostnatalRecordsScreenState extends State<AdminPostnatalRecordsScreen> {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final TextEditingController _searchController = TextEditingController();
   String _selectedFilter = 'ACTIVE';
+  List<Map<String, dynamic>> _patients = [];
+  List<Map<String, dynamic>> _filteredPatients = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchPatients();
+    _searchController.addListener(_filterPatients);
+  }
+
+  Future<void> _fetchPatients() async {
+    try {
+      final snapshot = await _firestore
+          .collection('users')
+          .where('patientType', isEqualTo: 'POSTNATAL')
+          .get();
+
+      List<Map<String, dynamic>> patients = [];
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+        // Only include fields that have actual data
+        Map<String, dynamic> patient = {
+          'id': doc.id,
+          'patientId': data['patientId'] ?? doc.id,
+        };
+        
+        // Only add fields if they exist and are not empty
+        if (data['name'] != null && data['name'].toString().isNotEmpty) {
+          patient['name'] = data['name'];
+        }
+        if (data['email'] != null && data['email'].toString().isNotEmpty) {
+          patient['email'] = data['email'];
+        }
+        if (data['age'] != null && data['age'].toString().isNotEmpty) {
+          patient['age'] = data['age'].toString();
+        }
+        if (data['deliveryType'] != null && data['deliveryType'].toString().isNotEmpty) {
+          patient['deliveryType'] = data['deliveryType'];
+        }
+        if (data['dateOfDelivery'] != null && data['dateOfDelivery'].toString().isNotEmpty) {
+          patient['dateOfDelivery'] = data['dateOfDelivery'];
+        }
+        if (data['address'] != null && data['address'].toString().isNotEmpty) {
+          patient['address'] = data['address'];
+        }
+        if (data['phone'] != null && data['phone'].toString().isNotEmpty) {
+          patient['contact'] = data['phone'];
+        }
+        
+        patients.add(patient);
+      }
+
+      if (mounted) {
+        setState(() {
+          _patients = patients;
+          _filteredPatients = patients;
+          _isLoading = false;
+        });
+        _filterPatients();
+      }
+    } catch (e) {
+      print('Error fetching postnatal patients: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _filterPatients() {
+    String query = _searchController.text.toLowerCase();
+    setState(() {
+      _filteredPatients = _patients.where((patient) {
+        bool matchesSearch = patient['name']?.toString().toLowerCase().contains(query) ?? false;
+        return matchesSearch;
+      }).toList();
+    });
+  }
 
   @override
   void dispose() {
@@ -112,9 +194,22 @@ class _AdminPostnatalRecordsScreenState extends State<AdminPostnatalRecordsScree
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: SingleChildScrollView(
-                        child: _buildPatientTable(),
-                      ),
+                      child: _isLoading
+                          ? Center(child: CircularProgressIndicator(color: primary))
+                          : _filteredPatients.isEmpty
+                              ? const Center(
+                                  child: Text(
+                                    'No postnatal patients found',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontFamily: 'Regular',
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                )
+                              : SingleChildScrollView(
+                                  child: _buildPatientTable(),
+                                ),
                     ),
                   ),
                 ],
@@ -238,99 +333,6 @@ class _AdminPostnatalRecordsScreenState extends State<AdminPostnatalRecordsScree
   }
 
   Widget _buildPatientTable() {
-    final patients = [
-      {
-        'patientId': 'PNL-2025-001',
-        'name': 'Maria Dela Cruz',
-        'age': '38',
-        'deliveryType': 'Cesarean',
-        'dateOfDelivery': '8/20/2025',
-        'address': '123 Sampaguita St., QC',
-        'contact': '0919-336-6789',
-      },
-      {
-        'patientId': 'PNL-2025-002',
-        'name': 'Ana Santos',
-        'age': '32',
-        'deliveryType': 'Normal',
-        'dateOfDelivery': '8/15/2025',
-        'address': '45 Mabini St., Manila',
-        'contact': '0921-567-3348',
-      },
-      {
-        'patientId': 'PNL-2025-003',
-        'name': 'Liza Reyes',
-        'age': '24',
-        'deliveryType': 'Normal',
-        'dateOfDelivery': '7/30/2025',
-        'address': '67 Rizal Ave., Caloocan',
-        'contact': '0958-221-7658',
-      },
-      {
-        'patientId': 'PNL-2025-004',
-        'name': 'Joanna Mendoza',
-        'age': '30',
-        'deliveryType': 'Cesarean',
-        'dateOfDelivery': '8/5/2025',
-        'address': '15 Katipunan Rd., QC',
-        'contact': '0917-665-8435',
-      },
-      {
-        'patientId': 'PNL-2025-005',
-        'name': 'Christine Bautista',
-        'age': '27',
-        'deliveryType': 'Normal',
-        'dateOfDelivery': '7/28/2025',
-        'address': '78 Boni Ave., Mandaluyong',
-        'contact': '0932-876-1109',
-      },
-      {
-        'patientId': 'PNL-2025-006',
-        'name': 'Camille Garcia',
-        'age': '35',
-        'deliveryType': 'Cesarean',
-        'dateOfDelivery': '8/10/2025',
-        'address': '89 Taft Ave., Manila',
-        'contact': '0918-223-8821',
-      },
-      {
-        'patientId': 'PNL-2025-007',
-        'name': 'Erika Villanueva',
-        'age': '29',
-        'deliveryType': 'Normal',
-        'dateOfDelivery': '8/18/2025',
-        'address': '23 P. Tuazon, Cubao',
-        'contact': '0976-332-1190',
-      },
-      {
-        'patientId': 'PNL-2025-008',
-        'name': 'Grace Fernandez',
-        'age': '31',
-        'deliveryType': 'Cesarean',
-        'dateOfDelivery': '7/25/2025',
-        'address': '16 Melchor St.,Pasig',
-        'contact': '0918-552-7788',
-      },
-      {
-        'patientId': 'PNL-2025-009',
-        'name': 'Janine Cruz',
-        'age': '26',
-        'deliveryType': 'Normal',
-        'dateOfDelivery': '8/12/2025',
-        'address': '54 Aurora Blvd., Marikina',
-        'contact': '0991-728-4960',
-      },
-      {
-        'patientId': 'PNL-2025-010',
-        'name': 'Michelle Torres',
-        'age': '33',
-        'deliveryType': 'Normal',
-        'dateOfDelivery': '7/22/2025',
-        'address': '34 Roxas Blvd., Pasay',
-        'contact': '0924-119-5678',
-      },
-    ];
-
     return Column(
       children: [
         // Table Header
@@ -346,26 +348,22 @@ class _AdminPostnatalRecordsScreenState extends State<AdminPostnatalRecordsScree
           child: Row(
             children: [
               _buildHeaderCell('PATIENT ID', flex: 2),
-              _buildHeaderCell('NAME', flex: 2),
-              _buildHeaderCell('Age', flex: 1),
-              _buildHeaderCell('Delivery Type', flex: 2),
-              _buildHeaderCell('Date of Delivery', flex: 2),
-              _buildHeaderCell('Address', flex: 3),
-              _buildHeaderCell('Contact No.', flex: 2),
+              _buildHeaderCell('NAME', flex: 3),
+              _buildHeaderCell('EMAIL', flex: 3),
+              _buildHeaderCell('PATIENT TYPE', flex: 2),
+              _buildHeaderCell('STATUS', flex: 2),
             ],
           ),
         ),
 
         // Table Rows
-        ...patients.map((patient) {
+        ..._filteredPatients.map((patient) {
           return _buildTableRow(
-            patient['patientId']!,
-            patient['name']!,
-            patient['age']!,
-            patient['deliveryType']!,
-            patient['dateOfDelivery']!,
-            patient['address']!,
-            patient['contact']!,
+            patient['patientId'] ?? 'N/A',
+            patient['name'] ?? 'Unknown',
+            patient['email'] ?? '',
+            'POSTNATAL',
+            'Active',
           );
         }).toList(),
       ],
@@ -390,12 +388,12 @@ class _AdminPostnatalRecordsScreenState extends State<AdminPostnatalRecordsScree
   Widget _buildTableRow(
     String patientId,
     String name,
-    String age,
-    String deliveryType,
-    String dateOfDelivery,
-    String address,
-    String contact,
+    String email,
+    String patientType,
+    String status,
   ) {
+    Color statusColor = status == 'Active' ? Colors.green : Colors.grey;
+    
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
@@ -407,11 +405,7 @@ class _AdminPostnatalRecordsScreenState extends State<AdminPostnatalRecordsScree
                 patientData: {
                   'patientId': patientId,
                   'name': name,
-                  'age': age,
-                  'deliveryType': deliveryType,
-                  'dateOfDelivery': dateOfDelivery,
-                  'address': address,
-                  'contact': contact,
+                  'email': email,
                 },
               ),
             ),
@@ -427,12 +421,23 @@ class _AdminPostnatalRecordsScreenState extends State<AdminPostnatalRecordsScree
           child: Row(
             children: [
               _buildTableCell(patientId, flex: 2),
-              _buildTableCell(name, flex: 2),
-              _buildTableCell(age, flex: 1),
-              _buildTableCell(deliveryType, flex: 2),
-              _buildTableCell(dateOfDelivery, flex: 2),
-              _buildTableCell(address, flex: 3),
-              _buildTableCell(contact, flex: 2),
+              _buildTableCell(name, flex: 3),
+              _buildTableCell(email, flex: 3),
+              _buildTableCell(patientType, flex: 2),
+              Expanded(
+                flex: 2,
+                child: Center(
+                  child: Text(
+                    status,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontFamily: 'Bold',
+                      color: statusColor,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -444,11 +449,11 @@ class _AdminPostnatalRecordsScreenState extends State<AdminPostnatalRecordsScree
     return Expanded(
       flex: flex,
       child: Text(
-        text,
+        text.isNotEmpty ? text : '-',
         style: TextStyle(
           fontSize: 11,
           fontFamily: 'Regular',
-          color: Colors.grey.shade700,
+          color: text.isNotEmpty ? Colors.grey.shade700 : Colors.grey.shade400,
         ),
         textAlign: TextAlign.center,
       ),
