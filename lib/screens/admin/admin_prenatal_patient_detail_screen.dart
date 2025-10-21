@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../utils/colors.dart';
 
 class AdminPrenatalPatientDetailScreen extends StatefulWidget {
@@ -14,6 +15,51 @@ class AdminPrenatalPatientDetailScreen extends StatefulWidget {
 }
 
 class _AdminPrenatalPatientDetailScreenState extends State<AdminPrenatalPatientDetailScreen> {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  List<Map<String, dynamic>> _appointments = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchPatientData();
+  }
+
+  Future<void> _fetchPatientData() async {
+    try {
+      // Fetch appointments for this patient
+      final appointmentsSnapshot = await _firestore
+          .collection('appointments')
+          .where('userId', isEqualTo: widget.patientData['patientId'])
+          .orderBy('createdAt', descending: true)
+          .get();
+
+      List<Map<String, dynamic>> appointments = [];
+      for (var doc in appointmentsSnapshot.docs) {
+        Map<String, dynamic> appointment = doc.data();
+        appointment['id'] = doc.id;
+        appointments.add(appointment);
+      }
+
+      // Fetch medical records (if you have a separate collection)
+      // For now, we'll use appointments as records
+      
+      if (mounted) {
+        setState(() {
+          _appointments = appointments;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error fetching patient data: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -25,7 +71,9 @@ class _AdminPrenatalPatientDetailScreenState extends State<AdminPrenatalPatientD
 
           // Main Content
           Expanded(
-            child: SingleChildScrollView(
+            child: _isLoading
+                ? Center(child: CircularProgressIndicator(color: primary))
+                : SingleChildScrollView(
               padding: const EdgeInsets.all(30),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -191,18 +239,31 @@ class _AdminPrenatalPatientDetailScreenState extends State<AdminPrenatalPatientD
             _buildInfoRow('Patient ID:', widget.patientData['patientId']!),
           if (widget.patientData['name'] != null && widget.patientData['name']!.isNotEmpty)
             _buildInfoRow('Name:', widget.patientData['name']!),
-          if (widget.patientData['age'] != null && widget.patientData['age']!.isNotEmpty)
-            _buildInfoRow('Age:', widget.patientData['age']!),
-          if (widget.patientData['address'] != null && widget.patientData['address']!.isNotEmpty)
-            _buildInfoRow('Address:', widget.patientData['address']!),
-          if (widget.patientData['contact'] != null && widget.patientData['contact']!.isNotEmpty)
-            _buildInfoRow('Contact:', widget.patientData['contact']!),
+          if (widget.patientData['email'] != null && widget.patientData['email']!.isNotEmpty)
+            _buildInfoRow('Email:', widget.patientData['email']!),
+          if (widget.patientData['status'] != null && widget.patientData['status']!.isNotEmpty)
+            _buildInfoRow('Status:', widget.patientData['status']!),
+          const SizedBox(height: 10),
+          Text(
+            'Additional patient information will be added during medical consultations.',
+            style: TextStyle(
+              fontSize: 11,
+              fontFamily: 'Regular',
+              color: Colors.grey.shade600,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildObstetricHistoryCard() {
+    int totalAppointments = _appointments.length;
+    int pendingCount = _appointments.where((a) => a['status'] == 'Pending').length;
+    int acceptedCount = _appointments.where((a) => a['status'] == 'Accepted').length;
+    int completedCount = _appointments.where((a) => a['status'] == 'Completed').length;
+    
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -213,7 +274,7 @@ class _AdminPrenatalPatientDetailScreenState extends State<AdminPrenatalPatientD
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'OBSTETRIC HISTORY',
+            'APPOINTMENT SUMMARY',
             style: TextStyle(
               fontSize: 14,
               fontFamily: 'Bold',
@@ -221,18 +282,42 @@ class _AdminPrenatalPatientDetailScreenState extends State<AdminPrenatalPatientD
             ),
           ),
           const SizedBox(height: 15),
-          _buildInfoRow('Gravida:', '2'),
-          _buildInfoRow('Para:', '1'),
-          _buildInfoRow('Last Delivery:', 'Normal'),
-          _buildInfoRow('Complications:', 'Spontaneous Vaginal Delivery (2020)'),
-          _buildInfoRow('Last Menstrual Period (LMP):', 'January 15, 2025'),
-          _buildInfoRow('Expected Date of Delivery (EDD):', 'October 22, 2025'),
+          _buildInfoRow('Total Appointments:', totalAppointments.toString()),
+          _buildInfoRow('Pending:', pendingCount.toString()),
+          _buildInfoRow('Accepted:', acceptedCount.toString()),
+          _buildInfoRow('Completed:', completedCount.toString()),
+          const SizedBox(height: 10),
+          if (totalAppointments == 0)
+            Text(
+              'No appointments yet',
+              style: TextStyle(
+                fontSize: 11,
+                fontFamily: 'Regular',
+                color: Colors.grey.shade600,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
         ],
       ),
     );
   }
 
   Widget _buildMedicalHistoryCard() {
+    // Get latest appointment if exists
+    String latestAppointment = 'No appointments';
+    String nextAppointment = 'No upcoming appointments';
+    
+    if (_appointments.isNotEmpty) {
+      var latest = _appointments.first;
+      latestAppointment = _formatDate(latest['createdAt']);
+      
+      // Find next accepted appointment
+      var upcoming = _appointments.where((a) => a['status'] == 'Accepted').toList();
+      if (upcoming.isNotEmpty) {
+        nextAppointment = '${upcoming.first['day']} - ${upcoming.first['timeSlot']}';
+      }
+    }
+    
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -243,7 +328,7 @@ class _AdminPrenatalPatientDetailScreenState extends State<AdminPrenatalPatientD
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'MEDICAL HISTORY',
+            'APPOINTMENT SCHEDULE',
             style: TextStyle(
               fontSize: 14,
               fontFamily: 'Bold',
@@ -251,15 +336,27 @@ class _AdminPrenatalPatientDetailScreenState extends State<AdminPrenatalPatientD
             ),
           ),
           const SizedBox(height: 15),
-          _buildInfoRow('Past Illnesses:', 'NONE'),
-          _buildInfoRow('Past Surgeries:', 'NONE'),
-          _buildInfoRow('Allergies:', 'No known drug allergies'),
+          _buildInfoRow('Latest Appointment:', latestAppointment),
+          const SizedBox(height: 5),
+          _buildInfoRow('Next Scheduled:', nextAppointment),
+          const SizedBox(height: 10),
+          Text(
+            'Patient Type: PRENATAL',
+            style: TextStyle(
+              fontSize: 11,
+              fontFamily: 'Bold',
+              color: Colors.blue.shade700,
+            ),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildLaboratoryResultsCard() {
+    int cancelledCount = _appointments.where((a) => a['status'] == 'Cancelled').length;
+    String accountStatus = widget.patientData['status'] ?? 'Active';
+    
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -270,7 +367,7 @@ class _AdminPrenatalPatientDetailScreenState extends State<AdminPrenatalPatientD
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'LABORATORY RESULTS',
+            'ACCOUNT STATUS',
             style: TextStyle(
               fontSize: 14,
               fontFamily: 'Bold',
@@ -278,11 +375,39 @@ class _AdminPrenatalPatientDetailScreenState extends State<AdminPrenatalPatientD
             ),
           ),
           const SizedBox(height: 15),
-          _buildInfoRow('CBC:', 'Within normal limits'),
-          _buildInfoRow('Urinalysis:', 'No protein, no sugar'),
-          _buildInfoRow('HBsAg:', 'Non-reactive'),
-          _buildInfoRow('HIV Test:', 'Non-reactive'),
-          _buildInfoRow('Ultrasound:', 'Normal findings'),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: accountStatus == 'Active' ? Colors.green : Colors.grey,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  accountStatus.toUpperCase(),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontFamily: 'Bold',
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 15),
+          _buildInfoRow('Email:', widget.patientData['email'] ?? 'N/A'),
+          const SizedBox(height: 5),
+          _buildInfoRow('Cancelled Appointments:', cancelledCount.toString()),
+          const SizedBox(height: 10),
+          Text(
+            'All appointment history is shown below',
+            style: TextStyle(
+              fontSize: 11,
+              fontFamily: 'Regular',
+              color: Colors.grey.shade600,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
         ],
       ),
     );
@@ -317,6 +442,43 @@ class _AdminPrenatalPatientDetailScreenState extends State<AdminPrenatalPatientD
   }
 
   Widget _buildCheckupHistoryTable() {
+    if (_appointments.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(40),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Colors.grey.shade300),
+        ),
+        child: Center(
+          child: Column(
+            children: [
+              Icon(Icons.event_note_outlined, size: 60, color: Colors.grey.shade400),
+              const SizedBox(height: 20),
+              const Text(
+                'No Appointment Records',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontFamily: 'Bold',
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Appointment records will appear here after the patient books appointments.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontFamily: 'Regular',
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -337,35 +499,42 @@ class _AdminPrenatalPatientDetailScreenState extends State<AdminPrenatalPatientD
             ),
             child: Row(
               children: [
-                _buildTableHeaderCell('Visit No.', flex: 1),
+                _buildTableHeaderCell('No.', flex: 1),
                 _buildTableHeaderCell('Date', flex: 2),
-                _buildTableHeaderCell('Age of Gestation', flex: 2),
-                _buildTableHeaderCell('Weight (kg)', flex: 1),
-                _buildTableHeaderCell('BP (mmHg)', flex: 2),
-                _buildTableHeaderCell('Fundic Height (cm)', flex: 2),
-                _buildTableHeaderCell('Fetal Heart (bpm)', flex: 2),
-                _buildTableHeaderCell('Remarks', flex: 2),
-                _buildTableHeaderCell('Pregnancy Risk Classification', flex: 2),
+                _buildTableHeaderCell('Day', flex: 2),
+                _buildTableHeaderCell('Time Slot', flex: 2),
+                _buildTableHeaderCell('Status', flex: 2),
+                _buildTableHeaderCell('Patient Type', flex: 2),
               ],
             ),
           ),
 
           // Table Rows
-          _buildTableRow('1', 'Feb 20, 2025', '4 weeks', '55', '110/70', '-', '-', 'Initial check-up', 'Low Risk'),
-          _buildTableRow('2', 'Mar 18, 2025', '10 weeks', '56', '110/70', '-', '-', 'Advised vitamins', 'Low Risk'),
-          _buildTableRow('3', 'Apr 8, 2025', '12 weeks', '57', '110/70', '12', '140', 'Normal findings', 'Low Risk'),
-          _buildTableRow('4', 'May 6, 2025', '16 weeks', '58', '110/70', '16', '145', 'Normal, ultrasound', 'Low Risk'),
-          _buildTableRow('5', 'Jun 3, 2025', '20 weeks', '59', '115/75', '20', '148', 'Anatomy scan done', 'Low Risk'),
-          _buildTableRow('6', 'Jul 1, 2025', '24 weeks', '61', '120/80', '24', '150', 'Normal progress', 'Low Risk'),
-          _buildTableRow('7', 'Aug 5, 2025', '28 weeks', '64', '135/90', '28', '152', 'Elevated BP edema noted', 'High Risk'),
-          
-          // Empty rows
-          _buildEmptyTableRow(),
-          _buildEmptyTableRow(),
-          _buildEmptyTableRow(),
+          ..._appointments.asMap().entries.map((entry) {
+            int index = entry.key;
+            Map<String, dynamic> appointment = entry.value;
+            return _buildAppointmentRow(
+              (index + 1).toString(),
+              _formatDate(appointment['createdAt']),
+              appointment['day'] ?? 'N/A',
+              appointment['timeSlot'] ?? 'N/A',
+              appointment['status'] ?? 'Pending',
+              appointment['patientType'] ?? 'PRENATAL',
+            );
+          }).toList(),
         ],
       ),
     );
+  }
+
+  String _formatDate(dynamic timestamp) {
+    if (timestamp == null) return 'N/A';
+    try {
+      DateTime date = (timestamp as Timestamp).toDate();
+      return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    } catch (e) {
+      return 'N/A';
+    }
   }
 
   Widget _buildTableHeaderCell(String text, {int flex = 1}) {
@@ -383,41 +552,27 @@ class _AdminPrenatalPatientDetailScreenState extends State<AdminPrenatalPatientD
     );
   }
 
-  Widget _buildTableRow(
-    String visitNo,
+  Widget _buildAppointmentRow(
+    String no,
     String date,
-    String ageOfGestation,
-    String weight,
-    String bp,
-    String fundicHeight,
-    String fetalHeart,
-    String remarks,
-    String riskClassification,
+    String day,
+    String timeSlot,
+    String status,
+    String patientType,
   ) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: Colors.grey.shade200),
-        ),
-      ),
-      child: Row(
-        children: [
-          _buildTableCell(visitNo, flex: 1),
-          _buildTableCell(date, flex: 2),
-          _buildTableCell(ageOfGestation, flex: 2),
-          _buildTableCell(weight, flex: 1),
-          _buildTableCell(bp, flex: 2),
-          _buildTableCell(fundicHeight, flex: 2),
-          _buildTableCell(fetalHeart, flex: 2),
-          _buildTableCell(remarks, flex: 2),
-          _buildTableCell(riskClassification, flex: 2),
-        ],
-      ),
-    );
-  }
+    Color statusColor;
+    if (status == 'Pending') {
+      statusColor = Colors.orange;
+    } else if (status == 'Accepted') {
+      statusColor = Colors.green;
+    } else if (status == 'Completed') {
+      statusColor = Colors.blue;
+    } else if (status == 'Cancelled') {
+      statusColor = Colors.red;
+    } else {
+      statusColor = Colors.grey;
+    }
 
-  Widget _buildEmptyTableRow() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
       decoration: BoxDecoration(
@@ -427,15 +582,23 @@ class _AdminPrenatalPatientDetailScreenState extends State<AdminPrenatalPatientD
       ),
       child: Row(
         children: [
-          _buildTableCell('', flex: 1),
-          _buildTableCell('', flex: 2),
-          _buildTableCell('', flex: 2),
-          _buildTableCell('', flex: 1),
-          _buildTableCell('', flex: 2),
-          _buildTableCell('', flex: 2),
-          _buildTableCell('', flex: 2),
-          _buildTableCell('', flex: 2),
-          _buildTableCell('', flex: 2),
+          _buildTableCell(no, flex: 1),
+          _buildTableCell(date, flex: 2),
+          _buildTableCell(day, flex: 2),
+          _buildTableCell(timeSlot, flex: 2),
+          Expanded(
+            flex: 2,
+            child: Text(
+              status,
+              style: TextStyle(
+                fontSize: 11,
+                fontFamily: 'Bold',
+                color: statusColor,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          _buildTableCell(patientType, flex: 2),
         ],
       ),
     );
