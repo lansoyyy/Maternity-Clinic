@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:maternity_clinic/screens/admin/admin_postnatal_patient_detail_screen.dart';
+import 'package:maternity_clinic/screens/admin/admin_transfer_requests_screen.dart';
+import 'package:maternity_clinic/screens/transfer_record_request_screen.dart';
 import 'package:maternity_clinic/utils/colors.dart';
 
 import 'admin_prenatal_records_screen.dart';
@@ -241,17 +243,8 @@ class _AdminPostnatalRecordsScreenState extends State<AdminPostnatalRecordsScree
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: const [
-                Text(
-                  'DELA CRUZ,',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontFamily: 'Bold',
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                Text(
-                  'JUAN B.',
+                  Text(
+                  'ADMIN',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -269,6 +262,7 @@ class _AdminPostnatalRecordsScreenState extends State<AdminPostnatalRecordsScree
           _buildMenuItem('PRENATAL PATIENT\nRECORD', false),
           _buildMenuItem('POSTNATAL PATIENT\nRECORD', true),
           _buildMenuItem('APPOINTMENT\nSCHEDULING', false),
+            _buildMenuItem('TRANSFER\nREQUESTS', false),
         ],
       ),
     );
@@ -327,6 +321,12 @@ class _AdminPostnatalRecordsScreenState extends State<AdminPostnatalRecordsScree
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const AdminAppointmentSchedulingScreen()),
+        );
+        break;
+      case 'TRANSFER\nREQUESTS':
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const AdminTransferRequestsScreen()),
         );
         break;
     }

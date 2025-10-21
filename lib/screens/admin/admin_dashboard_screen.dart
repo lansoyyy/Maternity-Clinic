@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:maternity_clinic/screens/admin/admin_appointment_scheduling_screen.dart';
 import 'package:maternity_clinic/screens/admin/admin_postnatal_records_screen.dart';
 import 'package:maternity_clinic/screens/admin/admin_prenatal_records_screen.dart';
+import 'package:maternity_clinic/screens/admin/admin_transfer_requests_screen.dart';
 import '../../utils/colors.dart';
 
 
@@ -219,6 +220,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           _buildMenuItem('PRENATAL PATIENT\nRECORD', false),
           _buildMenuItem('POSTNATAL PATIENT\nRECORD', false),
           _buildMenuItem('APPOINTMENT\nSCHEDULING', false),
+          _buildMenuItem('TRANSFER\nREQUESTS', false),
         ],
       ),
     );
@@ -271,6 +273,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         break;
       case 'APPOINTMENT\nSCHEDULING':
         screen = const AdminAppointmentSchedulingScreen();
+        break;
+      case 'TRANSFER\nREQUESTS':
+        screen = const AdminTransferRequestsScreen();
         break;
       default:
         return;

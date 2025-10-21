@@ -1,6 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:maternity_clinic/screens/admin/admin_dashboard_screen.dart';
 import 'screens/auth/home_screen.dart';
 
 void main() async {
@@ -32,7 +31,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'Regular',
       ),
-      home: const AdminDashboardScreen(),
+      home: const HomeScreen(),
     );
   }
 }

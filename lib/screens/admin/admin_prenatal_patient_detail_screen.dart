@@ -148,17 +148,8 @@ class _AdminPrenatalPatientDetailScreenState extends State<AdminPrenatalPatientD
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: const [
-                Text(
-                  'DELA CRUZ,',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontFamily: 'Bold',
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                Text(
-                  'JUAN B.',
+               Text(
+                  'ADMIN',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 18,

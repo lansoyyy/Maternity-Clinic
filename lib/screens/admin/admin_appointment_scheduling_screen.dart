@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:maternity_clinic/screens/admin/admin_transfer_requests_screen.dart';
 import 'package:maternity_clinic/utils/colors.dart';
 
 import 'admin_prenatal_records_screen.dart';
@@ -301,7 +302,7 @@ class _AdminAppointmentSchedulingScreenState extends State<AdminAppointmentSched
               crossAxisAlignment: CrossAxisAlignment.start,
               children: const [
                 Text(
-                  'DELA CRUZ,',
+                  'ADMIN',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -309,15 +310,7 @@ class _AdminAppointmentSchedulingScreenState extends State<AdminAppointmentSched
                     letterSpacing: 0.5,
                   ),
                 ),
-                Text(
-                  'JUAN B.',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontFamily: 'Bold',
-                    letterSpacing: 0.5,
-                  ),
-                ),
+               
               ],
             ),
           ),
@@ -328,6 +321,7 @@ class _AdminAppointmentSchedulingScreenState extends State<AdminAppointmentSched
           _buildMenuItem('PRENATAL PATIENT\nRECORD', false),
           _buildMenuItem('POSTNATAL PATIENT\nRECORD', false),
           _buildMenuItem('APPOINTMENT\nSCHEDULING', true),
+           _buildMenuItem('TRANSFER\nREQUESTS', false),
         ],
       ),
     );
@@ -387,6 +381,12 @@ class _AdminAppointmentSchedulingScreenState extends State<AdminAppointmentSched
         break;
       case 'APPOINTMENT\nSCHEDULING':
         // Already on this screen
+        break;
+              case 'TRANSFER\nREQUESTS':
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const AdminTransferRequestsScreen()),
+        );
         break;
     }
   }
