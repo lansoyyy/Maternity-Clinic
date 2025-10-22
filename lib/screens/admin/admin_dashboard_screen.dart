@@ -9,7 +9,14 @@ import '../../utils/colors.dart';
 
 
 class AdminDashboardScreen extends StatefulWidget {
-  const AdminDashboardScreen({super.key});
+  final String userRole;
+  final String userName;
+
+  const AdminDashboardScreen({
+    super.key,
+    required this.userRole,
+    required this.userName,
+  });
 
   @override
   State<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
@@ -29,6 +36,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   Map<int, int> _prenatalYearlyCount = {};
   Map<int, int> _postnatalYearlyCount = {};
   bool _isLoading = true;
+
+  // Check if current user is admin
+  bool get _isAdmin => widget.userRole == 'admin';
 
   @override
   void initState() {
@@ -199,17 +209,27 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 Text(
-                  'ADMIN',
-                  style: TextStyle(
+                  widget.userName.toUpperCase(),
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                     fontFamily: 'Bold',
                     letterSpacing: 0.5,
                   ),
                 ),
-             
+                const SizedBox(height: 5),
+                Text(
+                  widget.userRole.toUpperCase(),
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                    fontFamily: 'Medium',
+                    letterSpacing: 0.5,
+                  ),
+                ),
+               
               ],
             ),
           ),
@@ -217,10 +237,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
           // Menu Items
           _buildMenuItem('DATA GRAPHS', true),
-          _buildMenuItem('PRENATAL PATIENT\nRECORD', false),
-          _buildMenuItem('POSTNATAL PATIENT\nRECORD', false),
+          if (_isAdmin) _buildMenuItem('PRENATAL PATIENT\nRECORD', false),
+          if (_isAdmin) _buildMenuItem('POSTNATAL PATIENT\nRECORD', false),
           _buildMenuItem('APPOINTMENT\nSCHEDULING', false),
-          _buildMenuItem('TRANSFER\nREQUESTS', false),
+          if (_isAdmin) _buildMenuItem('TRANSFER\nREQUESTS', false),
         ],
       ),
     );
@@ -266,16 +286,43 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         // Already on this screen, do nothing
         return;
       case 'PRENATAL PATIENT\nRECORD':
-        screen = const AdminPrenatalRecordsScreen();
+        if (_isAdmin) {
+          screen = AdminPrenatalRecordsScreen(
+            userRole: widget.userRole,
+            userName: widget.userName,
+          );
+        } else {
+          _showAccessDeniedDialog();
+          return;
+        }
         break;
       case 'POSTNATAL PATIENT\nRECORD':
-        screen = const AdminPostnatalRecordsScreen();
+        if (_isAdmin) {
+          screen = AdminPostnatalRecordsScreen(
+            userRole: widget.userRole,
+            userName: widget.userName,
+          );
+        } else {
+          _showAccessDeniedDialog();
+          return;
+        }
         break;
       case 'APPOINTMENT\nSCHEDULING':
-        screen = const AdminAppointmentSchedulingScreen();
+        screen = AdminAppointmentSchedulingScreen(
+          userRole: widget.userRole,
+          userName: widget.userName,
+        );
         break;
       case 'TRANSFER\nREQUESTS':
-        screen = const AdminTransferRequestsScreen();
+        if (_isAdmin) {
+          screen = AdminTransferRequestsScreen(
+            userRole: widget.userRole,
+            userName: widget.userName,
+          );
+        } else {
+          _showAccessDeniedDialog();
+          return;
+        }
         break;
       default:
         return;
@@ -283,6 +330,31 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => screen),
+    );
+  }
+
+  void _showAccessDeniedDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+          'Access Denied',
+          style: TextStyle(fontFamily: 'Bold'),
+        ),
+        content: Text(
+          'This feature is only available to administrators. You are logged in as ${widget.userRole}.',
+          style: const TextStyle(fontFamily: 'Regular'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'OK',
+              style: TextStyle(color: primary, fontFamily: 'Bold'),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

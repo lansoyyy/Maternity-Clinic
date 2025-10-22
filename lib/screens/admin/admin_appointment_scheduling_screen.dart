@@ -5,9 +5,17 @@ import 'package:maternity_clinic/utils/colors.dart';
 
 import 'admin_prenatal_records_screen.dart';
 import 'admin_postnatal_records_screen.dart';
+import 'admin_dashboard_screen.dart';
 
 class AdminAppointmentSchedulingScreen extends StatefulWidget {
-  const AdminAppointmentSchedulingScreen({super.key});
+  final String userRole;
+  final String userName;
+
+  const AdminAppointmentSchedulingScreen({
+    super.key,
+    required this.userRole,
+    required this.userName,
+  });
 
   @override
   State<AdminAppointmentSchedulingScreen> createState() => _AdminAppointmentSchedulingScreenState();
@@ -300,17 +308,26 @@ class _AdminAppointmentSchedulingScreenState extends State<AdminAppointmentSched
             padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 Text(
-                  'ADMIN',
-                  style: TextStyle(
+                  widget.userName.toUpperCase(),
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                     fontFamily: 'Bold',
                     letterSpacing: 0.5,
                   ),
                 ),
-               
+                const SizedBox(height: 5),
+                Text(
+                  widget.userRole.toUpperCase(),
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                    fontFamily: 'Medium',
+                    letterSpacing: 0.5,
+                  ),
+                ),
               ],
             ),
           ),
@@ -318,10 +335,10 @@ class _AdminAppointmentSchedulingScreenState extends State<AdminAppointmentSched
 
           // Menu Items
           _buildMenuItem('DATA GRAPHS', false),
-          _buildMenuItem('PRENATAL PATIENT\nRECORD', false),
-          _buildMenuItem('POSTNATAL PATIENT\nRECORD', false),
+          if (widget.userRole == 'admin') _buildMenuItem('PRENATAL PATIENT\nRECORD', false),
+          if (widget.userRole == 'admin') _buildMenuItem('POSTNATAL PATIENT\nRECORD', false),
           _buildMenuItem('APPOINTMENT\nSCHEDULING', true),
-           _buildMenuItem('TRANSFER\nREQUESTS', false),
+          if (widget.userRole == 'admin') _buildMenuItem('TRANSFER\nREQUESTS', false),
         ],
       ),
     );
@@ -365,28 +382,57 @@ class _AdminAppointmentSchedulingScreenState extends State<AdminAppointmentSched
   void _handleNavigation(String title) {
     switch (title) {
       case 'DATA GRAPHS':
-        Navigator.pop(context);
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AdminDashboardScreen(
+              userRole: widget.userRole,
+              userName: widget.userName,
+            ),
+          ),
+        );
         break;
       case 'PRENATAL PATIENT\nRECORD':
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const AdminPrenatalRecordsScreen()),
-        );
+        if (widget.userRole == 'admin') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AdminPrenatalRecordsScreen(
+                userRole: widget.userRole,
+                userName: widget.userName,
+              ),
+            ),
+          );
+        }
         break;
       case 'POSTNATAL PATIENT\nRECORD':
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const AdminPostnatalRecordsScreen()),
-        );
+        if (widget.userRole == 'admin') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AdminPostnatalRecordsScreen(
+                userRole: widget.userRole,
+                userName: widget.userName,
+              ),
+            ),
+          );
+        }
         break;
       case 'APPOINTMENT\nSCHEDULING':
         // Already on this screen
         break;
-              case 'TRANSFER\nREQUESTS':
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const AdminTransferRequestsScreen()),
-        );
+      case 'TRANSFER\nREQUESTS':
+        if (widget.userRole == 'admin') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AdminTransferRequestsScreen(
+                userRole: widget.userRole,
+                userName: widget.userName,
+              ),
+            ),
+          );
+        }
         break;
     }
   }
