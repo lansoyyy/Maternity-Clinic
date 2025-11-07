@@ -16,6 +16,7 @@ class _AdminLoginDialogState extends State<AdminLoginDialog> {
   final TextEditingController _passwordController = TextEditingController();
   bool _rememberMe = false;
   bool _isLoading = false;
+  bool _obscurePassword = true;
 
   // Hardcoded user credentials
   final Map<String, Map<String, String>> _userCredentials = {
@@ -223,7 +224,7 @@ class _AdminLoginDialogState extends State<AdminLoginDialog> {
               // Password Field
               TextField(
                 controller: _passwordController,
-                obscureText: true,
+                obscureText: _obscurePassword,
                 decoration: InputDecoration(
                   labelText: 'Password',
                   labelStyle: TextStyle(
@@ -241,6 +242,17 @@ class _AdminLoginDialogState extends State<AdminLoginDialog> {
                     Icons.lock_outline,
                     color: primary,
                     size: 22,
+                  ),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                      color: Colors.grey.shade600,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
                   ),
                   filled: true,
                   fillColor: Colors.grey.shade50,

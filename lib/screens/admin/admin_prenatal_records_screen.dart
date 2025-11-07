@@ -282,10 +282,10 @@ class _AdminPrenatalRecordsScreenState extends State<AdminPrenatalRecordsScreen>
 
           // Menu Items
           _buildMenuItem('DATA GRAPHS', false),
-          if (widget.userRole == 'admin') _buildMenuItem('PRENATAL PATIENT\nRECORD', true),
-          if (widget.userRole == 'admin') _buildMenuItem('POSTNATAL PATIENT\nRECORD', false),
+          _buildMenuItem('PRENATAL PATIENT\nRECORD', true),
+          _buildMenuItem('POSTNATAL PATIENT\nRECORD', false),
           _buildMenuItem('APPOINTMENT\nSCHEDULING', false),
-          if (widget.userRole == 'admin') _buildMenuItem('TRANSFER\nREQUESTS', false),
+          _buildMenuItem('TRANSFER\nREQUESTS', false),
         ],
       ),
     );
@@ -343,17 +343,15 @@ class _AdminPrenatalRecordsScreenState extends State<AdminPrenatalRecordsScreen>
         // Already on this screen
         break;
       case 'POSTNATAL PATIENT\nRECORD':
-        if (widget.userRole == 'admin') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => AdminPostnatalRecordsScreen(
-                userRole: widget.userRole,
-                userName: widget.userName,
-              ),
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AdminPostnatalRecordsScreen(
+              userRole: widget.userRole,
+              userName: widget.userName,
             ),
-          );
-        }
+          ),
+        );
         break;
       case 'APPOINTMENT\nSCHEDULING':
         Navigator.pushReplacement(
@@ -367,17 +365,15 @@ class _AdminPrenatalRecordsScreenState extends State<AdminPrenatalRecordsScreen>
         );
         break;
       case 'TRANSFER\nREQUESTS':
-        if (widget.userRole == 'admin') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => AdminTransferRequestsScreen(
-                userRole: widget.userRole,
-                userName: widget.userName,
-              ),
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AdminTransferRequestsScreen(
+              userRole: widget.userRole,
+              userName: widget.userName,
             ),
-          );
-        }
+          ),
+        );
         break;
     }
   }

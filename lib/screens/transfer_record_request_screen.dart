@@ -746,7 +746,7 @@ class _TransferRecordRequestScreenState extends State<TransferRecordRequestScree
         ),
         const SizedBox(height: 10),
         _buildRadioOption('Pick-up by Patient/Authorized Representative'),
-        _buildRadioOption('Secure Email'),
+        _buildRadioOption('Send through Email'),
         _buildRadioOption('Postal Mail to the address above'),
         const SizedBox(height: 30),
 

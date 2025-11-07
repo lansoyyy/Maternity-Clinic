@@ -161,10 +161,10 @@ class _AdminTransferRequestsScreenState extends State<AdminTransferRequestsScree
           ),
           const SizedBox(height: 20),
           _buildMenuItem('DATA GRAPHS', false),
-          if (widget.userRole == 'admin') _buildMenuItem('PRENATAL PATIENT\nRECORD', false),
-          if (widget.userRole == 'admin') _buildMenuItem('POSTNATAL PATIENT\nRECORD', false),
+          _buildMenuItem('PRENATAL PATIENT\nRECORD', false),
+          _buildMenuItem('POSTNATAL PATIENT\nRECORD', false),
           _buildMenuItem('APPOINTMENT\nSCHEDULING', false),
-          if (widget.userRole == 'admin') _buildMenuItem('TRANSFER\nREQUESTS', true),
+          _buildMenuItem('TRANSFER\nREQUESTS', true),
         ],
       ),
     );
@@ -219,30 +219,26 @@ class _AdminTransferRequestsScreenState extends State<AdminTransferRequestsScree
         );
         break;
       case 'PRENATAL PATIENT\nRECORD':
-        if (widget.userRole == 'admin') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => AdminPrenatalRecordsScreen(
-                userRole: widget.userRole,
-                userName: widget.userName,
-              ),
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AdminPrenatalRecordsScreen(
+              userRole: widget.userRole,
+              userName: widget.userName,
             ),
-          );
-        }
+          ),
+        );
         break;
       case 'POSTNATAL PATIENT\nRECORD':
-        if (widget.userRole == 'admin') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => AdminPostnatalRecordsScreen(
-                userRole: widget.userRole,
-                userName: widget.userName,
-              ),
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AdminPostnatalRecordsScreen(
+              userRole: widget.userRole,
+              userName: widget.userName,
             ),
-          );
-        }
+          ),
+        );
         break;
       case 'APPOINTMENT\nSCHEDULING':
         Navigator.pushReplacement(
@@ -483,6 +479,23 @@ class _AdminTransferRequestsScreenState extends State<AdminTransferRequestsScree
                         value: 'Processing',
                         child: Text('Mark as Processing'),
                       ),
+                      const PopupMenuItem(
+                        value: 'Completed',
+                        child: Text('Mark as Completed'),
+                      ),
+                      const PopupMenuItem(
+                        value: 'Rejected',
+                        child: Text('Reject Request'),
+                      ),
+                    ],
+                  ),
+                if (status == 'Processing')
+                  PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert, size: 20),
+                    onSelected: (value) {
+                      _updateRequestStatus(requestId, value);
+                    },
+                    itemBuilder: (context) => [
                       const PopupMenuItem(
                         value: 'Completed',
                         child: Text('Mark as Completed'),

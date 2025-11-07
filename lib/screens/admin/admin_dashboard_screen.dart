@@ -55,6 +55,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   // Check if current user is admin
   bool get _isAdmin => widget.userRole == 'admin';
+  
+  // Check if current user is nurse
+  bool get _isNurse => widget.userRole == 'nurse';
 
   @override
   void initState() {
@@ -331,7 +334,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         ),
                         const SizedBox(height: 30),
 
-                        // Top Row - Charts
+                        // Top Row - Charts (Admin and Nurse)
                         Row(
                           children: [
                             Expanded(
@@ -351,6 +354,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
                         // Bottom - Line Chart
                         _buildHistoryCountingChart(),
+                        const SizedBox(height: 30),
+                        
+                        // Nurse Dashboard - Transfer Requests
+                        if (_isNurse) ...[
+                          _buildNurseTransferRequestsSection(),
+                        ],
                       ],
                     ),
                   ),
@@ -406,11 +415,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           const SizedBox(height: 20),
 
           // Menu Items
-          _buildMenuItem('DATA GRAPHS', true),
-          if (_isAdmin) _buildMenuItem('PRENATAL PATIENT\nRECORD', false),
-          if (_isAdmin) _buildMenuItem('POSTNATAL PATIENT\nRECORD', false),
+          _buildMenuItem('DATA GRAPHS', _isNurse ? false : true),
+          _buildMenuItem('PRENATAL PATIENT\nRECORD', false),
+          _buildMenuItem('POSTNATAL PATIENT\nRECORD', false),
           _buildMenuItem('APPOINTMENT\nSCHEDULING', false),
-          if (_isAdmin) _buildMenuItem('TRANSFER\nREQUESTS', false),
+          _buildMenuItem('TRANSFER\nREQUESTS', _isNurse ? true : false),
           
           const Spacer(),
           
@@ -545,44 +554,32 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       case 'DATA GRAPHS':
         // Already on this screen, do nothing
         return;
+      case 'TRANSFER\nREQUESTS':
+        // Navigate to transfer requests screen for both admin and nurse
+        screen = AdminTransferRequestsScreen(
+          userRole: widget.userRole,
+          userName: widget.userName,
+        );
+        break;
       case 'PRENATAL PATIENT\nRECORD':
-        if (_isAdmin) {
-          screen = AdminPrenatalRecordsScreen(
-            userRole: widget.userRole,
-            userName: widget.userName,
-          );
-        } else {
-          _showAccessDeniedDialog();
-          return;
-        }
+        // Allow both admin and nurse to access, but nurse will have read-only view
+        screen = AdminPrenatalRecordsScreen(
+          userRole: widget.userRole,
+          userName: widget.userName,
+        );
         break;
       case 'POSTNATAL PATIENT\nRECORD':
-        if (_isAdmin) {
-          screen = AdminPostnatalRecordsScreen(
-            userRole: widget.userRole,
-            userName: widget.userName,
-          );
-        } else {
-          _showAccessDeniedDialog();
-          return;
-        }
+        // Allow both admin and nurse to access, but nurse will have read-only view
+        screen = AdminPostnatalRecordsScreen(
+          userRole: widget.userRole,
+          userName: widget.userName,
+        );
         break;
       case 'APPOINTMENT\nSCHEDULING':
         screen = AdminAppointmentSchedulingScreen(
           userRole: widget.userRole,
           userName: widget.userName,
         );
-        break;
-      case 'TRANSFER\nREQUESTS':
-        if (_isAdmin) {
-          screen = AdminTransferRequestsScreen(
-            userRole: widget.userRole,
-            userName: widget.userName,
-          );
-        } else {
-          _showAccessDeniedDialog();
-          return;
-        }
         break;
       default:
         return;
@@ -1182,6 +1179,161 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNurseTransferRequestsSection() {
+    return Container(
+      padding: const EdgeInsets.all(30),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade200,
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'TRANSFER REQUESTS',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontFamily: 'Bold',
+                  color: Colors.black87,
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AdminTransferRequestsScreen(
+                        userRole: widget.userRole,
+                        userName: widget.userName,
+                      ),
+                    ),
+                  );
+                },
+                child: Text(
+                  'VIEW ALL',
+                  style: TextStyle(
+                    color: primary,
+                    fontSize: 14,
+                    fontFamily: 'Bold',
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: _buildNurseStatCard(
+                  'Pending Requests',
+                  '0',
+                  Icons.pending_actions_rounded,
+                  Colors.orange,
+                ),
+              ),
+              const SizedBox(width: 20),
+              Expanded(
+                child: _buildNurseStatCard(
+                  'Processing',
+                  '0',
+                  Icons.hourglass_empty_rounded,
+                  Colors.blue,
+                ),
+              ),
+              const SizedBox(width: 20),
+              Expanded(
+                child: _buildNurseStatCard(
+                  'Completed',
+                  '0',
+                  Icons.check_circle_rounded,
+                  Colors.green,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.all(15),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.info_outline_rounded,
+                  color: primary,
+                  size: 20,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'View and manage transfer requests for both prenatal and postnatal records',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontFamily: 'Medium',
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNurseStatCard(String title, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            icon,
+            color: color,
+            size: 24,
+          ),
+          const SizedBox(height: 10),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 24,
+              fontFamily: 'Bold',
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 12,
+              fontFamily: 'Medium',
+              color: Colors.grey.shade600,
+            ),
+          ),
         ],
       ),
     );

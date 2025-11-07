@@ -335,10 +335,10 @@ class _AdminAppointmentSchedulingScreenState extends State<AdminAppointmentSched
 
           // Menu Items
           _buildMenuItem('DATA GRAPHS', false),
-          if (widget.userRole == 'admin') _buildMenuItem('PRENATAL PATIENT\nRECORD', false),
-          if (widget.userRole == 'admin') _buildMenuItem('POSTNATAL PATIENT\nRECORD', false),
+          _buildMenuItem('PRENATAL PATIENT\nRECORD', false),
+          _buildMenuItem('POSTNATAL PATIENT\nRECORD', false),
           _buildMenuItem('APPOINTMENT\nSCHEDULING', true),
-          if (widget.userRole == 'admin') _buildMenuItem('TRANSFER\nREQUESTS', false),
+          _buildMenuItem('TRANSFER\nREQUESTS', false),
         ],
       ),
     );
@@ -393,46 +393,40 @@ class _AdminAppointmentSchedulingScreenState extends State<AdminAppointmentSched
         );
         break;
       case 'PRENATAL PATIENT\nRECORD':
-        if (widget.userRole == 'admin') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => AdminPrenatalRecordsScreen(
-                userRole: widget.userRole,
-                userName: widget.userName,
-              ),
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AdminPrenatalRecordsScreen(
+              userRole: widget.userRole,
+              userName: widget.userName,
             ),
-          );
-        }
+          ),
+        );
         break;
       case 'POSTNATAL PATIENT\nRECORD':
-        if (widget.userRole == 'admin') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => AdminPostnatalRecordsScreen(
-                userRole: widget.userRole,
-                userName: widget.userName,
-              ),
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AdminPostnatalRecordsScreen(
+              userRole: widget.userRole,
+              userName: widget.userName,
             ),
-          );
-        }
+          ),
+        );
         break;
       case 'APPOINTMENT\nSCHEDULING':
         // Already on this screen
         break;
       case 'TRANSFER\nREQUESTS':
-        if (widget.userRole == 'admin') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => AdminTransferRequestsScreen(
-                userRole: widget.userRole,
-                userName: widget.userName,
-              ),
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AdminTransferRequestsScreen(
+              userRole: widget.userRole,
+              userName: widget.userName,
             ),
-          );
-        }
+          ),
+        );
         break;
     }
   }
@@ -506,8 +500,8 @@ class _AdminAppointmentSchedulingScreenState extends State<AdminAppointmentSched
         // Table Rows
         ..._appointments.map((appointment) {
           return _buildTableRow(
-           ( _appointments.indexOf(appointment) + 1).toString(),
-            appointment['patientId'] ?? 'N/A',
+            appointment['id'] ?? '', // This is the actual appointment ID
+            (_appointments.indexOf(appointment) + 1).toString(), // This is the row number
             appointment['name'] ?? 'Unknown',
             appointment['status'] ?? 'Pending',
             appointment['appointment'] ?? 'Not specified',
@@ -535,7 +529,7 @@ class _AdminAppointmentSchedulingScreenState extends State<AdminAppointmentSched
 
   Widget _buildTableRow(
     String appointmentId,
-    String patientId,
+    String rowNumber,
     String name,
     String status,
     String appointment,
@@ -567,7 +561,7 @@ class _AdminAppointmentSchedulingScreenState extends State<AdminAppointmentSched
       ),
       child: Row(
         children: [
-          _buildTableCell(appointmentId, flex: 2),
+          _buildTableCell(rowNumber, flex: 2),
           _buildTableCell(name, flex: 3),
           Expanded(
             flex: 2,

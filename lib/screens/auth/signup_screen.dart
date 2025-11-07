@@ -20,6 +20,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController _ageController = TextEditingController();
   String _selectedGender = 'PRENATAL';
   bool _isLoading = false;
+  bool _obscurePassword = true;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
@@ -525,7 +526,7 @@ class _SignupScreenState extends State<SignupScreen> {
           // Password Field
           TextField(
             controller: _passwordController,
-            obscureText: true,
+            obscureText: _obscurePassword,
             decoration: InputDecoration(
               hintText: 'Password',
               hintStyle: TextStyle(
@@ -550,6 +551,17 @@ class _SignupScreenState extends State<SignupScreen> {
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide(color: primary, width: 2),
+              ),
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                  color: Colors.grey.shade600,
+                ),
+                onPressed: () {
+                  setState(() {
+                    _obscurePassword = !_obscurePassword;
+                  });
+                },
               ),
             ),
           ),
