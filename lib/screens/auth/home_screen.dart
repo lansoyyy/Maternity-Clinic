@@ -303,11 +303,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 'assets/images/ultra sound.png',
                 'ULTRA SOUND',
               ),
-              const SizedBox(height: 30),
-              _buildServiceItem(
-                'assets/images/pediatrics.png',
-                'PEDIATRICS',
-              ),
+             
             ],
           ),
         ),
@@ -349,8 +345,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _buildServiceItem('assets/images/ob-gyne.png', 'OB - GYNE'),
         const SizedBox(height: 20),
         _buildServiceItem('assets/images/ultra sound.png', 'ULTRA SOUND'),
-        const SizedBox(height: 20),
-        _buildServiceItem('assets/images/pediatrics.png', 'PEDIATRICS'),
+      
       ],
     );
   }

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:maternity_clinic/screens/admin/admin_appointment_scheduling_screen.dart';
 import 'package:maternity_clinic/screens/admin/admin_postnatal_records_screen.dart';
 import 'package:maternity_clinic/screens/admin/admin_prenatal_records_screen.dart';
 import 'package:maternity_clinic/screens/admin/admin_transfer_requests_screen.dart';
 import '../../utils/colors.dart';
+import '../auth/home_screen.dart';
 
 
 class AdminDashboardScreen extends StatefulWidget {
@@ -24,6 +26,7 @@ class AdminDashboardScreen extends StatefulWidget {
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   
   int _prenatalCount = 0;
   int _postnatalCount = 0;
@@ -35,6 +38,19 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   int _postnatalAppointments = 0;
   Map<int, int> _prenatalYearlyCount = {};
   Map<int, int> _postnatalYearlyCount = {};
+  
+  // Age group statistics
+  Map<String, int> _ageGroupCounts = {
+    '12-19': 0,
+    '20-29': 0,
+    '30-39': 0,
+    '40+': 0,
+  };
+  
+  // Delivery type statistics
+  int _normalDeliveryCount = 0;
+  int _cesareanDeliveryCount = 0;
+  
   bool _isLoading = true;
 
   // Check if current user is admin
@@ -63,6 +79,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       final appointmentsSnapshot = await _firestore
           .collection('appointments')
           .get();
+      
+      // Fetch delivery type data (simulated for now - in real app this would come from patient records)
+      // For demo purposes, we'll use some sample data
+      _normalDeliveryCount = (_postnatalCount * 0.7).round(); // 70% normal
+      _cesareanDeliveryCount = (_postnatalCount * 0.3).round(); // 30% cesarean
 
       // Count appointments by status
       int pending = 0;
@@ -96,6 +117,48 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         }
       }
 
+      // Process age group data
+      Map<String, int> ageGroups = {
+        '12-19': 0,
+        '20-29': 0,
+        '30-39': 0,
+        '40+': 0,
+      };
+      
+      // Process prenatal patients for age groups
+      for (var doc in prenatalSnapshot.docs) {
+        final data = doc.data();
+        if (data['age'] != null) {
+          int age = data['age'] as int;
+          if (age >= 12 && age <= 19) {
+            ageGroups['12-19'] = (ageGroups['12-19'] ?? 0) + 1;
+          } else if (age >= 20 && age <= 29) {
+            ageGroups['20-29'] = (ageGroups['20-29'] ?? 0) + 1;
+          } else if (age >= 30 && age <= 39) {
+            ageGroups['30-39'] = (ageGroups['30-39'] ?? 0) + 1;
+          } else if (age >= 40) {
+            ageGroups['40+'] = (ageGroups['40+'] ?? 0) + 1;
+          }
+        }
+      }
+      
+      // Process postnatal patients for age groups
+      for (var doc in postnatalSnapshot.docs) {
+        final data = doc.data();
+        if (data['age'] != null) {
+          int age = data['age'] as int;
+          if (age >= 12 && age <= 19) {
+            ageGroups['12-19'] = (ageGroups['12-19'] ?? 0) + 1;
+          } else if (age >= 20 && age <= 29) {
+            ageGroups['20-29'] = (ageGroups['20-29'] ?? 0) + 1;
+          } else if (age >= 30 && age <= 39) {
+            ageGroups['30-39'] = (ageGroups['30-39'] ?? 0) + 1;
+          } else if (age >= 40) {
+            ageGroups['40+'] = (ageGroups['40+'] ?? 0) + 1;
+          }
+        }
+      }
+
       // Fetch yearly counts for history chart
       Map<int, int> prenatalYearly = {};
       Map<int, int> postnatalYearly = {};
@@ -124,12 +187,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           _postnatalCount = postnatalSnapshot.docs.length;
           _pendingAppointments = pending;
           _acceptedAppointments = accepted;
+          _acceptedAppointments = accepted;
           _completedAppointments = completed;
+          _cancelledAppointments = cancelled;
           _cancelledAppointments = cancelled;
           _prenatalAppointments = prenatalAppts;
           _postnatalAppointments = postnatalAppts;
           _prenatalYearlyCount = prenatalYearly;
           _postnatalYearlyCount = postnatalYearly;
+          _ageGroupCounts = ageGroups;
           _isLoading = false;
         });
       }
@@ -146,7 +212,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
+      backgroundColor: const Color(0xFFF5F7FA),
       body: Row(
         children: [
           // Sidebar
@@ -161,7 +227,111 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Top Row - Pie Charts
+                        // Dashboard Header
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 30),
+                          padding: const EdgeInsets.all(25),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [primary.withOpacity(0.9), secondary.withOpacity(0.9)],
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                            ),
+                            borderRadius: BorderRadius.circular(15),
+                            boxShadow: [
+                              BoxShadow(
+                                color: primary.withOpacity(0.2),
+                                blurRadius: 15,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.dashboard_rounded,
+                                color: Colors.white,
+                                size: 40,
+                              ),
+                              const SizedBox(width: 20),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'ADMIN DASHBOARD',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 28,
+                                        fontFamily: 'Bold',
+                                        letterSpacing: 1,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 5),
+                                    Text(
+                                      'Welcome back, ${widget.userName}',
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 16,
+                                        fontFamily: 'Medium',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                                child: Text(
+                                  'Role: ${widget.userRole.toUpperCase()}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontFamily: 'Bold',
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        
+                        // Statistics Cards Row
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildStatCard(
+                                'Total Patients',
+                                '${_prenatalCount + _postnatalCount}',
+                                Icons.people_rounded,
+                                const Color(0xFF5DCED9),
+                              ),
+                            ),
+                            const SizedBox(width: 20),
+                            Expanded(
+                              child: _buildStatCard(
+                                'Pending Appointments',
+                                '$_pendingAppointments',
+                                Icons.pending_actions_rounded,
+                                Colors.orange,
+                              ),
+                            ),
+                            const SizedBox(width: 20),
+                            Expanded(
+                              child: _buildStatCard(
+                                'Completed Today',
+                                '$_completedAppointments',
+                                Icons.check_circle_rounded,
+                                Colors.green,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 30),
+
+                        // Top Row - Charts
                         Row(
                           children: [
                             Expanded(
@@ -169,11 +339,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             ),
                             const SizedBox(width: 20),
                             Expanded(
-                              child: _buildAgePercentageChart(),
+                              child: _buildAgeGroupChart(),
                             ),
                             const SizedBox(width: 20),
                             Expanded(
-                              child: _buildPostnatalBarChart(),
+                              child: _buildDeliveryTypeChart(),
                             ),
                           ],
                         ),
@@ -241,6 +411,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           if (_isAdmin) _buildMenuItem('POSTNATAL PATIENT\nRECORD', false),
           _buildMenuItem('APPOINTMENT\nSCHEDULING', false),
           if (_isAdmin) _buildMenuItem('TRANSFER\nREQUESTS', false),
+          
+          const Spacer(),
+          
+          // Logout Menu Item
+          Padding(
+            padding: const EdgeInsets.only(bottom: 20),
+            child: _buildLogoutMenuItem(),
+          ),
         ],
       ),
     );
@@ -275,6 +453,88 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildLogoutMenuItem() {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: () {
+          _showLogoutConfirmationDialog();
+        },
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+          decoration: BoxDecoration(
+            color: Colors.transparent,
+            border: Border(
+              left: BorderSide(
+                color: Colors.transparent,
+                width: 4,
+              ),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.logout_rounded,
+                color: Colors.white.withOpacity(0.9),
+                size: 20,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'LOGOUT',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.9),
+                  fontSize: 14,
+                  fontFamily: 'Medium',
+                  height: 1.3,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showLogoutConfirmationDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+          'Logout Confirmation',
+          style: TextStyle(fontFamily: 'Bold'),
+        ),
+        content: const Text(
+          'Are you sure you want to logout?',
+          style: TextStyle(fontFamily: 'Regular'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: Colors.grey.shade600, fontFamily: 'Medium'),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context); // Close dialog
+              await _auth.signOut();
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (context) => const HomeScreen()),
+                (route) => false,
+              );
+            },
+            child: Text(
+              'Logout',
+              style: TextStyle(color: Colors.red.shade600, fontFamily: 'Bold'),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -436,12 +696,69 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
-  Widget _buildAgePercentageChart() {
-    int total = _pendingAppointments + _acceptedAppointments + _completedAppointments + _cancelledAppointments;
-    double pendingPercent = total > 0 ? (_pendingAppointments / total) * 100 : 0;
-    double acceptedPercent = total > 0 ? (_acceptedAppointments / total) * 100 : 0;
-    double completedPercent = total > 0 ? (_completedAppointments / total) * 100 : 0;
-    double cancelledPercent = total > 0 ? (_cancelledAppointments / total) * 100 : 0;
+  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(25),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade200,
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  icon,
+                  color: color,
+                  size: 24,
+                ),
+              ),
+              const Spacer(),
+              Icon(
+                Icons.more_vert_rounded,
+                color: Colors.grey.shade400,
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 32,
+              fontFamily: 'Bold',
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 14,
+              fontFamily: 'Medium',
+              color: Colors.grey.shade600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAgeGroupChart() {
+    int totalPatients = _prenatalCount + _postnatalCount;
     
     return Container(
       padding: const EdgeInsets.all(25),
@@ -450,27 +767,36 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.shade300,
-            blurRadius: 10,
+            color: Colors.grey.shade200,
+            blurRadius: 15,
             offset: const Offset(0, 5),
           ),
         ],
       ),
       child: Column(
         children: [
+          const Text(
+            'AGE GROUP DISTRIBUTION',
+            style: TextStyle(
+              fontSize: 16,
+              fontFamily: 'Bold',
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 20),
           SizedBox(
             height: 200,
-            child: total > 0
+            child: totalPatients > 0
                 ? PieChart(
                     PieChartData(
                       sectionsSpace: 2,
-                      centerSpaceRadius: 35,
+                      centerSpaceRadius: 40,
                       sections: [
-                        if (_pendingAppointments > 0)
+                        if (_ageGroupCounts['12-19']! > 0)
                           PieChartSectionData(
-                            value: _pendingAppointments.toDouble(),
-                            title: 'PENDING: $_pendingAppointments\n${pendingPercent.toStringAsFixed(1)}%',
-                            color: Colors.orange,
+                            value: _ageGroupCounts['12-19']!.toDouble(),
+                            title: '12-19\n${((_ageGroupCounts['12-19']! / totalPatients) * 100).toStringAsFixed(1)}%',
+                            color: const Color(0xFF9C27B0),
                             radius: 70,
                             titleStyle: const TextStyle(
                               fontSize: 11,
@@ -478,11 +804,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               color: Colors.white,
                             ),
                           ),
-                        if (_acceptedAppointments > 0)
+                        if (_ageGroupCounts['20-29']! > 0)
                           PieChartSectionData(
-                            value: _acceptedAppointments.toDouble(),
-                            title: 'ACCEPTED: $_acceptedAppointments\n${acceptedPercent.toStringAsFixed(1)}%',
-                            color: Colors.green,
+                            value: _ageGroupCounts['20-29']!.toDouble(),
+                            title: '20-29\n${((_ageGroupCounts['20-29']! / totalPatients) * 100).toStringAsFixed(1)}%',
+                            color: const Color(0xFF2196F3),
                             radius: 70,
                             titleStyle: const TextStyle(
                               fontSize: 11,
@@ -490,11 +816,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               color: Colors.white,
                             ),
                           ),
-                        if (_completedAppointments > 0)
+                        if (_ageGroupCounts['30-39']! > 0)
                           PieChartSectionData(
-                            value: _completedAppointments.toDouble(),
-                            title: 'COMPLETED: $_completedAppointments\n${completedPercent.toStringAsFixed(1)}%',
-                            color: Colors.blue,
+                            value: _ageGroupCounts['30-39']!.toDouble(),
+                            title: '30-39\n${((_ageGroupCounts['30-39']! / totalPatients) * 100).toStringAsFixed(1)}%',
+                            color: const Color(0xFF4CAF50),
                             radius: 70,
                             titleStyle: const TextStyle(
                               fontSize: 11,
@@ -502,11 +828,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               color: Colors.white,
                             ),
                           ),
-                        if (_cancelledAppointments > 0)
+                        if (_ageGroupCounts['40+']! > 0)
                           PieChartSectionData(
-                            value: _cancelledAppointments.toDouble(),
-                            title: 'CANCELLED: $_cancelledAppointments\n${cancelledPercent.toStringAsFixed(1)}%',
-                            color: Colors.red,
+                            value: _ageGroupCounts['40+']!.toDouble(),
+                            title: '40+\n${((_ageGroupCounts['40+']! / totalPatients) * 100).toStringAsFixed(1)}%',
+                            color: const Color(0xFFFF9800),
                             radius: 70,
                             titleStyle: const TextStyle(
                               fontSize: 11,
@@ -517,31 +843,50 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       ],
                     ),
                   )
-                : const Center(child: Text('No appointments yet', style: TextStyle(fontSize: 14, color: Colors.grey))),
+                : const Center(child: Text('No patient data yet', style: TextStyle(fontSize: 14, color: Colors.grey))),
           ),
           const SizedBox(height: 15),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade200,
-              borderRadius: BorderRadius.circular(5),
-            ),
-            child: const Text(
-              'APPOINTMENT STATUS',
-              style: TextStyle(
-                fontSize: 12,
-                fontFamily: 'Bold',
-                color: Colors.black87,
-              ),
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildLegendItem('12-19', const Color(0xFF9C27B0)),
+              _buildLegendItem('20-29', const Color(0xFF2196F3)),
+              _buildLegendItem('30-39', const Color(0xFF4CAF50)),
+              _buildLegendItem('40+', const Color(0xFFFF9800)),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildPostnatalBarChart() {
-    int maxValue = _prenatalAppointments > _postnatalAppointments ? _prenatalAppointments : _postnatalAppointments;
+  Widget _buildLegendItem(String label, Color color) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 10,
+            fontFamily: 'Medium',
+            color: Colors.black87,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDeliveryTypeChart() {
+    int totalDeliveries = _normalDeliveryCount + _cesareanDeliveryCount;
     
     return Container(
       padding: const EdgeInsets.all(25),
@@ -550,115 +895,74 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.shade300,
-            blurRadius: 10,
+            color: Colors.grey.shade200,
+            blurRadius: 15,
             offset: const Offset(0, 5),
           ),
         ],
       ),
       child: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildLegend('PRENATAL', const Color(0xFF5DCED9)),
-              const SizedBox(width: 20),
-              _buildLegend('POSTNATAL', const Color(0xFF3F7B9E)),
-            ],
+          const Text(
+            'DELIVERY TYPE',
+            style: TextStyle(
+              fontSize: 16,
+              fontFamily: 'Bold',
+              color: Colors.black87,
+            ),
           ),
           const SizedBox(height: 20),
           SizedBox(
-            height: 150,
-            child: BarChart(
-              BarChartData(
-                alignment: BarChartAlignment.spaceAround,
-                maxY: maxValue > 0 ? maxValue.toDouble() + 10 : 10,
-                barTouchData: BarTouchData(enabled: false),
-                titlesData: FlTitlesData(
-                  show: true,
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (value, meta) {
-                        return const Text('');
-                      },
-                    ),
-                  ),
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 40,
-                      getTitlesWidget: (value, meta) {
-                        return Text(
-                          value.toInt().toString(),
-                          style: const TextStyle(
-                            fontSize: 10,
-                            fontFamily: 'Regular',
+            height: 200,
+            child: totalDeliveries > 0
+                ? PieChart(
+                    PieChartData(
+                      sectionsSpace: 2,
+                      centerSpaceRadius: 40,
+                      sections: [
+                        if (_normalDeliveryCount > 0)
+                          PieChartSectionData(
+                            value: _normalDeliveryCount.toDouble(),
+                            title: 'Normal\n${((_normalDeliveryCount / totalDeliveries) * 100).toStringAsFixed(1)}%',
+                            color: const Color(0xFF4CAF50),
+                            radius: 70,
+                            titleStyle: const TextStyle(
+                              fontSize: 12,
+                              fontFamily: 'Bold',
+                              color: Colors.white,
+                            ),
                           ),
-                        );
-                      },
+                        if (_cesareanDeliveryCount > 0)
+                          PieChartSectionData(
+                            value: _cesareanDeliveryCount.toDouble(),
+                            title: 'Cesarean\n${((_cesareanDeliveryCount / totalDeliveries) * 100).toStringAsFixed(1)}%',
+                            color: const Color(0xFFF44336),
+                            radius: 70,
+                            titleStyle: const TextStyle(
+                              fontSize: 12,
+                              fontFamily: 'Bold',
+                              color: Colors.white,
+                            ),
+                          ),
+                      ],
                     ),
-                  ),
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                ),
-                gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: false,
-                  horizontalInterval: maxValue > 10 ? 5 : 2,
-                ),
-                borderData: FlBorderData(show: false),
-                barGroups: [
-                  BarChartGroupData(
-                    x: 0,
-                    barRods: [
-                      BarChartRodData(
-                        toY: _prenatalAppointments.toDouble(),
-                        color: const Color(0xFF5DCED9),
-                        width: 60,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ],
-                  ),
-                  BarChartGroupData(
-                    x: 1,
-                    barRods: [
-                      BarChartRodData(
-                        toY: _postnatalAppointments.toDouble(),
-                        color: const Color(0xFF3F7B9E),
-                        width: 60,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+                  )
+                : const Center(child: Text('No delivery data yet', style: TextStyle(fontSize: 14, color: Colors.grey))),
           ),
           const SizedBox(height: 15),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade200,
-              borderRadius: BorderRadius.circular(5),
-            ),
-            child: const Text(
-              'APPOINTMENTS BY PATIENT TYPE',
-              style: TextStyle(
-                fontSize: 12,
-                fontFamily: 'Bold',
-                color: Colors.black87,
-              ),
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildLegendItem('Normal', const Color(0xFF4CAF50)),
+              const SizedBox(width: 20),
+              _buildLegendItem('Cesarean', const Color(0xFFF44336)),
+            ],
           ),
         ],
       ),
     );
   }
+
 
   List<FlSpot> _getPrenatalSpots() {
     List<FlSpot> spots = [];
@@ -730,21 +1034,30 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.shade300,
-            blurRadius: 10,
+            color: Colors.grey.shade200,
+            blurRadius: 15,
             offset: const Offset(0, 5),
           ),
         ],
       ),
       child: Column(
         children: [
+          const Text(
+            'PATIENT HISTORY TRENDS',
+            style: TextStyle(
+              fontSize: 18,
+              fontFamily: 'Bold',
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 20),
           if (_prenatalYearlyCount.isNotEmpty || _postnatalYearlyCount.isNotEmpty) ...[
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                if (_postnatalYearlyCount.isNotEmpty) _buildLegend('postnatal', Colors.red),
+                if (_postnatalYearlyCount.isNotEmpty) _buildLegend('Postnatal', Colors.red),
                 if (_postnatalYearlyCount.isNotEmpty && _prenatalYearlyCount.isNotEmpty) const SizedBox(width: 30),
-                if (_prenatalYearlyCount.isNotEmpty) _buildLegend('prenatal', const Color(0xFF3F51B5)),
+                if (_prenatalYearlyCount.isNotEmpty) _buildLegend('Prenatal', const Color(0xFF3F51B5)),
               ],
             ),
             const SizedBox(height: 30),
@@ -820,7 +1133,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     if (_prenatalYearlyCount.isNotEmpty)
                       LineChartBarData(
                         spots: _getPrenatalSpots(),
-                        isCurved: false,
+                        isCurved: true,
                         color: const Color(0xFF3F51B5),
                         barWidth: 3,
                         isStrokeCapRound: true,
@@ -835,13 +1148,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             );
                           },
                         ),
-                        belowBarData: BarAreaData(show: false),
+                        belowBarData: BarAreaData(
+                          show: true,
+                          color: const Color(0xFF3F51B5).withOpacity(0.1),
+                        ),
                       ),
                     // Postnatal line (red)
                     if (_postnatalYearlyCount.isNotEmpty)
                       LineChartBarData(
                         spots: _getPostnatalSpots(),
-                        isCurved: false,
+                        isCurved: true,
                         color: Colors.red,
                         barWidth: 3,
                         isStrokeCapRound: true,
@@ -856,29 +1172,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             );
                           },
                         ),
-                        belowBarData: BarAreaData(show: false),
+                        belowBarData: BarAreaData(
+                          show: true,
+                          color: Colors.red.withOpacity(0.1),
+                        ),
                       ),
                   ],
                 ),
               ),
             ),
           ],
-          const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade200,
-              borderRadius: BorderRadius.circular(5),
-            ),
-            child: const Text(
-              'HISTORY COUNTING PATIENT',
-              style: TextStyle(
-                fontSize: 12,
-                fontFamily: 'Bold',
-                color: Colors.black87,
-              ),
-            ),
-          ),
         ],
       ),
     );

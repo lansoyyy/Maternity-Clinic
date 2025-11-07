@@ -5,6 +5,7 @@ import '../utils/colors.dart';
 import 'prenatal_history_checkup_screen.dart';
 import 'notification_appointment_screen.dart';
 import 'transfer_record_request_screen.dart';
+import 'auth/home_screen.dart';
 
 class PrenatalDashboardScreen extends StatefulWidget {
   const PrenatalDashboardScreen({super.key});
@@ -139,6 +140,8 @@ class _PrenatalDashboardScreenState extends State<PrenatalDashboardScreen> {
           _buildMenuItem('HISTORY OF\nCHECK UP', false),
           _buildMenuItem('NOTIFICATION\nAPPOINTMENT', false),
           _buildMenuItem('TRANSFER OF\nRECORD REQUEST', false),
+          const Spacer(),
+          _buildMenuItem('LOGOUT', false),
         ],
       ),
     );
@@ -150,6 +153,10 @@ class _PrenatalDashboardScreenState extends State<PrenatalDashboardScreen> {
       child: GestureDetector(
         onTap: () {
           // Handle menu navigation
+          if (title == 'LOGOUT') {
+            _showLogoutConfirmationDialog();
+            return;
+          }
           if (title == 'HISTORY OF\nCHECK UP') {
             Navigator.push(
               context,
@@ -189,6 +196,48 @@ class _PrenatalDashboardScreenState extends State<PrenatalDashboardScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  void _showLogoutConfirmationDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+          'Logout Confirmation',
+          style: TextStyle(fontFamily: 'Bold'),
+        ),
+        content: const Text(
+          'Are you sure you want to logout?',
+          style: TextStyle(fontFamily: 'Regular'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: Colors.grey.shade600, fontFamily: 'Medium'),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context); // Close dialog
+              await _auth.signOut();
+              if (mounted) {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const HomeScreen()),
+                  (route) => false,
+                );
+              }
+            },
+            child: const Text(
+              'Logout',
+              style: TextStyle(color: Color(0xffEC008C), fontFamily: 'Bold'),
+            ),
+          ),
+        ],
       ),
     );
   }

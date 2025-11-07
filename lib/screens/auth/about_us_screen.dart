@@ -435,12 +435,7 @@ class _AboutUsScreenState extends State<AboutUsScreen> {
               'ULTRASOUND',
               'Advanced ultrasound imaging for prenatal monitoring and diagnostics',
             ),
-            const SizedBox(width: 30),
-            _buildServiceCard(
-              'assets/images/pediatrics.png',
-              'PEDIATRICS',
-              'Expert pediatric care for newborns and children\'s health needs',
-            ),
+            
           ],
         ),
       ],

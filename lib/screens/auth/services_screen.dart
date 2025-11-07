@@ -221,20 +221,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
             'Pelvic ultrasound',
           ],
         ),
-        const SizedBox(height: 30),
-        _buildServiceDetailCard(
-          'assets/images/pediatrics.png',
-          'PEDIATRIC CARE',
-          'Expert pediatric services for newborns and children. Our pediatricians provide comprehensive care from birth through childhood, ensuring your child\'s optimal health and development.',
-          [
-            'Newborn care and assessment',
-            'Well-baby checkups',
-            'Vaccination and immunization',
-            'Growth and development monitoring',
-            'Pediatric consultations',
-            'Treatment of common childhood illnesses',
-          ],
-        ),
+       
       ],
     );
   }

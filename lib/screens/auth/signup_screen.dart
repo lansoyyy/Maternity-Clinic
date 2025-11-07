@@ -17,6 +17,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _ageController = TextEditingController();
   String _selectedGender = 'PRENATAL';
   bool _isLoading = false;
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -27,6 +28,7 @@ class _SignupScreenState extends State<SignupScreen> {
     _emailController.dispose();
     _nameController.dispose();
     _passwordController.dispose();
+    _ageController.dispose();
     super.dispose();
   }
 
@@ -162,6 +164,15 @@ class _SignupScreenState extends State<SignupScreen> {
       _showErrorDialog('Please enter your name');
       return;
     }
+    if (_ageController.text.trim().isEmpty) {
+      _showErrorDialog('Please enter your age');
+      return;
+    }
+    int? age = int.tryParse(_ageController.text.trim());
+    if (age == null || age < 12 || age > 60) {
+      _showErrorDialog('Please enter a valid age between 12 and 60');
+      return;
+    }
     if (_passwordController.text.trim().isEmpty) {
       _showErrorDialog('Please enter a password');
       return;
@@ -186,6 +197,7 @@ class _SignupScreenState extends State<SignupScreen> {
       await _firestore.collection('users').doc(userCredential.user!.uid).set({
         'email': _emailController.text.trim(),
         'name': _nameController.text.trim(),
+        'age': age,
         'patientType': _selectedGender,
         'createdAt': FieldValue.serverTimestamp(),
         'role': 'patient',
@@ -278,11 +290,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 'assets/images/ultra sound.png',
                 'ULTRA SOUND',
               ),
-              const SizedBox(height: 30),
-              _buildServiceItem(
-                'assets/images/pediatrics.png',
-                'PEDIATRICS',
-              ),
+              
             ],
           ),
         ),
@@ -324,8 +332,7 @@ class _SignupScreenState extends State<SignupScreen> {
         _buildServiceItem('assets/images/ob-gyne.png', 'OB - GYNE'),
         const SizedBox(height: 20),
         _buildServiceItem('assets/images/ultra sound.png', 'ULTRA SOUND'),
-        const SizedBox(height: 20),
-        _buildServiceItem('assets/images/pediatrics.png', 'PEDIATRICS'),
+        
       ],
     );
   }
@@ -455,6 +462,39 @@ class _SignupScreenState extends State<SignupScreen> {
             controller: _nameController,
             decoration: InputDecoration(
               hintText: 'Name',
+              hintStyle: TextStyle(
+                color: Colors.grey.shade500,
+                fontFamily: 'Regular',
+                fontSize: 14,
+              ),
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 15,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: primary, width: 2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 15),
+
+          // Age Field
+          TextField(
+            controller: _ageController,
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(
+              hintText: 'Age',
               hintStyle: TextStyle(
                 color: Colors.grey.shade500,
                 fontFamily: 'Regular',
