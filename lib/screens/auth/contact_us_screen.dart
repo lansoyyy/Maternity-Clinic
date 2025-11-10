@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../utils/colors.dart';
 import 'home_screen.dart';
 import 'about_us_screen.dart';
@@ -312,6 +313,68 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
       children: [
         // Title
         const Text(
+          'CONTACT INFORMATION',
+          style: TextStyle(
+            fontSize: 32,
+            fontFamily: 'Bold',
+            color: Colors.black,
+            letterSpacing: 0.5,
+          ),
+        ),
+        const SizedBox(height: 30),
+
+        // Contact Information Card
+        Container(
+          padding: const EdgeInsets.all(25),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [primary.withOpacity(0.85), secondary.withOpacity(0.85)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: primary.withOpacity(0.3),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              // Email
+              _buildContactItem(
+                icon: Icons.email,
+                label: 'Email',
+                value: 'victorylying@yahoo.com',
+                onTap: () => _launchEmail('victorylying@yahoo.com'),
+              ),
+              const SizedBox(height: 20),
+
+              // Instagram
+              _buildContactItem(
+                icon: Icons.camera_alt,
+                label: 'Instagram',
+                value: '@victory_lyingincenter',
+                onTap: () => _launchInstagram('victory_lyingincenter'),
+              ),
+              const SizedBox(height: 20),
+
+              // Facebook
+              _buildContactItem(
+                icon: Icons.facebook,
+                label: 'Facebook',
+                value: 'Victory Lying-In Center',
+                onTap: () => _launchFacebook(),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 30),
+
+        // Map Section
+        const Text(
           'ADDRESS & LOCATION',
           style: TextStyle(
             fontSize: 32,
@@ -375,6 +438,129 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildContactItem({
+    required IconData icon,
+    required String label,
+    required String value,
+    required VoidCallback onTap,
+  }) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(15),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.9),
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: primary,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  icon,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 15),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        color: Colors.black54,
+                        fontFamily: 'Medium',
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      value,
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontFamily: 'Bold',
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios,
+                color: primary,
+                size: 16,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _launchEmail(String email) async {
+    final Uri emailUri = Uri(
+      scheme: 'mailto',
+      path: email,
+    );
+    if (!await launchUrl(emailUri)) {
+      _showErrorDialog('Could not launch email app');
+    }
+  }
+
+  Future<void> _launchInstagram(String username) async {
+    final Uri instagramUri = Uri.parse('instagram://user/?username=$username');
+    final Uri webUri = Uri.parse('https://www.instagram.com/$username');
+    
+    if (!await launchUrl(instagramUri)) {
+      // If app is not installed, try to open in web browser
+      if (!await launchUrl(webUri)) {
+        _showErrorDialog('Could not launch Instagram');
+      }
+    }
+  }
+
+  Future<void> _launchFacebook() async {
+    const String facebookUrl = 'https://www.facebook.com/VictoryLyingInCenter';
+    final Uri facebookUri = Uri.parse(facebookUrl);
+    
+    if (!await launchUrl(facebookUri)) {
+      _showErrorDialog('Could not launch Facebook');
+    }
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+          'Error',
+          style: TextStyle(fontFamily: 'Bold'),
+        ),
+        content: Text(
+          message,
+          style: const TextStyle(fontFamily: 'Regular'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'OK',
+              style: TextStyle(color: primary, fontFamily: 'Bold'),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

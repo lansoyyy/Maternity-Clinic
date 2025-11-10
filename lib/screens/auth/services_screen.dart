@@ -74,6 +74,10 @@ class _ServicesScreenState extends State<ServicesScreen> {
                   _buildAdditionalServices(),
                   const SizedBox(height: 60),
 
+                  // Services and Packages
+                  _buildServicesAndPackages(),
+                  const SizedBox(height: 60),
+
                   // Why Choose Us
                   _buildWhyChooseUs(),
                 ],
@@ -440,6 +444,307 @@ class _ServicesScreenState extends State<ServicesScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildServicesAndPackages() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'SERVICES & PACKAGES',
+          style: TextStyle(
+            fontSize: 28,
+            fontFamily: 'Bold',
+            color: primary,
+            letterSpacing: 0.5,
+          ),
+        ),
+        const SizedBox(height: 30),
+        
+        // Services Offered Section
+        _buildServicesOffered(),
+        const SizedBox(height: 40),
+        
+        // Packages Section
+        _buildPackages(),
+      ],
+    );
+  }
+
+  Widget _buildServicesOffered() {
+    return Container(
+      padding: const EdgeInsets.all(30),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey.shade200, width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: primary.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.medical_services,
+                color: primary,
+                size: 28,
+              ),
+              const SizedBox(width: 10),
+              const Text(
+                '🩺 Services Offered',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontFamily: 'Bold',
+                  color: Colors.black,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            'Effective from January 2025 unless modified or changed.',
+            style: TextStyle(
+              fontSize: 14,
+              fontFamily: 'Regular',
+              color: Colors.black54,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+          const SizedBox(height: 20),
+          _buildServiceItem('Prenatal Checkup', 'Php 300.00'),
+          _buildServiceItem('Postnatal Checkup', 'Php 300.00'),
+          _buildServiceItem('Pap Smear', 'Php 800.00'),
+          _buildServiceItem('NST / Fetal Monitoring', 'Php 500.00'),
+          _buildServiceItem('Pregnancy Test', 'Php 150.00'),
+          _buildServiceItem('Injectable Pill / DMPA', 'Php 500.00'),
+          _buildServiceItem('Subdermal Implant', 'Php 3,000.00'),
+          _buildServiceItem('Removal of Implant', 'Php 2,000.00'),
+          _buildServiceItem('IUD Removal', 'Php 1,500.00'),
+          _buildServiceItem('Newborn Screening', 'Php 1,750.00'),
+          _buildServiceItem('Hearing Test', 'Php 500.00'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildServiceItem(String name, String price) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            name,
+            style: const TextStyle(
+              fontSize: 16,
+              fontFamily: 'Regular',
+              color: Colors.black87,
+            ),
+          ),
+          Text(
+            price,
+            style: TextStyle(
+              fontSize: 16,
+              fontFamily: 'Bold',
+              color: primary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPackages() {
+    return Column(
+      children: [
+        // Maternity Care Package
+        _buildPackageCard(
+          '🤰 Maternity Care Package (MCP)',
+          [
+            'Without PhilHealth (Amount to be Paid)',
+            'HCI Fees',
+            'Facility / Room Charge',
+            'Delivery Room Fee',
+            'Drugs and Medications',
+            'Supplies – Php 13,550',
+            'Professional Fee – Php 12,000',
+            'Total: Php 25,550',
+          ],
+          [
+            'PhilHealth Benefits',
+            'Php 6,240',
+            'Php 4,160',
+            'Total: Php 10,400',
+          ],
+          [
+            'With PhilHealth (Amount to be Paid)',
+            'Php 7,310',
+            'Php 7,840',
+            'Total: Php 15,100',
+          ],
+        ),
+        const SizedBox(height: 30),
+        
+        // Newborn Care Package
+        _buildPackageCard(
+          '👶 Newborn Care Package (NCP)',
+          [
+            'Without PhilHealth (Amount to be Paid)',
+            'HCI Fees',
+            'Essential Newborn Care',
+            'BCG Vaccine',
+            'Hepa B Vaccine',
+            'Newborn Screening',
+            'Hearing Test',
+            'Professional Fee',
+            'Total: Php 6,685',
+          ],
+          [
+            'PhilHealth Benefits',
+            'Total: Php 3,835',
+          ],
+          [
+            'With PhilHealth (Amount to be Paid)',
+            'Total: Php 2,850',
+          ],
+        ),
+        const SizedBox(height: 30),
+        
+        // NSD Package
+        _buildPackageCard(
+          '🤱 NSD Package (Mother and Baby)',
+          [
+            'Without PhilHealth (Amount to be Paid)',
+            'Total: Php 32,235',
+          ],
+          [
+            'PhilHealth Benefits',
+            'Total: Php 14,235',
+          ],
+          [
+            'With PhilHealth (Amount to be Paid)',
+            'Total: Php 18,000',
+          ],
+          'Inclusion:\nMother:\n1 set of NSD delivery medication and supplies\nFacility / Room Charge\nDelivery Room Fee\nProfessional Fee\n\nBaby:\nEssential Newborn Care\nBCG\nHepa B Vaccine\nVitamin K\nOphthalmic Ointment\nNewborn Screening\nHearing Test\nWell Baby Clearance\n\nAdditional charges apply for excess medication and supplies.',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPackageCard(
+    String title,
+    List<String> withoutPhilHealth,
+    List<String> philHealthBenefits,
+    List<String> withPhilHealth, [
+    String inclusions = '',
+  ]) {
+    return Container(
+      padding: const EdgeInsets.all(30),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [primary.withOpacity(0.05), secondary.withOpacity(0.05)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: primary.withOpacity(0.2), width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: primary.withOpacity(0.15),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 20,
+              fontFamily: 'Bold',
+              color: primary,
+            ),
+          ),
+          const SizedBox(height: 20),
+          
+          // Without PhilHealth Section
+          _buildPackageSection('Without PhilHealth', withoutPhilHealth),
+          const SizedBox(height: 15),
+          
+          // PhilHealth Benefits Section
+          _buildPackageSection('PhilHealth Benefits', philHealthBenefits),
+          const SizedBox(height: 15),
+          
+          // With PhilHealth Section
+          _buildPackageSection('With PhilHealth', withPhilHealth),
+          
+          if (inclusions.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(15),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: primary.withOpacity(0.3)),
+              ),
+              child: Text(
+                inclusions,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontFamily: 'Regular',
+                  color: Colors.black87,
+                  height: 1.5,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPackageSection(String title, List<String> items) {
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.7),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 16,
+              fontFamily: 'Bold',
+              color: primary,
+            ),
+          ),
+          const SizedBox(height: 10),
+          ...items.map((item) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: 3),
+            child: Text(
+              item,
+              style: const TextStyle(
+                fontSize: 14,
+                fontFamily: 'Regular',
+                color: Colors.black87,
+              ),
+            ),
+          )).toList(),
+        ],
       ),
     );
   }
