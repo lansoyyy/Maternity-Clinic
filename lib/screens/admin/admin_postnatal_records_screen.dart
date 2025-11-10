@@ -79,6 +79,9 @@ class _AdminPostnatalRecordsScreenState extends State<AdminPostnatalRecordsScree
         if (data['phone'] != null && data['phone'].toString().isNotEmpty) {
           patient['contact'] = data['phone'];
         }
+        if (data['contactNumber'] != null && data['contactNumber'].toString().isNotEmpty) {
+          patient['contact'] = data['contactNumber'];
+        }
         
         patients.add(patient);
       }
@@ -394,6 +397,7 @@ class _AdminPostnatalRecordsScreenState extends State<AdminPostnatalRecordsScree
               _buildHeaderCell('PATIENT ID', flex: 2),
               _buildHeaderCell('NAME', flex: 2),
               _buildHeaderCell('EMAIL', flex: 2),
+              _buildHeaderCell('CONTACT NO.', flex: 2),
               _buildHeaderCell('EST. DELIVERY DATE', flex: 2),
               _buildHeaderCell('PATIENT TYPE', flex: 2),
               _buildHeaderCell('STATUS', flex: 2),
@@ -407,6 +411,7 @@ class _AdminPostnatalRecordsScreenState extends State<AdminPostnatalRecordsScree
             patient['patientId'] ?? 'N/A',
             patient['name'] ?? 'Unknown',
             patient['email'] ?? '',
+            patient['contact'] ?? 'N/A',
             patient['estimatedDeliveryDate'] ?? 'N/A',
             'POSTNATAL',
             'Active',
@@ -435,6 +440,7 @@ class _AdminPostnatalRecordsScreenState extends State<AdminPostnatalRecordsScree
     String patientId,
     String name,
     String email,
+    String contactNumber,
     String estimatedDeliveryDate,
     String patientType,
     String status,
@@ -470,6 +476,7 @@ class _AdminPostnatalRecordsScreenState extends State<AdminPostnatalRecordsScree
               _buildTableCell(patientId, flex: 2),
               _buildTableCell(name, flex: 2),
               _buildTableCell(email, flex: 2),
+              _buildTableCell(contactNumber, flex: 2),
               _buildTableCell(estimatedDeliveryDate, flex: 2),
               _buildTableCell(patientType, flex: 2),
               Expanded(
