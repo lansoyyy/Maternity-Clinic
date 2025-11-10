@@ -70,6 +70,9 @@ class _AdminPostnatalRecordsScreenState extends State<AdminPostnatalRecordsScree
         if (data['dateOfDelivery'] != null && data['dateOfDelivery'].toString().isNotEmpty) {
           patient['dateOfDelivery'] = data['dateOfDelivery'];
         }
+        if (data['estimatedDeliveryDate'] != null && data['estimatedDeliveryDate'].toString().isNotEmpty) {
+          patient['estimatedDeliveryDate'] = data['estimatedDeliveryDate'];
+        }
         if (data['address'] != null && data['address'].toString().isNotEmpty) {
           patient['address'] = data['address'];
         }
@@ -389,8 +392,9 @@ class _AdminPostnatalRecordsScreenState extends State<AdminPostnatalRecordsScree
           child: Row(
             children: [
               _buildHeaderCell('PATIENT ID', flex: 2),
-              _buildHeaderCell('NAME', flex: 3),
-              _buildHeaderCell('EMAIL', flex: 3),
+              _buildHeaderCell('NAME', flex: 2),
+              _buildHeaderCell('EMAIL', flex: 2),
+              _buildHeaderCell('EST. DELIVERY DATE', flex: 2),
               _buildHeaderCell('PATIENT TYPE', flex: 2),
               _buildHeaderCell('STATUS', flex: 2),
             ],
@@ -403,6 +407,7 @@ class _AdminPostnatalRecordsScreenState extends State<AdminPostnatalRecordsScree
             patient['patientId'] ?? 'N/A',
             patient['name'] ?? 'Unknown',
             patient['email'] ?? '',
+            patient['estimatedDeliveryDate'] ?? 'N/A',
             'POSTNATAL',
             'Active',
           );
@@ -430,6 +435,7 @@ class _AdminPostnatalRecordsScreenState extends State<AdminPostnatalRecordsScree
     String patientId,
     String name,
     String email,
+    String estimatedDeliveryDate,
     String patientType,
     String status,
   ) {
@@ -462,8 +468,9 @@ class _AdminPostnatalRecordsScreenState extends State<AdminPostnatalRecordsScree
           child: Row(
             children: [
               _buildTableCell(patientId, flex: 2),
-              _buildTableCell(name, flex: 3),
-              _buildTableCell(email, flex: 3),
+              _buildTableCell(name, flex: 2),
+              _buildTableCell(email, flex: 2),
+              _buildTableCell(estimatedDeliveryDate, flex: 2),
               _buildTableCell(patientType, flex: 2),
               Expanded(
                 flex: 2,

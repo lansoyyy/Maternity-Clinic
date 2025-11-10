@@ -83,7 +83,7 @@ class _PrenatalHistoryCheckupScreenState extends State<PrenatalHistoryCheckupScr
         QuerySnapshot appointmentSnapshot = await _firestore
             .collection('appointments')
             .where('userId', isEqualTo: user.uid)
-            .where('status', isEqualTo: 'Completed')
+            .where('status', whereIn: ['Completed', 'Rescheduled'])
             .get();
 
         List<Map<String, dynamic>> appointments = [];
@@ -492,7 +492,9 @@ class _PrenatalHistoryCheckupScreenState extends State<PrenatalHistoryCheckupScr
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.green.shade100,
+                  color: appointment['status'] == 'Rescheduled'
+                      ? Colors.blue.shade100
+                      : Colors.green.shade100,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -500,7 +502,9 @@ class _PrenatalHistoryCheckupScreenState extends State<PrenatalHistoryCheckupScr
                   style: TextStyle(
                     fontSize: 12,
                     fontFamily: 'Bold',
-                    color: Colors.green.shade700,
+                    color: appointment['status'] == 'Rescheduled'
+                        ? Colors.blue.shade700
+                        : Colors.green.shade700,
                   ),
                 ),
               ),
@@ -534,6 +538,8 @@ class _PrenatalHistoryCheckupScreenState extends State<PrenatalHistoryCheckupScr
                     const SizedBox(height: 8),
                     _buildInfoRow('Day:', appointment['day'] ?? 'N/A'),
                     _buildInfoRow('Time:', appointment['timeSlot'] ?? 'N/A'),
+                    if (appointment['rescheduledAt'] != null)
+                      _buildInfoRow('Rescheduled:', _formatDate(appointment['rescheduledAt'])),
                   ],
                 ),
               ),
@@ -636,6 +642,11 @@ class _PrenatalHistoryCheckupScreenState extends State<PrenatalHistoryCheckupScr
         ),
       ),
     );
+  }
+
+  String _formatDate(Timestamp timestamp) {
+    DateTime dateTime = timestamp.toDate();
+    return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
   }
 
   Widget _buildCheckupHistoryTable() {

@@ -227,6 +227,196 @@ class _AdminAppointmentSchedulingScreenState extends State<AdminAppointmentSched
     }
   }
 
+  Future<void> _rescheduleAppointment(String appointmentId, String patientName, Map<String, dynamic> currentAppointment) async {
+    // Show dialog to select new date and time
+    final TextEditingController newDayController = TextEditingController();
+    final TextEditingController newTimeController = TextEditingController();
+    String? selectedDay;
+    String? selectedTime;
+
+    // Available days and time slots
+    List<String> availableDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    List<String> availableTimeSlots = ['9:00 AM', '10:00 AM', '11:00 AM', '2:00 PM', '3:00 PM', '4:00 PM'];
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text(
+                'Reschedule Appointment',
+                style: const TextStyle(fontFamily: 'Bold'),
+              ),
+              content: SizedBox(
+                width: 400,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Patient: $patientName',
+                      style: const TextStyle(
+                        fontFamily: 'Regular',
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      'Current: ${currentAppointment['appointment']}',
+                      style: const TextStyle(fontFamily: 'Regular'),
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      'Select New Day:',
+                      style: TextStyle(
+                        fontFamily: 'Bold',
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: availableDays.map((day) {
+                        bool isSelected = selectedDay == day;
+                        return GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              selectedDay = day;
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: isSelected ? primary : Colors.grey.shade200,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              day,
+                              style: TextStyle(
+                                fontFamily: 'Regular',
+                                fontSize: 12,
+                                color: isSelected ? Colors.white : Colors.black87,
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      'Select New Time:',
+                      style: TextStyle(
+                        fontFamily: 'Bold',
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: availableTimeSlots.map((time) {
+                        bool isSelected = selectedTime == time;
+                        return GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              selectedTime = time;
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: isSelected ? primary : Colors.grey.shade200,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              time,
+                              style: TextStyle(
+                                fontFamily: 'Regular',
+                                fontSize: 12,
+                                color: isSelected ? Colors.white : Colors.black87,
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    'Cancel',
+                    style: TextStyle(color: Colors.grey.shade600, fontFamily: 'Regular'),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: selectedDay != null && selectedTime != null
+                      ? () async {
+                          Navigator.pop(context);
+                          await _updateAppointment(appointmentId, patientName, selectedDay!, selectedTime!);
+                        }
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primary,
+                  ),
+                  child: const Text(
+                    'Reschedule',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontFamily: 'Bold',
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _updateAppointment(String appointmentId, String patientName, String newDay, String newTime) async {
+    try {
+      await _firestore.collection('appointments').doc(appointmentId).update({
+        'day': newDay,
+        'timeSlot': newTime,
+        'rescheduledAt': FieldValue.serverTimestamp(),
+        'status': 'Rescheduled',
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Appointment for $patientName has been rescheduled to $newDay, $newTime',
+              style: const TextStyle(fontFamily: 'Regular'),
+            ),
+            backgroundColor: Colors.blue,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        _fetchAppointments(); // Refresh the list
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              'Failed to reschedule appointment',
+              style: TextStyle(fontFamily: 'Regular'),
+            ),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -544,10 +734,13 @@ class _AdminAppointmentSchedulingScreenState extends State<AdminAppointmentSched
     } else if (status == 'Accepted') {
       statusColor = Colors.green;
       statusIcon = Icons.check_circle;
+    } else if (status == 'Rescheduled') {
+      statusColor = Colors.blue;
+      statusIcon = Icons.event;
     } else if (status == 'Completed') {
       statusColor = Colors.green;
       statusIcon = Icons.check_circle;
-    }else {
+    } else {
       statusColor = Colors.red;
       statusIcon = Icons.cancel;
     }
@@ -600,6 +793,22 @@ class _AdminAppointmentSchedulingScreenState extends State<AdminAppointmentSched
                       ),
                     ),
                   ),
+                if (status == 'Accepted' || status == 'Rescheduled')
+                  TextButton(
+                    onPressed: () => _rescheduleAppointment(appointmentId, name, {
+                      'appointment': appointment,
+                      'day': appointment.split(', ')[0],
+                      'timeSlot': appointment.split(', ')[1],
+                    }),
+                    child: const Text(
+                      'Reschedule',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontFamily: 'Bold',
+                        color: Colors.orange,
+                      ),
+                    ),
+                  ),
                 if (status != 'Cancelled')
                   TextButton(
                     onPressed: () => _cancelAppointment(appointmentId, name),
@@ -612,7 +821,7 @@ class _AdminAppointmentSchedulingScreenState extends State<AdminAppointmentSched
                       ),
                     ),
                   ),
-                if (status == 'Accepted')
+                if (status == 'Accepted' || status == 'Rescheduled')
                   TextButton(
                     onPressed: () => _completeAppointment(appointmentId, name),
                     child: const Text(

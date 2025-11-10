@@ -15,9 +15,13 @@ class SignupScreen extends StatefulWidget {
 
 class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
+  final TextEditingController _contactNumberController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _ageController = TextEditingController();
+  final TextEditingController _estimatedDeliveryDateController = TextEditingController();
   String _selectedGender = 'PRENATAL';
   bool _isLoading = false;
   bool _obscurePassword = true;
@@ -27,9 +31,13 @@ class _SignupScreenState extends State<SignupScreen> {
   @override
   void dispose() {
     _emailController.dispose();
-    _nameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _contactNumberController.dispose();
+    _addressController.dispose();
     _passwordController.dispose();
     _ageController.dispose();
+    _estimatedDeliveryDateController.dispose();
     super.dispose();
   }
 
@@ -161,8 +169,20 @@ class _SignupScreenState extends State<SignupScreen> {
       _showErrorDialog('Please enter your email address');
       return;
     }
-    if (_nameController.text.trim().isEmpty) {
-      _showErrorDialog('Please enter your name');
+    if (_firstNameController.text.trim().isEmpty) {
+      _showErrorDialog('Please enter your first name');
+      return;
+    }
+    if (_lastNameController.text.trim().isEmpty) {
+      _showErrorDialog('Please enter your last name');
+      return;
+    }
+    if (_contactNumberController.text.trim().isEmpty) {
+      _showErrorDialog('Please enter your contact number');
+      return;
+    }
+    if (_addressController.text.trim().isEmpty) {
+      _showErrorDialog('Please enter your address');
       return;
     }
     if (_ageController.text.trim().isEmpty) {
@@ -172,6 +192,10 @@ class _SignupScreenState extends State<SignupScreen> {
     int? age = int.tryParse(_ageController.text.trim());
     if (age == null || age < 12 || age > 60) {
       _showErrorDialog('Please enter a valid age between 12 and 60');
+      return;
+    }
+    if (_estimatedDeliveryDateController.text.trim().isEmpty) {
+      _showErrorDialog('Please enter your estimated delivery date');
       return;
     }
     if (_passwordController.text.trim().isEmpty) {
@@ -197,9 +221,14 @@ class _SignupScreenState extends State<SignupScreen> {
       // Store user data in Firestore
       await _firestore.collection('users').doc(userCredential.user!.uid).set({
         'email': _emailController.text.trim(),
-        'name': _nameController.text.trim(),
+        'firstName': _firstNameController.text.trim(),
+        'lastName': _lastNameController.text.trim(),
+        'name': '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}',
+        'contactNumber': _contactNumberController.text.trim(),
+        'address': _addressController.text.trim(),
         'age': age,
         'patientType': _selectedGender,
+        'estimatedDeliveryDate': _estimatedDeliveryDateController.text.trim(),
         'createdAt': FieldValue.serverTimestamp(),
         'role': 'patient',
       });
@@ -458,11 +487,108 @@ class _SignupScreenState extends State<SignupScreen> {
           ),
           const SizedBox(height: 15),
 
-          // Name Field
+          // First Name Field
           TextField(
-            controller: _nameController,
+            controller: _firstNameController,
             decoration: InputDecoration(
-              hintText: 'Name',
+              hintText: 'First Name',
+              hintStyle: TextStyle(
+                color: Colors.grey.shade500,
+                fontFamily: 'Regular',
+                fontSize: 14,
+              ),
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 15,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: primary, width: 2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 15),
+
+          // Last Name Field
+          TextField(
+            controller: _lastNameController,
+            decoration: InputDecoration(
+              hintText: 'Last Name',
+              hintStyle: TextStyle(
+                color: Colors.grey.shade500,
+                fontFamily: 'Regular',
+                fontSize: 14,
+              ),
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 15,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: primary, width: 2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 15),
+
+          // Contact Number Field
+          TextField(
+            controller: _contactNumberController,
+            keyboardType: TextInputType.phone,
+            decoration: InputDecoration(
+              hintText: 'Contact Number',
+              hintStyle: TextStyle(
+                color: Colors.grey.shade500,
+                fontFamily: 'Regular',
+                fontSize: 14,
+              ),
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 15,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: primary, width: 2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 15),
+
+          // Address Field
+          TextField(
+            controller: _addressController,
+            decoration: InputDecoration(
+              hintText: 'Address',
               hintStyle: TextStyle(
                 color: Colors.grey.shade500,
                 fontFamily: 'Regular',
@@ -518,6 +644,59 @@ class _SignupScreenState extends State<SignupScreen> {
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide(color: primary, width: 2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 15),
+
+          // Estimated Delivery Date Field
+          TextField(
+            controller: _estimatedDeliveryDateController,
+            readOnly: true,
+            decoration: InputDecoration(
+              hintText: 'Estimated Delivery Date',
+              hintStyle: TextStyle(
+                color: Colors.grey.shade500,
+                fontFamily: 'Regular',
+                fontSize: 14,
+              ),
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 15,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: primary, width: 2),
+              ),
+              suffixIcon: IconButton(
+                icon: Icon(
+                  Icons.calendar_today,
+                  color: Colors.grey.shade600,
+                ),
+                onPressed: () async {
+                  DateTime? pickedDate = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now().add(const Duration(days: 280)), // Default to 40 weeks from now
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime.now().add(const Duration(days: 365)), // Up to 1 year from now
+                  );
+                  if (pickedDate != null) {
+                    String formattedDate = "${pickedDate.day.toString().padLeft(2, '0')}-${pickedDate.month.toString().padLeft(2, '0')}-${pickedDate.year}";
+                    setState(() {
+                      _estimatedDeliveryDateController.text = formattedDate;
+                    });
+                  }
+                },
               ),
             ),
           ),
