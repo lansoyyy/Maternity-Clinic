@@ -17,11 +17,11 @@ class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _lastNameController = TextEditingController();
-  final TextEditingController _contactNumberController = TextEditingController();
+  final TextEditingController _contactNumberController =
+      TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _ageController = TextEditingController();
-  final TextEditingController _estimatedDeliveryDateController = TextEditingController();
   String _selectedGender = 'PRENATAL';
   bool _isLoading = false;
   bool _obscurePassword = true;
@@ -37,7 +37,6 @@ class _SignupScreenState extends State<SignupScreen> {
     _addressController.dispose();
     _passwordController.dispose();
     _ageController.dispose();
-    _estimatedDeliveryDateController.dispose();
     super.dispose();
   }
 
@@ -194,10 +193,6 @@ class _SignupScreenState extends State<SignupScreen> {
       _showErrorDialog('Please enter a valid age between 12 and 60');
       return;
     }
-    if (_estimatedDeliveryDateController.text.trim().isEmpty) {
-      _showErrorDialog('Please enter your estimated delivery date');
-      return;
-    }
     if (_passwordController.text.trim().isEmpty) {
       _showErrorDialog('Please enter a password');
       return;
@@ -213,7 +208,8 @@ class _SignupScreenState extends State<SignupScreen> {
 
     try {
       // Create user with Firebase Auth
-      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+      UserCredential userCredential =
+          await _auth.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
@@ -223,12 +219,12 @@ class _SignupScreenState extends State<SignupScreen> {
         'email': _emailController.text.trim(),
         'firstName': _firstNameController.text.trim(),
         'lastName': _lastNameController.text.trim(),
-        'name': '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}',
+        'name':
+            '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}',
         'contactNumber': _contactNumberController.text.trim(),
         'address': _addressController.text.trim(),
         'age': age,
         'patientType': _selectedGender,
-        'estimatedDeliveryDate': _estimatedDeliveryDateController.text.trim(),
         'createdAt': FieldValue.serverTimestamp(),
         'role': 'patient',
       });
@@ -249,7 +245,7 @@ class _SignupScreenState extends State<SignupScreen> {
             behavior: SnackBarBehavior.floating,
           ),
         );
-        
+
         // Navigate back to login
         Navigator.pop(context);
       }
@@ -320,7 +316,6 @@ class _SignupScreenState extends State<SignupScreen> {
                 'assets/images/ultra sound.png',
                 'ULTRA SOUND',
               ),
-              
             ],
           ),
         ),
@@ -362,7 +357,6 @@ class _SignupScreenState extends State<SignupScreen> {
         _buildServiceItem('assets/images/ob-gyne.png', 'OB - GYNE'),
         const SizedBox(height: 20),
         _buildServiceItem('assets/images/ultra sound.png', 'ULTRA SOUND'),
-        
       ],
     );
   }
@@ -644,59 +638,6 @@ class _SignupScreenState extends State<SignupScreen> {
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide(color: primary, width: 2),
-              ),
-            ),
-          ),
-          const SizedBox(height: 15),
-
-          // Estimated Delivery Date Field
-          TextField(
-            controller: _estimatedDeliveryDateController,
-            readOnly: true,
-            decoration: InputDecoration(
-              hintText: 'Estimated Delivery Date',
-              hintStyle: TextStyle(
-                color: Colors.grey.shade500,
-                fontFamily: 'Regular',
-                fontSize: 14,
-              ),
-              filled: true,
-              fillColor: Colors.white,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 15,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.grey.shade300),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.grey.shade300),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: primary, width: 2),
-              ),
-              suffixIcon: IconButton(
-                icon: Icon(
-                  Icons.calendar_today,
-                  color: Colors.grey.shade600,
-                ),
-                onPressed: () async {
-                  DateTime? pickedDate = await showDatePicker(
-                    context: context,
-                    initialDate: DateTime.now().add(const Duration(days: 280)), // Default to 40 weeks from now
-                    firstDate: DateTime.now(),
-                    lastDate: DateTime.now().add(const Duration(days: 365)), // Up to 1 year from now
-                  );
-                  if (pickedDate != null) {
-                    String formattedDate = "${pickedDate.day.toString().padLeft(2, '0')}-${pickedDate.month.toString().padLeft(2, '0')}-${pickedDate.year}";
-                    setState(() {
-                      _estimatedDeliveryDateController.text = formattedDate;
-                    });
-                  }
-                },
               ),
             ),
           ),
