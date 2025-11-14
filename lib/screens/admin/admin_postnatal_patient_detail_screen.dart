@@ -11,10 +11,12 @@ class AdminPostnatalPatientDetailScreen extends StatefulWidget {
   });
 
   @override
-  State<AdminPostnatalPatientDetailScreen> createState() => _AdminPostnatalPatientDetailScreenState();
+  State<AdminPostnatalPatientDetailScreen> createState() =>
+      _AdminPostnatalPatientDetailScreenState();
 }
 
-class _AdminPostnatalPatientDetailScreenState extends State<AdminPostnatalPatientDetailScreen> {
+class _AdminPostnatalPatientDetailScreenState
+    extends State<AdminPostnatalPatientDetailScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   List<Map<String, dynamic>> _appointments = [];
   bool _isLoading = true;
@@ -40,7 +42,7 @@ class _AdminPostnatalPatientDetailScreenState extends State<AdminPostnatalPatien
         appointment['id'] = doc.id;
         appointments.add(appointment);
       }
-      
+
       if (mounted) {
         setState(() {
           _appointments = appointments;
@@ -71,54 +73,54 @@ class _AdminPostnatalPatientDetailScreenState extends State<AdminPostnatalPatien
             child: _isLoading
                 ? Center(child: CircularProgressIndicator(color: primary))
                 : SingleChildScrollView(
-              padding: const EdgeInsets.all(30),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Back Button
-                  Row(
-                    children: [
-                      IconButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                        icon: const Icon(Icons.arrow_back, size: 28),
-                        color: Colors.black87,
-                        tooltip: 'Back to Records',
-                      ),
-                      const SizedBox(width: 10),
-                      const Text(
-                        'Patient Details',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontFamily: 'Bold',
-                          color: Colors.black87,
+                    padding: const EdgeInsets.all(30),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Back Button
+                        Row(
+                          children: [
+                            IconButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+                              },
+                              icon: const Icon(Icons.arrow_back, size: 28),
+                              color: Colors.black87,
+                              tooltip: 'Back to Records',
+                            ),
+                            const SizedBox(width: 10),
+                            const Text(
+                              'Patient Details',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontFamily: 'Bold',
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
+                        const SizedBox(height: 20),
 
-                  // Top Section - Information Cards
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(child: _buildPatientInfoCard()),
-                      const SizedBox(width: 20),
-                      Expanded(child: _buildObstetricHistoryCard()),
-                      const SizedBox(width: 20),
-                      Expanded(child: _buildMedicalHistoryCard()),
-                      const SizedBox(width: 20),
-                      Expanded(child: _buildLaboratoryResultsCard()),
-                    ],
-                  ),
-                  const SizedBox(height: 30),
+                        // Top Section - Information Cards
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(child: _buildPatientInfoCard()),
+                            const SizedBox(width: 20),
+                            Expanded(child: _buildObstetricHistoryCard()),
+                            const SizedBox(width: 20),
+                            Expanded(child: _buildMedicalHistoryCard()),
+                            const SizedBox(width: 20),
+                            Expanded(child: _buildLaboratoryResultsCard()),
+                          ],
+                        ),
+                        const SizedBox(height: 30),
 
-                  // Checkup History Table
-                  _buildCheckupHistoryTable(),
-                ],
-              ),
-            ),
+                        // Checkup History Table
+                        _buildCheckupHistoryTable(),
+                      ],
+                    ),
+                  ),
           ),
         ],
       ),
@@ -182,7 +184,8 @@ class _AdminPostnatalPatientDetailScreenState extends State<AdminPostnatalPatien
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
           decoration: BoxDecoration(
-            color: isActive ? Colors.white.withOpacity(0.2) : Colors.transparent,
+            color:
+                isActive ? Colors.white.withOpacity(0.2) : Colors.transparent,
             border: Border(
               left: BorderSide(
                 color: isActive ? Colors.white : Colors.transparent,
@@ -223,11 +226,14 @@ class _AdminPostnatalPatientDetailScreenState extends State<AdminPostnatalPatien
             ),
           ),
           const SizedBox(height: 15),
-          if (widget.patientData['patientId'] != null && widget.patientData['patientId']!.isNotEmpty)
+          if (widget.patientData['patientId'] != null &&
+              widget.patientData['patientId']!.isNotEmpty)
             _buildInfoRow('Patient ID:', widget.patientData['patientId']!),
-          if (widget.patientData['name'] != null && widget.patientData['name']!.isNotEmpty)
+          if (widget.patientData['name'] != null &&
+              widget.patientData['name']!.isNotEmpty)
             _buildInfoRow('Name:', widget.patientData['name']!),
-          if (widget.patientData['email'] != null && widget.patientData['email']!.isNotEmpty)
+          if (widget.patientData['email'] != null &&
+              widget.patientData['email']!.isNotEmpty)
             _buildInfoRow('Email:', widget.patientData['email']!),
           const SizedBox(height: 10),
           Text(
@@ -246,10 +252,13 @@ class _AdminPostnatalPatientDetailScreenState extends State<AdminPostnatalPatien
 
   Widget _buildObstetricHistoryCard() {
     int totalAppointments = _appointments.length;
-    int pendingCount = _appointments.where((a) => a['status'] == 'Pending').length;
-    int acceptedCount = _appointments.where((a) => a['status'] == 'Accepted').length;
-    int completedCount = _appointments.where((a) => a['status'] == 'Completed').length;
-    
+    int pendingCount =
+        _appointments.where((a) => a['status'] == 'Pending').length;
+    int acceptedCount =
+        _appointments.where((a) => a['status'] == 'Accepted').length;
+    int completedCount =
+        _appointments.where((a) => a['status'] == 'Completed').length;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -292,18 +301,20 @@ class _AdminPostnatalPatientDetailScreenState extends State<AdminPostnatalPatien
     // Get latest appointment if exists
     String latestAppointment = 'No appointments';
     String nextAppointment = 'No upcoming appointments';
-    
+
     if (_appointments.isNotEmpty) {
       var latest = _appointments.first;
       latestAppointment = _formatDate(latest['createdAt']);
-      
+
       // Find next accepted appointment
-      var upcoming = _appointments.where((a) => a['status'] == 'Accepted').toList();
+      var upcoming =
+          _appointments.where((a) => a['status'] == 'Accepted').toList();
       if (upcoming.isNotEmpty) {
-        nextAppointment = '${upcoming.first['day']} - ${upcoming.first['timeSlot']}';
+        nextAppointment =
+            '${upcoming.first['day']} - ${upcoming.first['timeSlot']}';
       }
     }
-    
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -340,9 +351,10 @@ class _AdminPostnatalPatientDetailScreenState extends State<AdminPostnatalPatien
   }
 
   Widget _buildLaboratoryResultsCard() {
-    int cancelledCount = _appointments.where((a) => a['status'] == 'Cancelled').length;
+    int cancelledCount =
+        _appointments.where((a) => a['status'] == 'Cancelled').length;
     String accountStatus = 'Active';
-    
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -364,7 +376,8 @@ class _AdminPostnatalPatientDetailScreenState extends State<AdminPostnatalPatien
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: accountStatus == 'Active' ? Colors.green : Colors.grey,
                   borderRadius: BorderRadius.circular(20),
@@ -439,7 +452,8 @@ class _AdminPostnatalPatientDetailScreenState extends State<AdminPostnatalPatien
         child: Center(
           child: Column(
             children: [
-              Icon(Icons.event_note_outlined, size: 60, color: Colors.grey.shade400),
+              Icon(Icons.event_note_outlined,
+                  size: 60, color: Colors.grey.shade400),
               const SizedBox(height: 20),
               const Text(
                 'No Appointment Records',
@@ -499,13 +513,23 @@ class _AdminPostnatalPatientDetailScreenState extends State<AdminPostnatalPatien
           ..._appointments.asMap().entries.map((entry) {
             int index = entry.key;
             Map<String, dynamic> appointment = entry.value;
-            return _buildAppointmentRow(
-              (index + 1).toString(),
-              _formatDate(appointment['createdAt']),
-              appointment['day'] ?? 'N/A',
-              appointment['timeSlot'] ?? 'N/A',
-              appointment['status'] ?? 'Pending',
-              appointment['patientType'] ?? 'POSTNATAL',
+            return Column(
+              children: [
+                _buildAppointmentRow(
+                  (index + 1).toString(),
+                  _formatDate(appointment['createdAt']),
+                  appointment['appointmentDate'] != null
+                      ? _formatDate(appointment['appointmentDate'])
+                      : appointment['day'] ?? 'N/A',
+                  appointment['timeSlot'] ?? 'N/A',
+                  appointment['status'] ?? 'Pending',
+                  appointment['patientType'] ?? 'POSTNATAL',
+                  appointment,
+                ),
+                if (appointment['status'] == 'Accepted' ||
+                    appointment['status'] == 'Completed')
+                  _buildDetailedAppointmentView(appointment),
+              ],
             );
           }).toList(),
         ],
@@ -545,6 +569,7 @@ class _AdminPostnatalPatientDetailScreenState extends State<AdminPostnatalPatien
     String timeSlot,
     String status,
     String patientType,
+    Map<String, dynamic> appointment,
   ) {
     Color statusColor;
     if (status == 'Pending') {
@@ -601,6 +626,144 @@ class _AdminPostnatalPatientDetailScreenState extends State<AdminPostnatalPatien
           color: Colors.grey.shade700,
         ),
         textAlign: TextAlign.center,
+      ),
+    );
+  }
+
+  Widget _buildDetailedAppointmentView(Map<String, dynamic> appointment) {
+    return Container(
+      margin: const EdgeInsets.only(top: 10),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.purple.shade50,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.purple.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Appointment Details',
+            style: TextStyle(
+              fontSize: 16,
+              fontFamily: 'Bold',
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 15),
+
+          // Basic Information
+          _buildDetailRow('Full Name:', appointment['fullName'] ?? 'N/A'),
+          _buildDetailRow(
+              'Appointment Type:', appointment['appointmentType'] ?? 'N/A'),
+          _buildDetailRow(
+              'Delivery Date:',
+              appointment['deliveryDate'] != null
+                  ? _formatDate(appointment['deliveryDate'])
+                  : 'N/A'),
+          _buildDetailRow(
+              'Delivery Type:', appointment['deliveryType'] ?? 'N/A'),
+
+          const SizedBox(height: 10),
+          const Text(
+            'Infant Information:',
+            style: TextStyle(
+              fontSize: 14,
+              fontFamily: 'Bold',
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 5),
+          _buildDetailRow('Infant Name:', appointment['infantName'] ?? 'N/A'),
+          _buildDetailRow(
+              'Infant Gender:', appointment['infantGender'] ?? 'N/A'),
+          _buildDetailRow('Infant Age:', appointment['infantAge'] ?? 'N/A'),
+
+          const SizedBox(height: 10),
+          const Text(
+            'Health Assessment:',
+            style: TextStyle(
+              fontSize: 14,
+              fontFamily: 'Bold',
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 5),
+          _buildDetailRow('Incision Concern:',
+              appointment['incisionConcern'] == true ? 'Yes' : 'No'),
+          _buildDetailRow('Heavy Bleeding:',
+              appointment['heavyBleeding'] == true ? 'Yes' : 'No'),
+          _buildDetailRow(
+              'Depressed:', appointment['depressed'] == true ? 'Yes' : 'No'),
+          _buildDetailRow(
+              'No Pleasure:', appointment['noPleasure'] == true ? 'Yes' : 'No'),
+
+          const SizedBox(height: 10),
+          const Text(
+            'Infant Feeding:',
+            style: TextStyle(
+              fontSize: 14,
+              fontFamily: 'Bold',
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 5),
+          _buildDetailRow(
+              'Feeding Method:', appointment['feedingMethod'] ?? 'N/A'),
+          _buildDetailRow('Feeding Concern:',
+              appointment['feedingConcern'] == true ? 'Yes' : 'No'),
+          _buildDetailRow('Infant Fever:',
+              appointment['infantFever'] == true ? 'Yes' : 'No'),
+          _buildDetailRow(
+              'Few Diapers:', appointment['fewDiapers'] == true ? 'Yes' : 'No'),
+
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _buildDetailRow(
+                    'Current Weight:', '${appointment['weight'] ?? 'N/A'} kg'),
+              ),
+              const SizedBox(width: 20),
+              Expanded(
+                child: _buildDetailRow('Blood Pressure:',
+                    '${appointment['bloodPressure'] ?? 'N/A'} mmHg'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 140,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 12,
+                fontFamily: 'Bold',
+                color: Colors.black87,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 12,
+                fontFamily: 'Regular',
+                color: Colors.grey.shade700,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

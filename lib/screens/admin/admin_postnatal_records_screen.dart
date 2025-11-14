@@ -20,10 +20,12 @@ class AdminPostnatalRecordsScreen extends StatefulWidget {
   });
 
   @override
-  State<AdminPostnatalRecordsScreen> createState() => _AdminPostnatalRecordsScreenState();
+  State<AdminPostnatalRecordsScreen> createState() =>
+      _AdminPostnatalRecordsScreenState();
 }
 
-class _AdminPostnatalRecordsScreenState extends State<AdminPostnatalRecordsScreen> {
+class _AdminPostnatalRecordsScreenState
+    extends State<AdminPostnatalRecordsScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final TextEditingController _searchController = TextEditingController();
   String _selectedFilter = 'ACTIVE';
@@ -51,9 +53,9 @@ class _AdminPostnatalRecordsScreenState extends State<AdminPostnatalRecordsScree
         // Only include fields that have actual data
         Map<String, dynamic> patient = {
           'id': doc.id,
-          'patientId': data['patientId'] ?? doc.id,
+          'patientId': data['patientId'] ?? _generatePatientId(doc.id),
         };
-        
+
         // Only add fields if they exist and are not empty
         if (data['name'] != null && data['name'].toString().isNotEmpty) {
           patient['name'] = data['name'];
@@ -64,14 +66,13 @@ class _AdminPostnatalRecordsScreenState extends State<AdminPostnatalRecordsScree
         if (data['age'] != null && data['age'].toString().isNotEmpty) {
           patient['age'] = data['age'].toString();
         }
-        if (data['deliveryType'] != null && data['deliveryType'].toString().isNotEmpty) {
+        if (data['deliveryType'] != null &&
+            data['deliveryType'].toString().isNotEmpty) {
           patient['deliveryType'] = data['deliveryType'];
         }
-        if (data['dateOfDelivery'] != null && data['dateOfDelivery'].toString().isNotEmpty) {
+        if (data['dateOfDelivery'] != null &&
+            data['dateOfDelivery'].toString().isNotEmpty) {
           patient['dateOfDelivery'] = data['dateOfDelivery'];
-        }
-        if (data['estimatedDeliveryDate'] != null && data['estimatedDeliveryDate'].toString().isNotEmpty) {
-          patient['estimatedDeliveryDate'] = data['estimatedDeliveryDate'];
         }
         if (data['address'] != null && data['address'].toString().isNotEmpty) {
           patient['address'] = data['address'];
@@ -79,10 +80,26 @@ class _AdminPostnatalRecordsScreenState extends State<AdminPostnatalRecordsScree
         if (data['phone'] != null && data['phone'].toString().isNotEmpty) {
           patient['contact'] = data['phone'];
         }
-        if (data['contactNumber'] != null && data['contactNumber'].toString().isNotEmpty) {
+        if (data['contactNumber'] != null &&
+            data['contactNumber'].toString().isNotEmpty) {
           patient['contact'] = data['contactNumber'];
         }
-        
+
+        // Fetch latest appointment data
+        final appointmentSnapshot = await _firestore
+            .collection('appointments')
+            .where('userId', isEqualTo: doc.id)
+            .where('appointmentType', isEqualTo: 'Postnatal Checkup')
+            .orderBy('appointmentDate', descending: true)
+            .limit(1)
+            .get();
+
+        if (appointmentSnapshot.docs.isNotEmpty) {
+          final appointmentData = appointmentSnapshot.docs.first.data();
+          patient['latestAppointment'] = appointmentData;
+          patient['latestAppointmentId'] = appointmentSnapshot.docs.first.id;
+        }
+
         patients.add(patient);
       }
 
@@ -104,11 +121,192 @@ class _AdminPostnatalRecordsScreenState extends State<AdminPostnatalRecordsScree
     }
   }
 
+  String _generatePatientId(String docId) {
+    // Generate pattern: PNL 2 2025 - 0001 (2 for postnatal)
+    final currentYear = DateTime.now().year;
+    final hash = docId.hashCode.abs();
+    final sequence = (hash % 9999) + 1;
+    return 'PNL 2 $currentYear - ${sequence.toString().padLeft(4, '0')}';
+  }
+
+  String _calculatePostpartumPeriod(String deliveryDate) {
+    try {
+      final parts = deliveryDate.split('/');
+      if (parts.length == 3) {
+        final month = int.parse(parts[0]);
+        final day = int.parse(parts[1]);
+        final year = int.parse(parts[2]);
+        final delivery = DateTime(year, month, day);
+        final now = DateTime.now();
+        final difference = now.difference(delivery);
+        final days = difference.inDays;
+        final weeks = days ~/ 7;
+        final remainingDays = days % 7;
+
+        if (weeks > 0) {
+          return 'Postpartum Week $weeks, Day $remainingDays';
+        } else {
+          return 'Postpartum Day $days';
+        }
+      }
+    } catch (e) {
+      print('Error calculating postpartum period: $e');
+    }
+    return 'N/A';
+  }
+
+  String _assessPostnatalRiskStatus(Map<String, dynamic> patient) {
+    final appointment = patient['latestAppointment'] as Map<String, dynamic>?;
+    if (appointment == null) return 'LOW RISK';
+
+    // Check HIGH RISK criteria
+    bool highRisk = false;
+
+    // Mother: Heavy Bleeding/Discharge
+    if (appointment['heavyBleedingDischarge'] == 'YES') {
+      highRisk = true;
+    }
+
+    // Mother: BP Concern (140/90 or higher)
+    final bp = appointment['currentBloodPressure']?.toString() ?? '';
+    if (bp.contains('/')) {
+      final parts = bp.split('/');
+      final systolic = int.tryParse(parts[0]) ?? 0;
+      final diastolic = int.tryParse(parts[1]) ?? 0;
+      if (systolic >= 140 || diastolic >= 90) {
+        highRisk = true;
+      }
+    }
+
+    // Infant: Fever
+    if (appointment['infantFever'] == 'YES') {
+      highRisk = true;
+    }
+
+    if (highRisk) return 'HIGH RISK';
+
+    // Check CAUTION criteria (only if not already HIGH RISK)
+    bool caution = false;
+
+    // Mother: Mental Health(Depression)
+    if (appointment['maternalMentalHealth'] == 'YES') {
+      caution = true;
+    }
+
+    // Mother: Wound Concern
+    if (appointment['maternalWoundConcern'] == 'YES') {
+      caution = true;
+    }
+
+    // Infant: Feeding/Weight Concern
+    if (appointment['infantFeedingWeightConcern'] == 'YES') {
+      caution = true;
+    }
+
+    // Infant: Hydration
+    if (appointment['infantHydration'] == 'YES') {
+      caution = true;
+    }
+
+    if (caution) return 'CAUTION';
+
+    return 'LOW RISK';
+  }
+
+  Color _getRiskColor(String riskStatus) {
+    switch (riskStatus) {
+      case 'HIGH RISK':
+        return Colors.red;
+      case 'CAUTION':
+        return Colors.orange;
+      default:
+        return Colors.green;
+    }
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return Colors.orange;
+      case 'accepted':
+        return Colors.green;
+      case 'completed':
+        return Colors.blue;
+      case 'cancelled':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  Future<void> _rescheduleAppointment(
+      String appointmentId, String patientName) async {
+    // Implement reschedule dialog similar to admin appointment scheduling screen
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content:
+            Text('Reschedule feature for $patientName - To be implemented'),
+        backgroundColor: Colors.orange,
+      ),
+    );
+  }
+
+  Future<void> _completeAppointment(
+      String appointmentId, String patientName) async {
+    try {
+      await _firestore.collection('appointments').doc(appointmentId).update({
+        'status': 'Completed',
+        'completedAt': FieldValue.serverTimestamp(),
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Appointment for $patientName marked as completed'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      _fetchPatients(); // Refresh list
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to complete appointment: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<String> _getLastAppointmentDate(String patientId) async {
+    try {
+      final appointmentsSnapshot = await _firestore
+          .collection('appointments')
+          .where('patientId', isEqualTo: patientId)
+          .where('appointmentType', isEqualTo: 'Postnatal Checkup')
+          .orderBy('appointmentDate', descending: true)
+          .limit(1)
+          .get();
+
+      if (appointmentsSnapshot.docs.isNotEmpty) {
+        final appointmentData = appointmentsSnapshot.docs.first.data();
+        final timestamp = appointmentData['appointmentDate'] as Timestamp?;
+        if (timestamp != null) {
+          final date = timestamp.toDate();
+          return '${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}/${date.year}';
+        }
+      }
+      return 'No appointments';
+    } catch (e) {
+      print('Error fetching last appointment: $e');
+      return 'Error';
+    }
+  }
+
   void _filterPatients() {
     String query = _searchController.text.toLowerCase();
     setState(() {
       _filteredPatients = _patients.where((patient) {
-        bool matchesSearch = patient['name']?.toString().toLowerCase().contains(query) ?? false;
+        bool matchesSearch =
+            patient['name']?.toString().toLowerCase().contains(query) ?? false;
         return matchesSearch;
       }).toList();
     });
@@ -211,7 +409,8 @@ class _AdminPostnatalRecordsScreenState extends State<AdminPostnatalRecordsScree
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: _isLoading
-                          ? Center(child: CircularProgressIndicator(color: primary))
+                          ? Center(
+                              child: CircularProgressIndicator(color: primary))
                           : _filteredPatients.isEmpty
                               ? const Center(
                                   child: Text(
@@ -305,7 +504,8 @@ class _AdminPostnatalRecordsScreenState extends State<AdminPostnatalRecordsScree
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
           decoration: BoxDecoration(
-            color: isActive ? Colors.white.withOpacity(0.2) : Colors.transparent,
+            color:
+                isActive ? Colors.white.withOpacity(0.2) : Colors.transparent,
             border: Border(
               left: BorderSide(
                 color: isActive ? Colors.white : Colors.transparent,
@@ -394,28 +594,26 @@ class _AdminPostnatalRecordsScreenState extends State<AdminPostnatalRecordsScree
           ),
           child: Row(
             children: [
-              _buildHeaderCell('PATIENT ID', flex: 2),
-              _buildHeaderCell('NAME', flex: 2),
-              _buildHeaderCell('EMAIL', flex: 2),
-              _buildHeaderCell('CONTACT NO.', flex: 2),
-              _buildHeaderCell('EST. DELIVERY DATE', flex: 2),
-              _buildHeaderCell('PATIENT TYPE', flex: 2),
-              _buildHeaderCell('STATUS', flex: 2),
+              _buildHeaderCell('PATIENT ID', flex: 1),
+              _buildHeaderCell("MOTHER'S NAME", flex: 2),
+              _buildHeaderCell("INFANT'S NAME", flex: 2),
+              _buildHeaderCell('APPOINTMENT DATE/TIME', flex: 2),
+              _buildHeaderCell('POSTPARTUM PERIOD', flex: 2),
+              _buildHeaderCell('DATE OF DELIVERY', flex: 2),
+              _buildHeaderCell('DELIVERY TYPE', flex: 2),
+              _buildHeaderCell("INFANT'S GENDER", flex: 1),
+              _buildHeaderCell('FEEDING METHOD', flex: 2),
+              _buildHeaderCell("MOTHER'S BP", flex: 1),
+              _buildHeaderCell('RISK STATUS', flex: 2),
+              _buildHeaderCell('APPOINTMENT STATUS', flex: 2),
+              _buildHeaderCell('ACTIONS', flex: 2),
             ],
           ),
         ),
 
         // Table Rows
         ..._filteredPatients.map((patient) {
-          return _buildTableRow(
-            patient['patientId'] ?? 'N/A',
-            patient['name'] ?? 'Unknown',
-            patient['email'] ?? '',
-            patient['contact'] ?? 'N/A',
-            patient['estimatedDeliveryDate'] ?? 'N/A',
-            'POSTNATAL',
-            'Active',
-          );
+          return _buildTableRow(patient);
         }).toList(),
       ],
     );
@@ -436,17 +634,43 @@ class _AdminPostnatalRecordsScreenState extends State<AdminPostnatalRecordsScree
     );
   }
 
-  Widget _buildTableRow(
-    String patientId,
-    String name,
-    String email,
-    String contactNumber,
-    String estimatedDeliveryDate,
-    String patientType,
-    String status,
-  ) {
-    Color statusColor = status == 'Active' ? Colors.green : Colors.grey;
-    
+  Widget _buildTableRow(Map<String, dynamic> patient) {
+    String patientId = patient['patientId'] ?? 'N/A';
+    String mothersName = patient['name'] ?? 'Unknown';
+
+    final appointment = patient['latestAppointment'] as Map<String, dynamic>?;
+    final appointmentId = patient['latestAppointmentId'] as String?;
+
+    // Appointment details
+    String appointmentDate = 'N/A';
+    String timeSlot = 'N/A';
+    String appointmentStatus = appointment?['status'] ?? 'No Appointment';
+    String infantsName = appointment?['infantsName'] ?? 'N/A';
+    String infantGender = appointment?['infantsGender'] ?? 'N/A';
+    String feedingMethod = appointment?['infantFeedingMethod'] ?? 'N/A';
+    String mothersBP = appointment?['currentBloodPressure'] ?? 'N/A';
+
+    if (appointment != null && appointment['appointmentDate'] != null) {
+      final timestamp = appointment['appointmentDate'] as Timestamp;
+      final date = timestamp.toDate();
+      appointmentDate =
+          '${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}/${date.year}';
+      timeSlot = appointment['timeSlot'] ?? 'N/A';
+    }
+
+    // Postpartum period calculation
+    String postpartumPeriod = 'N/A';
+    String deliveryDate = patient['dateOfDelivery'] ?? 'N/A';
+    String deliveryType = patient['deliveryType'] ?? 'N/A';
+
+    if (deliveryDate != 'N/A') {
+      postpartumPeriod = _calculatePostpartumPeriod(deliveryDate);
+    }
+
+    // Risk assessment
+    final riskStatus = _assessPostnatalRiskStatus(patient);
+    final riskColor = _getRiskColor(riskStatus);
+
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
@@ -455,17 +679,14 @@ class _AdminPostnatalRecordsScreenState extends State<AdminPostnatalRecordsScree
             context,
             MaterialPageRoute(
               builder: (context) => AdminPostnatalPatientDetailScreen(
-                patientData: {
-                  'patientId': patientId,
-                  'name': name,
-                  'email': email,
-                },
+                patientData: patient
+                    .map((key, value) => MapEntry(key, value.toString())),
               ),
             ),
           );
         },
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 15),
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(color: Colors.grey.shade200),
@@ -473,24 +694,89 @@ class _AdminPostnatalRecordsScreenState extends State<AdminPostnatalRecordsScree
           ),
           child: Row(
             children: [
-              _buildTableCell(patientId, flex: 2),
-              _buildTableCell(name, flex: 2),
-              _buildTableCell(email, flex: 2),
-              _buildTableCell(contactNumber, flex: 2),
-              _buildTableCell(estimatedDeliveryDate, flex: 2),
-              _buildTableCell(patientType, flex: 2),
+              _buildTableCell(patientId, flex: 1),
+              _buildTableCell(mothersName, flex: 2),
+              _buildTableCell(infantsName, flex: 2),
+              _buildTableCell('$appointmentDate\n$timeSlot', flex: 2),
+              _buildTableCell(postpartumPeriod, flex: 2),
+              _buildTableCell(deliveryDate, flex: 2),
+              _buildTableCell(deliveryType, flex: 2),
+              _buildTableCell(infantGender, flex: 1),
+              _buildTableCell(feedingMethod, flex: 2),
+              _buildTableCell(mothersBP, flex: 1),
               Expanded(
                 flex: 2,
                 child: Center(
-                  child: Text(
-                    status,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontFamily: 'Bold',
-                      color: statusColor,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: riskColor.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: riskColor),
                     ),
-                    textAlign: TextAlign.center,
+                    child: Text(
+                      riskStatus,
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontFamily: 'Bold',
+                        color: riskColor,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
+                ),
+              ),
+              Expanded(
+                flex: 2,
+                child: Center(
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                    decoration: BoxDecoration(
+                      color:
+                          _getStatusColor(appointmentStatus).withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(10),
+                      border:
+                          Border.all(color: _getStatusColor(appointmentStatus)),
+                    ),
+                    child: Text(
+                      appointmentStatus,
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontFamily: 'Bold',
+                        color: _getStatusColor(appointmentStatus),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                flex: 2,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (appointmentId != null &&
+                        appointmentStatus == 'Accepted') ...[
+                      IconButton(
+                        icon: const Icon(Icons.schedule,
+                            size: 14, color: Colors.orange),
+                        onPressed: () =>
+                            _rescheduleAppointment(appointmentId, mothersName),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.check_circle,
+                            size: 14, color: Colors.green),
+                        onPressed: () =>
+                            _completeAppointment(appointmentId, mothersName),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ],
+                  ],
                 ),
               ),
             ],

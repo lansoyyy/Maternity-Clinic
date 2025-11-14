@@ -11,17 +11,19 @@ import '../widgets/book_appointment_dialog.dart';
 
 class NotificationAppointmentScreen extends StatefulWidget {
   final String patientType; // 'PRENATAL' or 'POSTNATAL'
-  
+
   const NotificationAppointmentScreen({
     super.key,
     required this.patientType,
   });
 
   @override
-  State<NotificationAppointmentScreen> createState() => _NotificationAppointmentScreenState();
+  State<NotificationAppointmentScreen> createState() =>
+      _NotificationAppointmentScreenState();
 }
 
-class _NotificationAppointmentScreenState extends State<NotificationAppointmentScreen> {
+class _NotificationAppointmentScreenState
+    extends State<NotificationAppointmentScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   String _userName = 'Loading...';
@@ -39,13 +41,12 @@ class _NotificationAppointmentScreenState extends State<NotificationAppointmentS
     try {
       User? user = _auth.currentUser;
       if (user != null) {
-        DocumentSnapshot userDoc = await _firestore
-            .collection('users')
-            .doc(user.uid)
-            .get();
-        
+        DocumentSnapshot userDoc =
+            await _firestore.collection('users').doc(user.uid).get();
+
         if (userDoc.exists) {
-          Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+          Map<String, dynamic> userData =
+              userDoc.data() as Map<String, dynamic>;
           if (mounted) {
             setState(() {
               _userName = userData['name'] ?? 'User';
@@ -74,7 +75,8 @@ class _NotificationAppointmentScreenState extends State<NotificationAppointmentS
             .where('userId', isEqualTo: user.uid)
             .get();
 
-        print('Appointments found for current user: ${appointmentSnapshot.docs.length}');
+        print(
+            'Appointments found for current user: ${appointmentSnapshot.docs.length}');
 
         List<Map<String, dynamic>> appointments = [];
         for (var doc in appointmentSnapshot.docs) {
@@ -121,7 +123,7 @@ class _NotificationAppointmentScreenState extends State<NotificationAppointmentS
               patientType: widget.patientType,
             ),
           );
-          
+
           // Refresh appointments if booking was successful
           if (result == true) {
             _loadUserAppointments();
@@ -213,9 +215,9 @@ class _NotificationAppointmentScreenState extends State<NotificationAppointmentS
                     )
                   else
                     ..._appointments.map((appointment) => Padding(
-                      padding: const EdgeInsets.only(bottom: 20),
-                      child: _buildAppointmentCard(appointment),
-                    )),
+                          padding: const EdgeInsets.only(bottom: 20),
+                          child: _buildAppointmentCard(appointment),
+                        )),
                 ],
               ),
             ),
@@ -292,7 +294,8 @@ class _NotificationAppointmentScreenState extends State<NotificationAppointmentS
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
           decoration: BoxDecoration(
-            color: isActive ? Colors.white.withOpacity(0.2) : Colors.transparent,
+            color:
+                isActive ? Colors.white.withOpacity(0.2) : Colors.transparent,
             border: Border(
               left: BorderSide(
                 color: isActive ? Colors.white : Colors.transparent,
@@ -320,12 +323,14 @@ class _NotificationAppointmentScreenState extends State<NotificationAppointmentS
         if (widget.patientType == 'PRENATAL') {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const PrenatalDashboardScreen()),
+            MaterialPageRoute(
+                builder: (context) => const PrenatalDashboardScreen()),
           );
         } else {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const PostnatalDashboardScreen()),
+            MaterialPageRoute(
+                builder: (context) => const PostnatalDashboardScreen()),
           );
         }
         break;
@@ -333,12 +338,14 @@ class _NotificationAppointmentScreenState extends State<NotificationAppointmentS
         if (widget.patientType == 'PRENATAL') {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const PrenatalHistoryCheckupScreen()),
+            MaterialPageRoute(
+                builder: (context) => const PrenatalHistoryCheckupScreen()),
           );
         } else {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const PostnatalHistoryCheckupScreen()),
+            MaterialPageRoute(
+                builder: (context) => const PostnatalHistoryCheckupScreen()),
           );
         }
         break;
@@ -348,7 +355,9 @@ class _NotificationAppointmentScreenState extends State<NotificationAppointmentS
       case 'TRANSFER OF\nRECORD REQUEST':
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => TransferRecordRequestScreen(patientType: widget.patientType)),
+          MaterialPageRoute(
+              builder: (context) =>
+                  TransferRecordRequestScreen(patientType: widget.patientType)),
         );
         break;
     }
@@ -398,7 +407,8 @@ class _NotificationAppointmentScreenState extends State<NotificationAppointmentS
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
@@ -414,7 +424,8 @@ class _NotificationAppointmentScreenState extends State<NotificationAppointmentS
               ),
               const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: statusColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
@@ -447,7 +458,7 @@ class _NotificationAppointmentScreenState extends State<NotificationAppointmentS
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${appointment['day'] ?? 'Unknown Day'}, ${appointment['timeSlot'] ?? 'Unknown Time'}',
+                      _formatAppointmentDateTime(appointment),
                       style: const TextStyle(
                         fontSize: 16,
                         fontFamily: 'Bold',
@@ -464,7 +475,8 @@ class _NotificationAppointmentScreenState extends State<NotificationAppointmentS
                         color: Colors.grey.shade700,
                       ),
                     ),
-                    if (appointment['notes'] != null && appointment['notes'].toString().isNotEmpty) ...[
+                    if (appointment['notes'] != null &&
+                        appointment['notes'].toString().isNotEmpty) ...[
                       const SizedBox(height: 4),
                       Text(
                         'Notes: ${appointment['notes']}',
@@ -518,5 +530,24 @@ class _NotificationAppointmentScreenState extends State<NotificationAppointmentS
     } catch (e) {
       return 'Unknown';
     }
+  }
+
+  String _formatAppointmentDateTime(Map<String, dynamic> appointment) {
+    // Handle new appointment structure with appointmentDate
+    if (appointment.containsKey('appointmentDate')) {
+      Timestamp dateTimestamp = appointment['appointmentDate'];
+      DateTime date = dateTimestamp.toDate();
+      String timeSlot = appointment['timeSlot'] ?? 'Unknown Time';
+      return '${_formatDate(date)}, $timeSlot';
+    }
+
+    // Handle old structure for backward compatibility
+    String day = appointment['day'] ?? 'Unknown Day';
+    String timeSlot = appointment['timeSlot'] ?? 'Unknown Time';
+    return '$day, $timeSlot';
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.month}/${date.day}/${date.year}';
   }
 }

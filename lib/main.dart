@@ -7,13 +7,12 @@ void main() async {
 
   await Firebase.initializeApp(
       options: const FirebaseOptions(
-        apiKey: "AIzaSyAHLEmv94h9MqjUEpjL7ik0L_CrWPjCJIs",
-    authDomain: "maternity-clinic.firebaseapp.com",
-    projectId: "maternity-clinic",
-    storageBucket: "maternity-clinic.firebasestorage.app",
-    messagingSenderId: "412859194071",
-    appId: "1:412859194071:web:fd17423ba677c322f42e92"
-          ));
+          apiKey: "AIzaSyAHLEmv94h9MqjUEpjL7ik0L_CrWPjCJIs",
+          authDomain: "maternity-clinic.firebaseapp.com",
+          projectId: "maternity-clinic",
+          storageBucket: "maternity-clinic.firebasestorage.app",
+          messagingSenderId: "412859194071",
+          appId: "1:412859194071:web:fd17423ba677c322f42e92"));
 
   runApp(MyApp());
 }
