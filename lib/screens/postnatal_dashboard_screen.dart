@@ -5,19 +5,23 @@ import '../utils/colors.dart';
 import 'postnatal_history_checkup_screen.dart';
 import 'notification_appointment_screen.dart';
 import 'transfer_record_request_screen.dart';
+import 'postnatal_checkup_requests_screen.dart';
+import 'postnatal_update_profile_screen.dart';
 import 'auth/home_screen.dart';
 
 class PostnatalDashboardScreen extends StatefulWidget {
   const PostnatalDashboardScreen({super.key});
 
   @override
-  State<PostnatalDashboardScreen> createState() => _PostnatalDashboardScreenState();
+  State<PostnatalDashboardScreen> createState() =>
+      _PostnatalDashboardScreenState();
 }
 
 class _PostnatalDashboardScreenState extends State<PostnatalDashboardScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   String _userName = 'Loading...';
+  bool _profileCompleted = false;
 
   @override
   void initState() {
@@ -29,16 +33,16 @@ class _PostnatalDashboardScreenState extends State<PostnatalDashboardScreen> {
     try {
       User? user = _auth.currentUser;
       if (user != null) {
-        DocumentSnapshot userDoc = await _firestore
-            .collection('users')
-            .doc(user.uid)
-            .get();
-        
+        DocumentSnapshot userDoc =
+            await _firestore.collection('users').doc(user.uid).get();
+
         if (userDoc.exists) {
-          Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+          Map<String, dynamic> userData =
+              userDoc.data() as Map<String, dynamic>;
           if (mounted) {
             setState(() {
               _userName = userData['name'] ?? 'User';
+              _profileCompleted = userData['profileCompleted'] == true;
             });
           }
         }
@@ -68,7 +72,158 @@ class _PostnatalDashboardScreenState extends State<PostnatalDashboardScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Title
+                  Text(
+                    'Welcome, $_userName',
+                    style: const TextStyle(
+                      fontSize: 26,
+                      fontFamily: 'Bold',
+                      color: Colors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  if (!_profileCompleted)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.orange.shade200),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            Icons.warning_amber_rounded,
+                            color: Colors.orange.shade700,
+                            size: 24,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Required Profile Information',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontFamily: 'Bold',
+                                    color: Colors.black,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                const Text(
+                                  'Before you can book an appointment you need to fill out "Update Profile".',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontFamily: 'Regular',
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: TextButton(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              const PostnatalUpdateProfileScreen(),
+                                        ),
+                                      ).then((_) {
+                                        _loadUserName();
+                                      });
+                                    },
+                                    child: Text(
+                                      'Go to Update Profile',
+                                      style: TextStyle(
+                                        color: primary,
+                                        fontFamily: 'Bold',
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  if (!_profileCompleted) const SizedBox(height: 24),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: [
+                      _buildDashboardAction(
+                        title: 'Update Profile',
+                        icon: Icons.person,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const PostnatalUpdateProfileScreen(),
+                            ),
+                          ).then((_) {
+                            _loadUserName();
+                          });
+                        },
+                      ),
+                      _buildDashboardAction(
+                        title: 'Request Postnatal Checkup',
+                        icon: Icons.event_available,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const NotificationAppointmentScreen(
+                                      patientType: 'POSTNATAL'),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildDashboardAction(
+                        title: 'View Checkup Requests',
+                        icon: Icons.list_alt,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const PostnatalCheckupRequestsScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildDashboardAction(
+                        title: 'View Appointments',
+                        icon: Icons.calendar_today,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const NotificationAppointmentScreen(
+                                      patientType: 'POSTNATAL'),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildDashboardAction(
+                        title: 'Baby Records (coming soon)',
+                        icon: Icons.child_care,
+                        onTap: () {},
+                      ),
+                      _buildDashboardAction(
+                        title: 'Education for Postnatal Care',
+                        icon: Icons.menu_book,
+                        onTap: () {},
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 32),
                   const Text(
                     'Life After Birth: Essential Postnatal Care Tips',
                     style: TextStyle(
@@ -79,8 +234,6 @@ class _PostnatalDashboardScreenState extends State<PostnatalDashboardScreen> {
                     ),
                   ),
                   const SizedBox(height: 40),
-
-                  // Guide Items Grid
                   _buildGuideGrid(),
                 ],
               ),
@@ -160,17 +313,22 @@ class _PostnatalDashboardScreenState extends State<PostnatalDashboardScreen> {
           if (title == 'HISTORY OF\nCHECK UP') {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const PostnatalHistoryCheckupScreen()),
+              MaterialPageRoute(
+                  builder: (context) => const PostnatalHistoryCheckupScreen()),
             );
           } else if (title == 'NOTIFICATION\nAPPOINTMENT') {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const NotificationAppointmentScreen(patientType: 'POSTNATAL')),
+              MaterialPageRoute(
+                  builder: (context) => const NotificationAppointmentScreen(
+                      patientType: 'POSTNATAL')),
             );
           } else if (title == 'TRANSFER OF\nRECORD REQUEST') {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const TransferRecordRequestScreen(patientType: 'POSTNATAL')),
+              MaterialPageRoute(
+                  builder: (context) => const TransferRecordRequestScreen(
+                      patientType: 'POSTNATAL')),
             );
           }
         },
@@ -178,7 +336,8 @@ class _PostnatalDashboardScreenState extends State<PostnatalDashboardScreen> {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
           decoration: BoxDecoration(
-            color: isActive ? Colors.white.withOpacity(0.2) : Colors.transparent,
+            color:
+                isActive ? Colors.white.withOpacity(0.2) : Colors.transparent,
             border: Border(
               left: BorderSide(
                 color: isActive ? Colors.white : Colors.transparent,
@@ -217,7 +376,8 @@ class _PostnatalDashboardScreenState extends State<PostnatalDashboardScreen> {
             onPressed: () => Navigator.pop(context),
             child: Text(
               'Cancel',
-              style: TextStyle(color: Colors.grey.shade600, fontFamily: 'Medium'),
+              style:
+                  TextStyle(color: Colors.grey.shade600, fontFamily: 'Medium'),
             ),
           ),
           TextButton(
@@ -247,52 +407,62 @@ class _PostnatalDashboardScreenState extends State<PostnatalDashboardScreen> {
       {
         'number': '1',
         'title': 'Rest When You Can',
-        'description': 'Sleep while your baby sleeps, to help your body recover.',
+        'description':
+            'Sleep while your baby sleeps, to help your body recover.',
       },
       {
         'number': '2',
         'title': 'Eat Nutritious Foods',
-        'description': 'Continue a healthy diet with fruits, vegetables, lean protein, and whole grains.',
+        'description':
+            'Continue a healthy diet with fruits, vegetables, lean protein, and whole grains.',
       },
       {
         'number': '3',
         'title': 'Stay Hydrated',
-        'description': 'Drink enough water, especially if you\'re breastfeeding.',
+        'description':
+            'Drink enough water, especially if you\'re breastfeeding.',
       },
       {
         'number': '4',
         'title': 'Take Prescribed Supplements',
-        'description': 'Follow your doctor\'s advice on vitamins and iron after delivery.',
+        'description':
+            'Follow your doctor\'s advice on vitamins and iron after delivery.',
       },
       {
         'number': '5',
         'title': 'Practice Good Hygiene',
-        'description': 'Keep your body and stitches (if any) clean to avoid infection.',
+        'description':
+            'Keep your body and stitches (if any) clean to avoid infection.',
       },
       {
         'number': '6',
         'title': 'Manage Pain',
-        'description': 'Follow doctor-approved relief methods and report unusual discomfort.',
+        'description':
+            'Follow doctor-approved relief methods and report unusual discomfort.',
       },
       {
         'number': '7',
         'title': 'Feed Safely',
-        'description': 'Breastfeed or bottle-feed properly to support your baby\'s nutrition.',
+        'description':
+            'Breastfeed or bottle-feed properly to support your baby\'s nutrition.',
       },
       {
         'number': '8',
         'title': 'Watch for Warning Signs',
-        'description': 'Seek care for fever, heavy bleeding, pain, or mood changes.',
+        'description':
+            'Seek care for fever, heavy bleeding, pain, or mood changes.',
       },
       {
         'number': '9',
         'title': 'Do Gentle Exercises',
-        'description': 'Begin light activities only with your doctor\'s approval.',
+        'description':
+            'Begin light activities only with your doctor\'s approval.',
       },
       {
         'number': '10',
         'title': 'Seek Support',
-        'description': 'Reach out to loved ones or professionals if you feel overwhelmed.',
+        'description':
+            'Reach out to loved ones or professionals if you feel overwhelmed.',
       },
     ];
 
@@ -378,6 +548,53 @@ class _PostnatalDashboardScreenState extends State<PostnatalDashboardScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDashboardAction({
+    required String title,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return SizedBox(
+      width: 230,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.grey.shade300),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.shade200,
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Icon(icon, size: 20, color: primary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontFamily: 'Medium',
+                      color: Colors.black87,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

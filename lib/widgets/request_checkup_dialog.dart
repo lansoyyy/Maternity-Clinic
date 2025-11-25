@@ -29,10 +29,17 @@ class _RequestCheckupDialogState extends State<RequestCheckupDialog> {
   DateTime? _preferredDate;
   bool _isSubmitting = false;
 
-  final List<String> _appointmentTypes = const [
+  final List<String> _prenatalAppointmentTypes = const [
     'First Checkup',
     'Routine Prenatal Checkup',
     'Follow-up (Reading of Lab Results)',
+    'Specific Concern',
+  ];
+
+  final List<String> _postnatalAppointmentTypes = const [
+    'First Postnatal Checkup',
+    'Routine Postnatal Checkup',
+    'Follow-up (Review of medication/wound check)',
     'Specific Concern',
   ];
 
@@ -161,7 +168,9 @@ class _RequestCheckupDialogState extends State<RequestCheckupDialog> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Fill out this form to request a prenatal checkup. The clinic will review and schedule your appointment.',
+                widget.patientType == 'POSTNATAL'
+                    ? 'Fill out this form to request a postnatal checkup. The clinic will review and schedule your appointment.'
+                    : 'Fill out this form to request a prenatal checkup. The clinic will review and schedule your appointment.',
                 style: TextStyle(
                   fontSize: 13,
                   fontFamily: 'Regular',
@@ -193,7 +202,9 @@ class _RequestCheckupDialogState extends State<RequestCheckupDialog> {
                   contentPadding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 ),
-                items: _appointmentTypes
+                items: (widget.patientType == 'POSTNATAL'
+                        ? _postnatalAppointmentTypes
+                        : _prenatalAppointmentTypes)
                     .map(
                       (type) => DropdownMenuItem(
                         value: type,

@@ -8,6 +8,7 @@ import 'prenatal_history_checkup_screen.dart';
 import 'postnatal_history_checkup_screen.dart';
 import 'transfer_record_request_screen.dart';
 import 'prenatal_update_profile_screen.dart';
+import 'postnatal_update_profile_screen.dart';
 import '../widgets/book_appointment_dialog.dart';
 import '../widgets/request_checkup_dialog.dart';
 import 'prenatal_checkup_requests_screen.dart';
@@ -70,7 +71,7 @@ class _NotificationAppointmentScreenState
   }
 
   Future<void> _openRequestCheckup() async {
-    if (widget.patientType == 'PRENATAL' && !_profileCompleted) {
+    if (!_profileCompleted) {
       _showProfileRequiredDialog();
       return;
     }
@@ -91,9 +92,11 @@ class _NotificationAppointmentScreenState
           'Update Profile Required',
           style: TextStyle(fontFamily: 'Bold'),
         ),
-        content: const Text(
-          'Before you can book an appointment you need to fill out "Update Profile" in your prenatal dashboard.',
-          style: TextStyle(fontFamily: 'Regular'),
+        content: Text(
+          widget.patientType == 'POSTNATAL'
+              ? 'Before you can book an appointment you need to fill out "Update Profile" in your postnatal dashboard.'
+              : 'Before you can book an appointment you need to fill out "Update Profile" in your prenatal dashboard.',
+          style: const TextStyle(fontFamily: 'Regular'),
         ),
         actions: [
           TextButton(
@@ -107,10 +110,13 @@ class _NotificationAppointmentScreenState
           TextButton(
             onPressed: () {
               Navigator.pop(context);
+              final Widget target = widget.patientType == 'POSTNATAL'
+                  ? const PostnatalUpdateProfileScreen()
+                  : const PrenatalUpdateProfileScreen();
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const PrenatalUpdateProfileScreen(),
+                  builder: (context) => target,
                 ),
               ).then((_) {
                 _loadUserName();
@@ -325,27 +331,14 @@ class _NotificationAppointmentScreenState
       backgroundColor: Colors.white,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
-          if (widget.patientType == 'PRENATAL') {
-            await _openRequestCheckup();
-          } else {
-            final result = await showDialog(
-              context: context,
-              builder: (context) => BookAppointmentDialog(
-                patientType: widget.patientType,
-              ),
-            );
-
-            if (result == true) {
-              _loadUserAppointments();
-            }
-          }
+          await _openRequestCheckup();
         },
         backgroundColor: primary,
         icon: const Icon(Icons.add, color: Colors.white),
         label: Text(
-          widget.patientType == 'PRENATAL'
-              ? 'Request Checkup'
-              : 'Book Appointment',
+          widget.patientType == 'POSTNATAL'
+              ? 'Request Postnatal Checkup'
+              : 'Request Checkup',
           style: const TextStyle(
             color: Colors.white,
             fontFamily: 'Bold',
