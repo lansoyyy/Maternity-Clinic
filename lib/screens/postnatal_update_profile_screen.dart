@@ -56,6 +56,8 @@ class _PostnatalUpdateProfileScreenState
   String? _pulse;
   String? _fundalHeight;
   String? _lochiaStatus;
+  String? _riskStatus;
+  String? _specificComplication;
 
   final List<String> _deliveryPlaces = const [
     'Home',
@@ -150,6 +152,8 @@ class _PostnatalUpdateProfileScreenState
         _pulse = data['postnatalPulse']?.toString();
         _fundalHeight = data['fundalHeight']?.toString();
         _lochiaStatus = data['lochiaStatus']?.toString();
+        _riskStatus = data['riskStatus']?.toString();
+        _specificComplication = data['specificComplication']?.toString();
 
         _recomputeAge();
       }
@@ -919,6 +923,16 @@ class _PostnatalUpdateProfileScreenState
             ),
           ),
           const SizedBox(height: 16),
+          _buildReadOnlyField(
+            label: 'Risk Level',
+            value: _riskStatus ?? 'Not yet recorded',
+          ),
+          const SizedBox(height: 8),
+          _buildReadOnlyField(
+            label: 'Specific Complication',
+            value: _specificComplication ?? 'Not yet recorded',
+          ),
+          const SizedBox(height: 8),
           _buildReadOnlyField(
             label: 'Blood Pressure',
             value: _bp ?? 'Not yet recorded',

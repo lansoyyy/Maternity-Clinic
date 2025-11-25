@@ -76,6 +76,24 @@ class _AdminPrenatalRecordsScreenState
           patient['contact'] = data['contactNumber'];
         }
 
+        // Account status and manual risk/specific complication (for staff updates)
+        final rawAccountStatus = data['accountStatus']?.toString();
+        final accountStatus =
+            (rawAccountStatus == null || rawAccountStatus.isEmpty)
+                ? 'Active'
+                : rawAccountStatus;
+        patient['accountStatus'] = accountStatus;
+        patient['status'] = accountStatus;
+
+        if (data['riskStatus'] != null &&
+            data['riskStatus'].toString().isNotEmpty) {
+          patient['riskStatus'] = data['riskStatus'];
+        }
+        if (data['specificComplication'] != null &&
+            data['specificComplication'].toString().isNotEmpty) {
+          patient['specificComplication'] = data['specificComplication'];
+        }
+
         // Fetch latest appointment data
         final appointmentSnapshot = await _firestore
             .collection('appointments')
@@ -139,6 +157,13 @@ class _AdminPrenatalRecordsScreenState
   }
 
   String _assessRiskStatus(Map<String, dynamic> patient) {
+    // If staff/admin has manually set a risk status on the patient record,
+    // always honor that as the primary risk level.
+    final manualRisk = patient['riskStatus']?.toString();
+    if (manualRisk != null && manualRisk.isNotEmpty) {
+      return manualRisk;
+    }
+
     final appointment = patient['latestAppointment'] as Map<String, dynamic>?;
     if (appointment == null) return 'LOW RISK';
 
@@ -270,11 +295,19 @@ class _AdminPrenatalRecordsScreenState
   }
 
   void _filterPatients() {
-    String query = _searchController.text.toLowerCase();
+    String query = _searchController.text.toLowerCase().trim();
     setState(() {
       _filteredPatients = _patients.where((patient) {
-        bool matchesSearch =
-            patient['name']?.toString().toLowerCase().contains(query) ?? false;
+        final name = patient['name']?.toString().toLowerCase() ?? '';
+        final patientId = patient['patientId']?.toString().toLowerCase() ?? '';
+        final latestAppointmentId =
+            patient['latestAppointmentId']?.toString().toLowerCase() ?? '';
+
+        final bool matchesSearch = query.isEmpty ||
+            name.contains(query) ||
+            patientId.contains(query) ||
+            latestAppointmentId.contains(query);
+
         return matchesSearch;
       }).toList();
     });
@@ -311,7 +344,7 @@ class _AdminPrenatalRecordsScreenState
                         child: TextField(
                           controller: _searchController,
                           decoration: InputDecoration(
-                            hintText: 'SEARCH NAME',
+                            hintText: 'SEARCH NAME OR ID',
                             hintStyle: TextStyle(
                               fontSize: 12,
                               fontFamily: 'Regular',
@@ -719,6 +752,18 @@ class _AdminPrenatalRecordsScreenState
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    TextButton(
+                      onPressed: () async {
+                        await _showViewProfileDialog(patient, name, patientId);
+                      },
+                      child: const Text(
+                        'View Profile',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontFamily: 'Bold',
+                        ),
+                      ),
+                    ),
                     if (appointmentId != null &&
                         appointmentStatus == 'Accepted') ...[
                       IconButton(
@@ -745,6 +790,224 @@ class _AdminPrenatalRecordsScreenState
           ),
         ),
       ),
+    );
+  }
+
+  Future<void> _showViewProfileDialog(
+      Map<String, dynamic> patient, String name, String patientId) async {
+    final String userId = patient['id'] as String? ?? '';
+    String status = patient['accountStatus']?.toString() ?? 'Active';
+    String risk = patient['riskStatus']?.toString().isNotEmpty == true
+        ? patient['riskStatus'].toString()
+        : 'LOW RISK';
+    String specificComplication =
+        patient['specificComplication']?.toString() ?? '';
+
+    final complications = <String>[
+      'None',
+      'GDM (Gestational Diabetes)',
+      'Preeclampsia',
+      'Eclampsia',
+      'Placenta Previa',
+      'Placental Abruption',
+      'Multiple Pregnancy',
+      'History of C-Section',
+      'Other',
+    ];
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text(
+            'View Profile (Staff Editing Mode)',
+            style: TextStyle(fontFamily: 'Bold'),
+          ),
+          content: SizedBox(
+            width: 400,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontFamily: 'Bold',
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Patient ID: $patientId',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontFamily: 'Regular',
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Status (Active / Inactive)',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontFamily: 'Bold',
+                  ),
+                ),
+                const SizedBox(height: 6),
+                DropdownButtonFormField<String>(
+                  value: status,
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: Colors.grey.shade100,
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.grey.shade400),
+                    ),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'Active', child: Text('Active')),
+                    DropdownMenuItem(
+                        value: 'Inactive', child: Text('Inactive')),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      status = value;
+                    }
+                  },
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Risk Level',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontFamily: 'Bold',
+                  ),
+                ),
+                const SizedBox(height: 6),
+                DropdownButtonFormField<String>(
+                  value: risk,
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: Colors.grey.shade100,
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.grey.shade400),
+                    ),
+                  ),
+                  items: const [
+                    DropdownMenuItem(
+                        value: 'LOW RISK', child: Text('LOW RISK')),
+                    DropdownMenuItem(value: 'CAUTION', child: Text('CAUTION')),
+                    DropdownMenuItem(
+                        value: 'HIGH RISK', child: Text('HIGH RISK')),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      risk = value;
+                    }
+                  },
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Specific Complication',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontFamily: 'Bold',
+                  ),
+                ),
+                const SizedBox(height: 6),
+                DropdownButtonFormField<String>(
+                  value: specificComplication.isEmpty
+                      ? 'None'
+                      : specificComplication,
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: Colors.grey.shade100,
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.grey.shade400),
+                    ),
+                  ),
+                  items: complications
+                      .map(
+                        (c) => DropdownMenuItem(
+                          value: c,
+                          child: Text(c),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      specificComplication = value == 'None' ? '' : value;
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: Colors.grey.shade700),
+              ),
+            ),
+            TextButton(
+              onPressed: () async {
+                try {
+                  await _firestore.collection('users').doc(userId).update({
+                    'accountStatus': status,
+                    'riskStatus': risk,
+                    'specificComplication': specificComplication,
+                  });
+
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text(
+                          'Profile updated successfully',
+                          style: TextStyle(fontFamily: 'Regular'),
+                        ),
+                        backgroundColor: Colors.green,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                  Navigator.pop(context);
+                  await _fetchPatients();
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text(
+                          'Failed to update profile',
+                          style: TextStyle(fontFamily: 'Regular'),
+                        ),
+                        backgroundColor: Colors.red,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                }
+              },
+              child: const Text(
+                'Save',
+                style: TextStyle(fontFamily: 'Bold'),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 

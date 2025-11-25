@@ -60,6 +60,7 @@ class _PrenatalUpdateProfileScreenState
   int? _confirmedGestationWeeks;
   String? _pregnancyStatus;
   String? _specificComplication;
+  String? _riskStatus;
 
   @override
   void initState() {
@@ -140,6 +141,7 @@ class _PrenatalUpdateProfileScreenState
         }
         _pregnancyStatus = data['pregnancyStatus']?.toString();
         _specificComplication = data['specificComplication']?.toString();
+        _riskStatus = data['riskStatus']?.toString();
 
         _recomputeDerivedValues();
       }
@@ -766,6 +768,11 @@ class _PrenatalUpdateProfileScreenState
             ),
           ),
           const SizedBox(height: 16),
+          _buildReadOnlyField(
+            label: 'Risk Level',
+            value: _riskStatus ?? 'Not yet recorded',
+          ),
+          const SizedBox(height: 8),
           _buildReadOnlyField(
             label: 'Height',
             value: _height ?? 'Not yet recorded',
