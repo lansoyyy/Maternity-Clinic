@@ -7,6 +7,7 @@ import 'package:maternity_clinic/utils/colors.dart';
 import 'admin_postnatal_records_screen.dart';
 import 'admin_appointment_scheduling_screen.dart';
 import 'admin_dashboard_screen.dart';
+import 'admin_educational_cms_screen.dart';
 
 class AdminPrenatalRecordsScreen extends StatefulWidget {
   final String userRole;
@@ -488,6 +489,7 @@ class _AdminPrenatalRecordsScreenState
           _buildMenuItem('POSTNATAL PATIENT\nRECORD', false),
           _buildMenuItem('APPOINTMENT\nSCHEDULING', false),
           _buildMenuItem('TRANSFER\nREQUESTS', false),
+          _buildMenuItem('EDUCATIONAL CMS', false),
         ],
       ),
     );
@@ -572,6 +574,17 @@ class _AdminPrenatalRecordsScreenState
           context,
           MaterialPageRoute(
             builder: (context) => AdminTransferRequestsScreen(
+              userRole: widget.userRole,
+              userName: widget.userName,
+            ),
+          ),
+        );
+        break;
+      case 'EDUCATIONAL CMS':
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AdminEducationalCmsScreen(
               userRole: widget.userRole,
               userName: widget.userName,
             ),

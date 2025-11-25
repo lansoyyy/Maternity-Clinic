@@ -22,6 +22,7 @@ class _PostnatalDashboardScreenState extends State<PostnatalDashboardScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   String _userName = 'Loading...';
   bool _profileCompleted = false;
+  Map<String, dynamic>? _userData;
 
   @override
   void initState() {
@@ -43,6 +44,7 @@ class _PostnatalDashboardScreenState extends State<PostnatalDashboardScreen> {
             setState(() {
               _userName = userData['name'] ?? 'User';
               _profileCompleted = userData['profileCompleted'] == true;
+              _userData = userData;
             });
           }
         }
@@ -223,6 +225,8 @@ class _PostnatalDashboardScreenState extends State<PostnatalDashboardScreen> {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 24),
+                  _buildPersonalizedEducationalSection(),
                   const SizedBox(height: 32),
                   const Text(
                     'Life After Birth: Essential Postnatal Care Tips',
@@ -242,6 +246,219 @@ class _PostnatalDashboardScreenState extends State<PostnatalDashboardScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildPersonalizedEducationalSection() {
+    final user = _auth.currentUser;
+    if (user == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Personalized Health Tips',
+          style: TextStyle(
+            fontSize: 20,
+            fontFamily: 'Bold',
+            color: Colors.black,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Articles selected based on your clinical risk information.',
+          style: TextStyle(
+            fontSize: 13,
+            fontFamily: 'Regular',
+            color: Colors.grey.shade700,
+          ),
+        ),
+        const SizedBox(height: 12),
+        StreamBuilder<QuerySnapshot>(
+          stream: _firestore
+              .collection('educationalArticles')
+              .where('category', isEqualTo: 'POSTNATAL')
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Center(
+                  child: CircularProgressIndicator(color: primary),
+                ),
+              );
+            }
+
+            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Text(
+                  'No personalized tips yet.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontFamily: 'Regular',
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              );
+            }
+
+            final docs = snapshot.data!.docs.where((doc) {
+              final data = doc.data() as Map<String, dynamic>;
+              return _articleMatchesPostnatalPatient(data);
+            }).toList();
+
+            if (docs.isEmpty) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Text(
+                  'No personalized tips match your current profile.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontFamily: 'Regular',
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              );
+            }
+
+            return Column(
+              children: docs.map((doc) {
+                final data = doc.data() as Map<String, dynamic>;
+                final title = data['title']?.toString() ?? '';
+                final body = data['body']?.toString() ?? '';
+                final tags = (data['targetTags'] as List?)
+                        ?.map((e) => e.toString())
+                        .toList() ??
+                    [];
+
+                return Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.grey.shade300),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.shade200,
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontFamily: 'Bold',
+                          color: Colors.black,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        body,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontFamily: 'Regular',
+                          color: Colors.grey.shade800,
+                          height: 1.4,
+                        ),
+                      ),
+                      if (tags.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 4,
+                          children: tags
+                              .map(
+                                (t) => Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 3,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade200,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    t,
+                                    style: const TextStyle(
+                                      fontSize: 10,
+                                      fontFamily: 'Regular',
+                                    ),
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                        ),
+                      ],
+                    ],
+                  ),
+                );
+              }).toList(),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  bool _articleMatchesPostnatalPatient(Map<String, dynamic> article) {
+    final rawTags = article['targetTags'];
+    final List<String> tags = rawTags is List
+        ? rawTags.map((e) => e.toString()).toList()
+        : <String>[];
+
+    if (tags.isEmpty) {
+      return true;
+    }
+
+    final patientTags = _getPostnatalPatientTags();
+    if (patientTags.isEmpty) {
+      return false;
+    }
+
+    for (final tag in tags) {
+      if (patientTags.contains(tag)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  Set<String> _getPostnatalPatientTags() {
+    final Set<String> tags = {};
+    final data = _userData ?? {};
+
+    final riskStatus =
+        (data['riskStatus'] ?? '').toString().toUpperCase().trim();
+    final complication =
+        (data['specificComplication'] ?? '').toString().toLowerCase();
+
+    if (riskStatus == 'HIGH RISK') {
+      if (complication.contains('gdm') ||
+          complication.contains('gestational diabetes') ||
+          complication.contains('diabetes')) {
+        tags.add('High Risk-Diabetes');
+      }
+
+      if (complication.contains('preeclampsia') ||
+          complication.contains('eclampsia') ||
+          complication.contains('hypertension') ||
+          complication.contains('high blood pressure')) {
+        tags.add('High Risk-Hypertension');
+      }
+    }
+
+    return tags;
   }
 
   Widget _buildSidebar() {

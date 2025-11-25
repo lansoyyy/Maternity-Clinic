@@ -6,6 +6,7 @@ import 'package:maternity_clinic/utils/colors.dart';
 import 'admin_prenatal_records_screen.dart';
 import 'admin_postnatal_records_screen.dart';
 import 'admin_dashboard_screen.dart';
+import 'admin_educational_cms_screen.dart';
 
 class AdminAppointmentSchedulingScreen extends StatefulWidget {
   final String userRole;
@@ -849,6 +850,737 @@ class _AdminAppointmentSchedulingScreenState
     adviceController.dispose();
   }
 
+  Future<void> _openPostnatalConsultation(
+    String appointmentId,
+    String patientName,
+    Map<String, dynamic> appointmentData,
+  ) async {
+    Map<String, dynamic>? fullAppointment;
+    Map<String, dynamic>? userData;
+    String userId = (appointmentData['userId'] ?? '').toString();
+
+    try {
+      if (userId.isEmpty) {
+        final doc = await _firestore
+            .collection('appointments')
+            .doc(appointmentId)
+            .get();
+        if (doc.exists) {
+          fullAppointment = doc.data() as Map<String, dynamic>;
+          userId = (fullAppointment['userId'] ?? '').toString();
+        }
+      } else {
+        final doc = await _firestore
+            .collection('appointments')
+            .doc(appointmentId)
+            .get();
+        if (doc.exists) {
+          fullAppointment = doc.data() as Map<String, dynamic>;
+        }
+      }
+
+      if (userId.isNotEmpty) {
+        final userDoc = await _firestore.collection('users').doc(userId).get();
+        if (userDoc.exists) {
+          userData = userDoc.data() as Map<String, dynamic>;
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Failed to load consultation data: $e',
+              style: const TextStyle(fontFamily: 'Regular'),
+            ),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+      return;
+    }
+
+    DateTime? appointmentDate =
+        _getAppointmentDateFromData(fullAppointment ?? appointmentData);
+
+    double? previousWeightKg;
+
+    try {
+      if (userId.isNotEmpty) {
+        final snapshot = await _firestore
+            .collection('appointments')
+            .where('userId', isEqualTo: userId)
+            .get();
+
+        List<Map<String, dynamic>> previousAppointments = [];
+        for (var doc in snapshot.docs) {
+          if (doc.id == appointmentId) continue;
+          Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+          previousAppointments.add(data);
+        }
+
+        previousAppointments = previousAppointments
+            .where((a) => (a['status'] ?? '').toString() == 'Completed')
+            .toList();
+
+        previousAppointments.sort((a, b) {
+          DateTime aDate = _getAppointmentDateFromData(a) ??
+              DateTime.fromMillisecondsSinceEpoch(0);
+          DateTime bDate = _getAppointmentDateFromData(b) ??
+              DateTime.fromMillisecondsSinceEpoch(0);
+          return bDate.compareTo(aDate);
+        });
+
+        if (previousAppointments.isNotEmpty) {
+          final latestPrev = previousAppointments.first;
+          if (latestPrev['postnatalWeightKg'] != null) {
+            previousWeightKg =
+                (latestPrev['postnatalWeightKg'] as num).toDouble();
+          } else if (latestPrev['checkupWeightKg'] != null) {
+            previousWeightKg =
+                (latestPrev['checkupWeightKg'] as num).toDouble();
+          } else if (latestPrev['weight'] != null) {
+            previousWeightKg = double.tryParse(latestPrev['weight'].toString());
+          }
+        }
+      }
+    } catch (_) {}
+
+    final TextEditingController weightController = TextEditingController();
+    final TextEditingController systolicController = TextEditingController();
+    final TextEditingController diastolicController = TextEditingController();
+    final TextEditingController uterineInvolutionController =
+        TextEditingController();
+    final TextEditingController remarksController = TextEditingController();
+    final TextEditingController findingsController = TextEditingController();
+    final TextEditingController adviceController = TextEditingController();
+
+    DateTime? nextVisitDate;
+    String visitRiskStatus = 'LOW RISK';
+    String riskExplanation = '';
+
+    String? lochiaType = 'Rubra';
+    String? lochiaAmount = 'Light';
+    String? lochiaSmell = 'Normal';
+    String? woundStatus = 'Clean';
+
+    void evaluateRisk() {
+      bool highRisk = false;
+      List<String> reasons = [];
+
+      final weightText = weightController.text.trim();
+      if (weightText.isNotEmpty && previousWeightKg != null) {
+        final currentWeight = double.tryParse(weightText);
+        if (currentWeight != null) {
+          final diff = currentWeight - previousWeightKg!;
+          if (diff <= -3.0) {
+            highRisk = true;
+            reasons.add('Sudden postpartum weight loss');
+          } else if (diff >= 0.0) {
+            highRisk = true;
+            reasons.add('No postpartum weight reduction');
+          }
+        }
+      }
+
+      final systolic = int.tryParse(systolicController.text.trim());
+      final diastolic = int.tryParse(diastolicController.text.trim());
+      if (systolic != null && diastolic != null) {
+        if (systolic >= 140 || diastolic >= 90) {
+          highRisk = true;
+          reasons.add(
+              'BP 9140/90 (possible postpartum hypertension / preeclampsia)');
+        }
+      }
+
+      final uiText = uterineInvolutionController.text.toLowerCase();
+      if (uiText.contains('soft') ||
+          uiText.contains('boggy') ||
+          uiText.contains('not firm')) {
+        highRisk = true;
+        reasons.add('Uterus soft / not well contracted');
+      }
+
+      if (lochiaAmount == 'Heavy') {
+        highRisk = true;
+        reasons.add('Heavy lochia');
+      }
+      if (lochiaSmell == 'Foul') {
+        highRisk = true;
+        reasons.add('Foul-smelling lochia');
+      }
+
+      if (woundStatus != null) {
+        final w = woundStatus!.toLowerCase();
+        if (w.contains('red') ||
+            w.contains('discharge') ||
+            w.contains('pus') ||
+            w.contains('infect')) {
+          highRisk = true;
+          reasons.add('Wound with redness/discharge (possible infection)');
+        }
+      }
+
+      final remarksText = remarksController.text.toLowerCase();
+      final severeKeywords = [
+        'fever',
+        'chills',
+        'heavy bleeding',
+        'hemorrhage',
+        'infection',
+        'foul smell',
+      ];
+      if (remarksText.isNotEmpty) {
+        for (final k in severeKeywords) {
+          if (remarksText.contains(k)) {
+            highRisk = true;
+            reasons.add('Severe symptom: $k');
+            break;
+          }
+        }
+      }
+
+      if (highRisk) {
+        visitRiskStatus = 'HIGH RISK';
+        riskExplanation = reasons.join('; ');
+      } else {
+        visitRiskStatus = 'LOW RISK';
+        riskExplanation = '';
+      }
+    }
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        evaluateRisk();
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            Color riskColor = visitRiskStatus == 'HIGH RISK'
+                ? Colors.red
+                : visitRiskStatus == 'LOW RISK'
+                    ? Colors.green
+                    : Colors.orange;
+
+            return AlertDialog(
+              title: const Text(
+                'Postnatal Consultation / Checkup',
+                style: TextStyle(fontFamily: 'Bold'),
+              ),
+              content: SizedBox(
+                width: 600,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        patientName,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontFamily: 'Bold',
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        appointmentData['appointment']?.toString() ?? '',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontFamily: 'Regular',
+                          color: Colors.grey.shade700,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Step 2: Current Vitals (Postnatal Mother Only)',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontFamily: 'Bold',
+                          color: Colors.grey.shade900,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: weightController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Weight (kg)',
+                          border: OutlineInputBorder(),
+                        ),
+                        onChanged: (_) {
+                          setStateDialog(() {
+                            evaluateRisk();
+                          });
+                        },
+                      ),
+                      if (previousWeightKg != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          'Previous weight: ${previousWeightKg!.toStringAsFixed(1)} kg',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontFamily: 'Regular',
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: systolicController,
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(
+                                labelText: 'Systolic (mmHg)',
+                                border: OutlineInputBorder(),
+                              ),
+                              onChanged: (_) {
+                                setStateDialog(() {
+                                  evaluateRisk();
+                                });
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: TextField(
+                              controller: diastolicController,
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(
+                                labelText: 'Diastolic (mmHg)',
+                                border: OutlineInputBorder(),
+                              ),
+                              onChanged: (_) {
+                                setStateDialog(() {
+                                  evaluateRisk();
+                                });
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: uterineInvolutionController,
+                        maxLines: 2,
+                        decoration: const InputDecoration(
+                          labelText:
+                              'Uterine Involution (fundus level / firm or soft)',
+                          border: OutlineInputBorder(),
+                        ),
+                        onChanged: (_) {
+                          setStateDialog(() {
+                            evaluateRisk();
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Lochia Assessment',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontFamily: 'Bold',
+                          color: Colors.grey.shade900,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: DropdownButtonFormField<String>(
+                              value: lochiaType,
+                              decoration: const InputDecoration(
+                                labelText: 'Type',
+                                border: OutlineInputBorder(),
+                              ),
+                              items: const [
+                                DropdownMenuItem(
+                                    value: 'Rubra', child: Text('Rubra')),
+                                DropdownMenuItem(
+                                    value: 'Serosa', child: Text('Serosa')),
+                                DropdownMenuItem(
+                                    value: 'Alba', child: Text('Alba')),
+                              ],
+                              onChanged: (value) {
+                                setStateDialog(() {
+                                  lochiaType = value;
+                                  evaluateRisk();
+                                });
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: DropdownButtonFormField<String>(
+                              value: lochiaAmount,
+                              decoration: const InputDecoration(
+                                labelText: 'Amount',
+                                border: OutlineInputBorder(),
+                              ),
+                              items: const [
+                                DropdownMenuItem(
+                                    value: 'Light', child: Text('Light')),
+                                DropdownMenuItem(
+                                    value: 'Moderate', child: Text('Moderate')),
+                                DropdownMenuItem(
+                                    value: 'Heavy', child: Text('Heavy')),
+                              ],
+                              onChanged: (value) {
+                                setStateDialog(() {
+                                  lochiaAmount = value;
+                                  evaluateRisk();
+                                });
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      DropdownButtonFormField<String>(
+                        value: lochiaSmell,
+                        decoration: const InputDecoration(
+                          labelText: 'Smell',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: const [
+                          DropdownMenuItem(
+                              value: 'Normal', child: Text('Normal')),
+                          DropdownMenuItem(value: 'Foul', child: Text('Foul')),
+                        ],
+                        onChanged: (value) {
+                          setStateDialog(() {
+                            lochiaSmell = value;
+                            evaluateRisk();
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 10),
+                      DropdownButtonFormField<String>(
+                        value: woundStatus,
+                        decoration: const InputDecoration(
+                          labelText: 'Incision / Wound Check',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: const [
+                          DropdownMenuItem(
+                              value: 'Clean', child: Text('Clean')),
+                          DropdownMenuItem(
+                              value: 'Redness', child: Text('Redness')),
+                          DropdownMenuItem(
+                              value: 'Discharge', child: Text('Discharge')),
+                          DropdownMenuItem(
+                            value: 'Redness with Discharge',
+                            child: Text('Redness with Discharge'),
+                          ),
+                        ],
+                        onChanged: (value) {
+                          setStateDialog(() {
+                            woundStatus = value;
+                            evaluateRisk();
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: remarksController,
+                        maxLines: 3,
+                        decoration: const InputDecoration(
+                          labelText: 'Remarks / Observations',
+                          border: OutlineInputBorder(),
+                        ),
+                        onChanged: (_) {
+                          setStateDialog(() {
+                            evaluateRisk();
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: riskColor.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.warning,
+                                  size: 14,
+                                  color: riskColor,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Risk: $visitRiskStatus',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontFamily: 'Bold',
+                                    color: riskColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (riskExplanation.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          riskExplanation,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontFamily: 'Regular',
+                            color: Colors.red.shade700,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 16),
+                      Text(
+                        'Step 3: Doctor\'s Diagnosis & Advice',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontFamily: 'Bold',
+                          color: Colors.grey.shade900,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: findingsController,
+                        maxLines: 3,
+                        decoration: const InputDecoration(
+                          labelText: 'Findings',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: adviceController,
+                        maxLines: 3,
+                        decoration: const InputDecoration(
+                          labelText: 'Prescription / Recommendations',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      GestureDetector(
+                        onTap: () async {
+                          final now = DateTime.now();
+                          final picked = await showDatePicker(
+                            context: context,
+                            initialDate: nextVisitDate ??
+                                now.add(const Duration(days: 7)),
+                            firstDate: now,
+                            lastDate: now.add(const Duration(days: 365)),
+                          );
+                          if (picked != null) {
+                            setStateDialog(() {
+                              nextVisitDate = picked;
+                            });
+                          }
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.grey.shade400),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.calendar_today,
+                                size: 18,
+                                color: primary,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                nextVisitDate == null
+                                    ? 'Select Next Visit Recommendation (optional)'
+                                    : '${nextVisitDate!.month.toString().padLeft(2, '0')}/${nextVisitDate!.day.toString().padLeft(2, '0')}/${nextVisitDate!.year}',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontFamily: 'Regular',
+                                  color: nextVisitDate == null
+                                      ? Colors.grey.shade600
+                                      : Colors.black87,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop();
+                  },
+                  child: Text(
+                    'Cancel',
+                    style: TextStyle(
+                      color: Colors.grey.shade700,
+                      fontFamily: 'Regular',
+                    ),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    final weightText = weightController.text.trim();
+                    final systolicText = systolicController.text.trim();
+                    final diastolicText = diastolicController.text.trim();
+
+                    if (weightText.isEmpty ||
+                        systolicText.isEmpty ||
+                        diastolicText.isEmpty) {
+                      ScaffoldMessenger.of(this.context).showSnackBar(
+                        SnackBar(
+                          content: const Text(
+                            'Please fill in all required vitals',
+                            style: TextStyle(fontFamily: 'Regular'),
+                          ),
+                          backgroundColor: Colors.red,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                      return;
+                    }
+
+                    if (findingsController.text.trim().isEmpty ||
+                        adviceController.text.trim().isEmpty) {
+                      ScaffoldMessenger.of(this.context).showSnackBar(
+                        SnackBar(
+                          content: const Text(
+                            'Please add findings and recommendations',
+                            style: TextStyle(fontFamily: 'Regular'),
+                          ),
+                          backgroundColor: Colors.red,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                      return;
+                    }
+
+                    evaluateRisk();
+
+                    try {
+                      double? weightKg = double.tryParse(weightText);
+                      int? systolic = int.tryParse(systolicText);
+                      int? diastolic = int.tryParse(diastolicText);
+
+                      Map<String, dynamic> update = {
+                        'status': 'Completed',
+                        'completedAt': FieldValue.serverTimestamp(),
+                        'completedBy': widget.userName,
+                        'postnatalWeightKg': weightKg,
+                        'postnatalBP_Systolic': systolic,
+                        'postnatalBP_Diastolic': diastolic,
+                        'postnatalBloodPressure':
+                            '${systolic ?? ''}/${diastolic ?? ''}',
+                        'postnatalUterineInvolution':
+                            uterineInvolutionController.text.trim(),
+                        'postnatalLochiaType': lochiaType,
+                        'postnatalLochiaAmount': lochiaAmount,
+                        'postnatalLochiaSmell': lochiaSmell,
+                        'postnatalWoundStatus': woundStatus,
+                        'postnatalRemarks': remarksController.text.trim(),
+                        'visitRiskStatus': visitRiskStatus,
+                        'findings': findingsController.text.trim(),
+                        'advice': adviceController.text.trim(),
+                        'notes': adviceController.text.trim(),
+                      };
+
+                      if (nextVisitDate != null) {
+                        update['nextVisitDate'] =
+                            Timestamp.fromDate(nextVisitDate!);
+                      }
+
+                      await _firestore
+                          .collection('appointments')
+                          .doc(appointmentId)
+                          .update(update);
+
+                      if (userId.isNotEmpty && visitRiskStatus == 'HIGH RISK') {
+                        final userRef =
+                            _firestore.collection('users').doc(userId);
+                        final userSnap = await userRef.get();
+                        if (userSnap.exists) {
+                          final existing =
+                              userSnap.data() as Map<String, dynamic>;
+                          final existingRisk =
+                              (existing['riskStatus'] ?? '').toString();
+                          if (existingRisk != 'HIGH RISK') {
+                            await userRef.update({'riskStatus': 'HIGH RISK'});
+                          }
+                        }
+                      }
+
+                      if (mounted) {
+                        Navigator.of(dialogContext).pop();
+                        ScaffoldMessenger.of(this.context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Consultation saved for $patientName',
+                              style: const TextStyle(fontFamily: 'Regular'),
+                            ),
+                            backgroundColor: Colors.green,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                        _fetchAppointments();
+                      }
+                    } catch (e) {
+                      ScaffoldMessenger.of(this.context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Failed to save consultation: $e',
+                            style: const TextStyle(fontFamily: 'Regular'),
+                          ),
+                          backgroundColor: Colors.red,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primary,
+                  ),
+                  child: const Text(
+                    'Save & Finish',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontFamily: 'Bold',
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    weightController.dispose();
+    systolicController.dispose();
+    diastolicController.dispose();
+    uterineInvolutionController.dispose();
+    remarksController.dispose();
+    findingsController.dispose();
+    adviceController.dispose();
+  }
+
   Future<void> _cancelAppointment(
       String appointmentId, String patientName) async {
     try {
@@ -1346,6 +2078,7 @@ class _AdminAppointmentSchedulingScreenState
           _buildMenuItem('POSTNATAL PATIENT\nRECORD', false),
           _buildMenuItem('APPOINTMENT\nSCHEDULING', true),
           _buildMenuItem('TRANSFER\nREQUESTS', false),
+          _buildMenuItem('EDUCATIONAL CMS', false),
         ],
       ),
     );
@@ -1430,6 +2163,17 @@ class _AdminAppointmentSchedulingScreenState
           context,
           MaterialPageRoute(
             builder: (context) => AdminTransferRequestsScreen(
+              userRole: widget.userRole,
+              userName: widget.userName,
+            ),
+          ),
+        );
+        break;
+      case 'EDUCATIONAL CMS':
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AdminEducationalCmsScreen(
               userRole: widget.userRole,
               userName: widget.userName,
             ),
@@ -1726,6 +2470,19 @@ class _AdminAppointmentSchedulingScreenState
                   if (maternityStatus == 'PRENATAL')
                     TextButton(
                       onPressed: () => _openPrenatalConsultation(
+                          appointmentId, name, appointmentData),
+                      child: const Text(
+                        'Start Consultation',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontFamily: 'Bold',
+                          color: Colors.blue,
+                        ),
+                      ),
+                    )
+                  else if (maternityStatus == 'POSTNATAL')
+                    TextButton(
+                      onPressed: () => _openPostnatalConsultation(
                           appointmentId, name, appointmentData),
                       child: const Text(
                         'Start Consultation',

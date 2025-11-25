@@ -5,6 +5,7 @@ import 'admin_dashboard_screen.dart';
 import 'admin_prenatal_records_screen.dart';
 import 'admin_postnatal_records_screen.dart';
 import 'admin_appointment_scheduling_screen.dart';
+import 'admin_educational_cms_screen.dart';
 
 class AdminTransferRequestsScreen extends StatefulWidget {
   final String userRole;
@@ -17,10 +18,12 @@ class AdminTransferRequestsScreen extends StatefulWidget {
   });
 
   @override
-  State<AdminTransferRequestsScreen> createState() => _AdminTransferRequestsScreenState();
+  State<AdminTransferRequestsScreen> createState() =>
+      _AdminTransferRequestsScreenState();
 }
 
-class _AdminTransferRequestsScreenState extends State<AdminTransferRequestsScreen> {
+class _AdminTransferRequestsScreenState
+    extends State<AdminTransferRequestsScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   List<Map<String, dynamic>> _requests = [];
   bool _isLoading = true;
@@ -165,6 +168,7 @@ class _AdminTransferRequestsScreenState extends State<AdminTransferRequestsScree
           _buildMenuItem('POSTNATAL PATIENT\nRECORD', false),
           _buildMenuItem('APPOINTMENT\nSCHEDULING', false),
           _buildMenuItem('TRANSFER\nREQUESTS', true),
+          _buildMenuItem('EDUCATIONAL CMS', false),
         ],
       ),
     );
@@ -183,7 +187,8 @@ class _AdminTransferRequestsScreenState extends State<AdminTransferRequestsScree
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
           decoration: BoxDecoration(
-            color: isActive ? Colors.white.withOpacity(0.2) : Colors.transparent,
+            color:
+                isActive ? Colors.white.withOpacity(0.2) : Colors.transparent,
             border: Border(
               left: BorderSide(
                 color: isActive ? Colors.white : Colors.transparent,
@@ -245,6 +250,17 @@ class _AdminTransferRequestsScreenState extends State<AdminTransferRequestsScree
           context,
           MaterialPageRoute(
             builder: (context) => AdminAppointmentSchedulingScreen(
+              userRole: widget.userRole,
+              userName: widget.userName,
+            ),
+          ),
+        );
+        break;
+      case 'EDUCATIONAL CMS':
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AdminEducationalCmsScreen(
               userRole: widget.userRole,
               userName: widget.userName,
             ),
@@ -579,9 +595,11 @@ class _AdminTransferRequestsScreenState extends State<AdminTransferRequestsScree
                         children: [
                           _buildDetailItem('Patient Name', request['userName']),
                           _buildDetailItem('Full Name', request['fullName']),
-                          _buildDetailItem('Date of Birth', request['dateOfBirth']),
+                          _buildDetailItem(
+                              'Date of Birth', request['dateOfBirth']),
                           _buildDetailItem('Address', request['address']),
-                          _buildDetailItem('Patient Type', request['patientType']),
+                          _buildDetailItem(
+                              'Patient Type', request['patientType']),
                         ],
                       ),
                     ),
@@ -590,10 +608,14 @@ class _AdminTransferRequestsScreenState extends State<AdminTransferRequestsScree
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildDetailItem('Transfer To', request['transferTo']),
-                          _buildDetailItem('New Doctor/Clinic', request['newDoctor']),
-                          _buildDetailItem('Clinic Address', request['clinicAddress']),
-                          _buildDetailItem('Contact Info', request['contactInfo']),
+                          _buildDetailItem(
+                              'Transfer To', request['transferTo']),
+                          _buildDetailItem(
+                              'New Doctor/Clinic', request['newDoctor']),
+                          _buildDetailItem(
+                              'Clinic Address', request['clinicAddress']),
+                          _buildDetailItem(
+                              'Contact Info', request['contactInfo']),
                           _buildDetailItem('Reason', request['reason']),
                         ],
                       ),
@@ -614,11 +636,14 @@ class _AdminTransferRequestsScreenState extends State<AdminTransferRequestsScree
                   spacing: 10,
                   runSpacing: 10,
                   children: [
-                    if (request['recordsRequested']?['laboratoryResults'] == true)
+                    if (request['recordsRequested']?['laboratoryResults'] ==
+                        true)
                       _buildRecordChip('Laboratory Results'),
-                    if (request['recordsRequested']?['diagnosticReports'] == true)
+                    if (request['recordsRequested']?['diagnosticReports'] ==
+                        true)
                       _buildRecordChip('Diagnostic Reports'),
-                    if (request['recordsRequested']?['vaccinationRecords'] == true)
+                    if (request['recordsRequested']?['vaccinationRecords'] ==
+                        true)
                       _buildRecordChip('Vaccination Records'),
                     if (request['recordsRequested']?['clinicalNotes'] == true)
                       _buildRecordChip('Clinical Notes'),

@@ -6,6 +6,7 @@ import 'package:maternity_clinic/screens/admin/admin_appointment_scheduling_scre
 import 'package:maternity_clinic/screens/admin/admin_postnatal_records_screen.dart';
 import 'package:maternity_clinic/screens/admin/admin_prenatal_records_screen.dart';
 import 'package:maternity_clinic/screens/admin/admin_transfer_requests_screen.dart';
+import 'package:maternity_clinic/screens/admin/admin_educational_cms_screen.dart';
 import '../../utils/colors.dart';
 import '../auth/home_screen.dart';
 
@@ -511,6 +512,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           _buildMenuItem('POSTNATAL PATIENT\nRECORD', false),
           _buildMenuItem('APPOINTMENT\nSCHEDULING', false),
           _buildMenuItem('TRANSFER\nREQUESTS', _isNurse ? true : false),
+          _buildMenuItem('EDUCATIONAL CMS', false),
 
           const Spacer(),
 
@@ -647,6 +649,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       case 'DATA GRAPHS':
         // Already on this screen, do nothing
         return;
+      case 'EDUCATIONAL CMS':
+        screen = AdminEducationalCmsScreen(
+          userRole: widget.userRole,
+          userName: widget.userName,
+        );
+        break;
       case 'TRANSFER\nREQUESTS':
         // Navigate to transfer requests screen for both admin and nurse
         screen = AdminTransferRequestsScreen(
