@@ -15,13 +15,11 @@ class SignupScreen extends StatefulWidget {
 
 class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _firstNameController = TextEditingController();
-  final TextEditingController _lastNameController = TextEditingController();
+  final TextEditingController _fullNameController = TextEditingController();
   final TextEditingController _contactNumberController =
       TextEditingController();
-  final TextEditingController _addressController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _ageController = TextEditingController();
+  DateTime? _dob;
   String _selectedGender = 'PRENATAL';
   bool _isLoading = false;
   bool _obscurePassword = true;
@@ -31,12 +29,9 @@ class _SignupScreenState extends State<SignupScreen> {
   @override
   void dispose() {
     _emailController.dispose();
-    _firstNameController.dispose();
-    _lastNameController.dispose();
+    _fullNameController.dispose();
     _contactNumberController.dispose();
-    _addressController.dispose();
     _passwordController.dispose();
-    _ageController.dispose();
     super.dispose();
   }
 
@@ -162,35 +157,32 @@ class _SignupScreenState extends State<SignupScreen> {
     }
   }
 
+  int _calculateAge(DateTime dob) {
+    final now = DateTime.now();
+    int age = now.year - dob.year;
+    final birthdayThisYear = DateTime(now.year, dob.month, dob.day);
+    if (now.isBefore(birthdayThisYear)) {
+      age -= 1;
+    }
+    return age;
+  }
+
   Future<void> _handleSignup() async {
     // Validate inputs
     if (_emailController.text.trim().isEmpty) {
       _showErrorDialog('Please enter your email address');
       return;
     }
-    if (_firstNameController.text.trim().isEmpty) {
-      _showErrorDialog('Please enter your first name');
-      return;
-    }
-    if (_lastNameController.text.trim().isEmpty) {
-      _showErrorDialog('Please enter your last name');
+    if (_fullNameController.text.trim().isEmpty) {
+      _showErrorDialog('Please enter your full name');
       return;
     }
     if (_contactNumberController.text.trim().isEmpty) {
       _showErrorDialog('Please enter your contact number');
       return;
     }
-    if (_addressController.text.trim().isEmpty) {
-      _showErrorDialog('Please enter your address');
-      return;
-    }
-    if (_ageController.text.trim().isEmpty) {
-      _showErrorDialog('Please enter your age');
-      return;
-    }
-    int? age = int.tryParse(_ageController.text.trim());
-    if (age == null || age < 12 || age > 60) {
-      _showErrorDialog('Please enter a valid age between 12 and 60');
+    if (_dob == null) {
+      _showErrorDialog('Please select your date of birth');
       return;
     }
     if (_passwordController.text.trim().isEmpty) {
@@ -207,6 +199,8 @@ class _SignupScreenState extends State<SignupScreen> {
     });
 
     try {
+      int age = _calculateAge(_dob!);
+
       // Create user with Firebase Auth
       UserCredential userCredential =
           await _auth.createUserWithEmailAndPassword(
@@ -217,16 +211,17 @@ class _SignupScreenState extends State<SignupScreen> {
       // Store user data in Firestore
       await _firestore.collection('users').doc(userCredential.user!.uid).set({
         'email': _emailController.text.trim(),
-        'firstName': _firstNameController.text.trim(),
-        'lastName': _lastNameController.text.trim(),
-        'name':
-            '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}',
+        'firstName': _fullNameController.text.trim(),
+        'lastName': '',
+        'name': _fullNameController.text.trim(),
         'contactNumber': _contactNumberController.text.trim(),
-        'address': _addressController.text.trim(),
+        'address': '',
         'age': age,
+        'dob': Timestamp.fromDate(_dob!),
         'patientType': _selectedGender,
         'createdAt': FieldValue.serverTimestamp(),
         'role': 'patient',
+        'profileCompleted': false,
       });
 
       setState(() {
@@ -481,11 +476,11 @@ class _SignupScreenState extends State<SignupScreen> {
           ),
           const SizedBox(height: 15),
 
-          // First Name Field
+          // Full Name Field
           TextField(
-            controller: _firstNameController,
+            controller: _fullNameController,
             decoration: InputDecoration(
-              hintText: 'First Name',
+              hintText: 'Full Name',
               hintStyle: TextStyle(
                 color: Colors.grey.shade500,
                 fontFamily: 'Regular',
@@ -513,35 +508,70 @@ class _SignupScreenState extends State<SignupScreen> {
           ),
           const SizedBox(height: 15),
 
-          // Last Name Field
-          TextField(
-            controller: _lastNameController,
-            decoration: InputDecoration(
-              hintText: 'Last Name',
-              hintStyle: TextStyle(
-                color: Colors.grey.shade500,
-                fontFamily: 'Regular',
-                fontSize: 14,
+          // Date of Birth Field
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Date of Birth (DOB)',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontFamily: 'Regular',
+                  fontSize: 13,
+                ),
               ),
-              filled: true,
-              fillColor: Colors.white,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 15,
+              const SizedBox(height: 6),
+              GestureDetector(
+                onTap: () async {
+                  final now = DateTime.now();
+                  final initial =
+                      _dob ?? DateTime(now.year - 25, now.month, now.day);
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: initial,
+                    firstDate: DateTime(now.year - 60),
+                    lastDate: now,
+                  );
+                  if (picked != null) {
+                    setState(() {
+                      _dob = picked;
+                    });
+                  }
+                },
+                child: Container(
+                  width: double.infinity,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.calendar_today,
+                        size: 18,
+                        color: primary,
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        _dob == null
+                            ? 'Select Date of Birth'
+                            : '${_dob!.month.toString().padLeft(2, '0')}/${_dob!.day.toString().padLeft(2, '0')}/${_dob!.year}',
+                        style: TextStyle(
+                          color: _dob == null
+                              ? Colors.grey.shade600
+                              : Colors.black,
+                          fontFamily: 'Regular',
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.grey.shade300),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.grey.shade300),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: primary, width: 2),
-              ),
-            ),
+            ],
           ),
           const SizedBox(height: 15),
 
@@ -578,70 +608,8 @@ class _SignupScreenState extends State<SignupScreen> {
           ),
           const SizedBox(height: 15),
 
-          // Address Field
-          TextField(
-            controller: _addressController,
-            decoration: InputDecoration(
-              hintText: 'Address',
-              hintStyle: TextStyle(
-                color: Colors.grey.shade500,
-                fontFamily: 'Regular',
-                fontSize: 14,
-              ),
-              filled: true,
-              fillColor: Colors.white,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 15,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.grey.shade300),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.grey.shade300),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: primary, width: 2),
-              ),
-            ),
-          ),
-          const SizedBox(height: 15),
-
-          // Age Field
-          TextField(
-            controller: _ageController,
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(
-              hintText: 'Age',
-              hintStyle: TextStyle(
-                color: Colors.grey.shade500,
-                fontFamily: 'Regular',
-                fontSize: 14,
-              ),
-              filled: true,
-              fillColor: Colors.white,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 15,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.grey.shade300),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.grey.shade300),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: primary, width: 2),
-              ),
-            ),
-          ),
-          const SizedBox(height: 15),
+          // (Age will be calculated from DOB and stored in profile)
+          // No direct age field here.
 
           // Password Field
           TextField(

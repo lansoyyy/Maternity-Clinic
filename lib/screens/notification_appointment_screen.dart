@@ -7,7 +7,10 @@ import 'postnatal_dashboard_screen.dart';
 import 'prenatal_history_checkup_screen.dart';
 import 'postnatal_history_checkup_screen.dart';
 import 'transfer_record_request_screen.dart';
+import 'prenatal_update_profile_screen.dart';
 import '../widgets/book_appointment_dialog.dart';
+import '../widgets/request_checkup_dialog.dart';
+import 'prenatal_checkup_requests_screen.dart';
 
 class NotificationAppointmentScreen extends StatefulWidget {
   final String patientType; // 'PRENATAL' or 'POSTNATAL'
@@ -29,6 +32,8 @@ class _NotificationAppointmentScreenState
   String _userName = 'Loading...';
   List<Map<String, dynamic>> _appointments = [];
   bool _isLoading = true;
+  bool _profileCompleted = false;
+  int _selectedTabIndex = 0; // 0 = upcoming, 1 = history
 
   @override
   void initState() {
@@ -50,6 +55,7 @@ class _NotificationAppointmentScreenState
           if (mounted) {
             setState(() {
               _userName = userData['name'] ?? 'User';
+              _profileCompleted = userData['profileCompleted'] == true;
             });
           }
         }
@@ -61,6 +67,63 @@ class _NotificationAppointmentScreenState
         });
       }
     }
+  }
+
+  Future<void> _openRequestCheckup() async {
+    if (widget.patientType == 'PRENATAL' && !_profileCompleted) {
+      _showProfileRequiredDialog();
+      return;
+    }
+
+    await showDialog(
+      context: context,
+      builder: (context) => RequestCheckupDialog(
+        patientType: widget.patientType,
+      ),
+    );
+  }
+
+  void _showProfileRequiredDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+          'Update Profile Required',
+          style: TextStyle(fontFamily: 'Bold'),
+        ),
+        content: const Text(
+          'Before you can book an appointment you need to fill out "Update Profile" in your prenatal dashboard.',
+          style: TextStyle(fontFamily: 'Regular'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancel',
+              style:
+                  TextStyle(color: Colors.grey.shade700, fontFamily: 'Medium'),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const PrenatalUpdateProfileScreen(),
+                ),
+              ).then((_) {
+                _loadUserName();
+              });
+            },
+            child: Text(
+              'Go to Update Profile',
+              style: TextStyle(color: primary, fontFamily: 'Bold'),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _loadUserAppointments() async {
@@ -111,29 +174,179 @@ class _NotificationAppointmentScreenState
     }
   }
 
+  bool _isUpcomingAppointment(Map<String, dynamic> appointment) {
+    final status = (appointment['status'] ?? 'Pending').toString();
+    if (status == 'Completed' || status == 'Cancelled' || status == 'No-show') {
+      return false;
+    }
+
+    if (appointment['appointmentDate'] is! Timestamp) {
+      return false;
+    }
+
+    final DateTime date =
+        (appointment['appointmentDate'] as Timestamp).toDate();
+    return date.isAfter(DateTime.now());
+  }
+
+  bool _canCancelAppointment(Map<String, dynamic> appointment) {
+    final status = (appointment['status'] ?? 'Pending').toString();
+    if (status == 'Completed' || status == 'Cancelled' || status == 'No-show') {
+      return false;
+    }
+    if (appointment['appointmentDate'] is! Timestamp) {
+      return false;
+    }
+    final DateTime date =
+        (appointment['appointmentDate'] as Timestamp).toDate();
+    return date.isAfter(DateTime.now().add(const Duration(hours: 24)));
+  }
+
+  Future<void> _cancelAppointment(Map<String, dynamic> appointment) async {
+    final String? id = appointment['id'] as String?;
+    if (id == null) return;
+
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+          'Cancel Appointment',
+          style: TextStyle(fontFamily: 'Bold'),
+        ),
+        content: const Text(
+          'Are you sure you want to cancel this appointment? You will need to request a new checkup if you still wish to be seen.',
+          style: TextStyle(fontFamily: 'Regular'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              'No',
+              style:
+                  TextStyle(color: Colors.grey.shade700, fontFamily: 'Medium'),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(
+              'Yes, Cancel',
+              style: TextStyle(color: primary, fontFamily: 'Bold'),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await _firestore.collection('appointments').doc(id).update({
+        'status': 'Cancelled',
+        'cancelledAt': FieldValue.serverTimestamp(),
+        'cancelledBy': 'patient',
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              'Appointment cancelled successfully',
+              style: TextStyle(fontFamily: 'Regular'),
+            ),
+            backgroundColor: Colors.orange,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+
+      await _loadUserAppointments();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              'Failed to cancel appointment. Please try again.',
+              style: TextStyle(fontFamily: 'Regular'),
+            ),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showAppointmentDetails(Map<String, dynamic> appointment) {
+    final String status = (appointment['status'] ?? 'Pending').toString();
+    final String notes = (appointment['notes'] ?? '').toString();
+    String message;
+
+    if (status == 'Completed') {
+      if (notes.isNotEmpty) {
+        message = notes;
+      } else {
+        message = 'Sorry, there\'s no available recommendation for you.';
+      }
+    } else if (status == 'Cancelled') {
+      message = 'Sorry, there\'s no available recommendation for you.';
+    } else if (status == 'No-show') {
+      message = 'Please request appointment again.';
+    } else {
+      message = 'This appointment is still active.';
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+          'Appointment Details',
+          style: TextStyle(fontFamily: 'Bold'),
+        ),
+        content: Text(
+          message,
+          style: const TextStyle(fontFamily: 'Regular'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Close',
+              style: TextStyle(color: primary, fontFamily: 'Bold'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
-          final result = await showDialog(
-            context: context,
-            builder: (context) => BookAppointmentDialog(
-              patientType: widget.patientType,
-            ),
-          );
+          if (widget.patientType == 'PRENATAL') {
+            await _openRequestCheckup();
+          } else {
+            final result = await showDialog(
+              context: context,
+              builder: (context) => BookAppointmentDialog(
+                patientType: widget.patientType,
+              ),
+            );
 
-          // Refresh appointments if booking was successful
-          if (result == true) {
-            _loadUserAppointments();
+            if (result == true) {
+              _loadUserAppointments();
+            }
           }
         },
         backgroundColor: primary,
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text(
-          'Book Appointment',
-          style: TextStyle(
+        label: Text(
+          widget.patientType == 'PRENATAL'
+              ? 'Request Checkup'
+              : 'Book Appointment',
+          style: const TextStyle(
             color: Colors.white,
             fontFamily: 'Bold',
           ),
@@ -170,7 +383,77 @@ class _NotificationAppointmentScreenState
                       color: Colors.grey.shade600,
                     ),
                   ),
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 20),
+                  if (widget.patientType == 'PRENATAL') ...[
+                    Row(
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: _openRequestCheckup,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primary,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 10,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          icon: const Icon(Icons.note_add,
+                              color: Colors.white, size: 18),
+                          label: const Text(
+                            'Request Checkup',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontFamily: 'Bold',
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        OutlinedButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const PrenatalCheckupRequestsScreen(),
+                              ),
+                            );
+                          },
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 10,
+                            ),
+                            side: BorderSide(color: primary),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          icon: Icon(Icons.list_alt, color: primary, size: 18),
+                          label: Text(
+                            'View Checkup Requests',
+                            style: TextStyle(
+                              color: primary,
+                              fontSize: 13,
+                              fontFamily: 'Bold',
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+
+                  Row(
+                    children: [
+                      _buildTabButton('UPCOMING APPOINTMENTS', 0),
+                      const SizedBox(width: 8),
+                      _buildTabButton('APPOINTMENT HISTORY', 1),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
 
                   // Loading State
                   if (_isLoading)
@@ -181,43 +464,70 @@ class _NotificationAppointmentScreenState
                     )
 
                   // Appointments List
-                  else if (_appointments.isEmpty)
-                    Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.calendar_today_outlined,
-                            size: 80,
-                            color: Colors.grey.shade400,
-                          ),
-                          const SizedBox(height: 20),
-                          Text(
-                            'No Appointments Yet',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontFamily: 'Bold',
-                              color: Colors.grey.shade600,
+                  else ...[
+                    Builder(
+                      builder: (context) {
+                        final upcoming = _appointments
+                            .where(_isUpcomingAppointment)
+                            .toList();
+                        final history = _appointments
+                            .where((a) => !_isUpcomingAppointment(a))
+                            .toList();
+                        final currentList =
+                            _selectedTabIndex == 0 ? upcoming : history;
+
+                        if (currentList.isEmpty) {
+                          return Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.calendar_today_outlined,
+                                  size: 80,
+                                  color: Colors.grey.shade400,
+                                ),
+                                const SizedBox(height: 20),
+                                Text(
+                                  _selectedTabIndex == 0
+                                      ? 'No Upcoming Appointments'
+                                      : 'No Appointment History',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontFamily: 'Bold',
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  widget.patientType == 'PRENATAL'
+                                      ? 'Submit a checkup request using the button above.'
+                                      : 'Book your first appointment using the button below.',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontFamily: 'Regular',
+                                    color: Colors.grey.shade500,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
                             ),
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            'Book your first appointment using the button below',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontFamily: 'Regular',
-                              color: Colors.grey.shade500,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    )
-                  else
-                    ..._appointments.map((appointment) => Padding(
-                          padding: const EdgeInsets.only(bottom: 20),
-                          child: _buildAppointmentCard(appointment),
-                        )),
+                          );
+                        }
+
+                        return Column(
+                          children: currentList
+                              .map((appointment) => Padding(
+                                    padding: const EdgeInsets.only(bottom: 20),
+                                    child: _buildAppointmentCard(
+                                      appointment,
+                                      isUpcoming: _selectedTabIndex == 0,
+                                    ),
+                                  ))
+                              .toList(),
+                        );
+                      },
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -363,13 +673,19 @@ class _NotificationAppointmentScreenState
     }
   }
 
-  Widget _buildAppointmentCard(Map<String, dynamic> appointment) {
-    String status = appointment['status'] ?? 'Pending';
+  Widget _buildAppointmentCard(
+    Map<String, dynamic> appointment, {
+    required bool isUpcoming,
+  }) {
+    String rawStatus = appointment['status'] ?? 'Pending';
+    String displayStatus = _normalizeStatusLabel(rawStatus);
     Color statusColor;
     IconData statusIcon;
 
-    switch (status) {
+    switch (rawStatus) {
       case 'Confirmed':
+      case 'Accepted':
+      case 'Completed':
         statusColor = Colors.green;
         statusIcon = Icons.check_circle;
         break;
@@ -377,9 +693,17 @@ class _NotificationAppointmentScreenState
         statusColor = Colors.orange;
         statusIcon = Icons.schedule;
         break;
+      case 'Rescheduled':
+        statusColor = Colors.blue;
+        statusIcon = Icons.update;
+        break;
       case 'Cancelled':
         statusColor = Colors.red;
         statusIcon = Icons.cancel;
+        break;
+      case 'No-show':
+        statusColor = Colors.grey;
+        statusIcon = Icons.report_problem;
         break;
       default:
         statusColor = Colors.grey;
@@ -435,7 +759,7 @@ class _NotificationAppointmentScreenState
                     Icon(statusIcon, size: 14, color: statusColor),
                     const SizedBox(width: 4),
                     Text(
-                      status,
+                      displayStatus,
                       style: TextStyle(
                         fontSize: 12,
                         fontFamily: 'Bold',
@@ -512,6 +836,36 @@ class _NotificationAppointmentScreenState
                 ),
               ],
             ),
+
+          const SizedBox(height: 10),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              if (isUpcoming && _canCancelAppointment(appointment))
+                TextButton(
+                  onPressed: () => _cancelAppointment(appointment),
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(
+                      fontFamily: 'Bold',
+                      color: Colors.red,
+                    ),
+                  ),
+                )
+              else if (!isUpcoming)
+                TextButton(
+                  onPressed: () => _showAppointmentDetails(appointment),
+                  child: Text(
+                    'View Details',
+                    style: TextStyle(
+                      fontFamily: 'Bold',
+                      color: primary,
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ],
       ),
     );
@@ -549,5 +903,44 @@ class _NotificationAppointmentScreenState
 
   String _formatDate(DateTime date) {
     return '${date.month}/${date.day}/${date.year}';
+  }
+
+  String _normalizeStatusLabel(String rawStatus) {
+    if (rawStatus == 'Accepted') {
+      return 'Approved';
+    }
+    return rawStatus;
+  }
+
+  Widget _buildTabButton(String label, int index) {
+    final bool isActive = _selectedTabIndex == index;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _selectedTabIndex = index;
+          });
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: isActive ? primary : Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: primary),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontFamily: 'Bold',
+                color: isActive ? Colors.white : primary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
