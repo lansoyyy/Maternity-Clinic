@@ -53,11 +53,13 @@ class _BookAppointmentDialogState extends State<BookAppointmentDialog> {
   bool _infantFever = false;
   bool _fewDiapers = false;
 
+  // Union of all possible time slots; actual availability depends on selected day
   final List<String> _timeSlots = [
-    '8:00 AM',
-    '10:00 AM',
-    '12:00 PM',
-    '2:00 PM'
+    '2:00 PM',
+    '3:00 PM',
+    '4:00 PM',
+    '5:00 PM',
+    '6:00 PM',
   ];
 
   final List<String> _prenatalAppointmentTypes = [
@@ -1144,15 +1146,32 @@ class _BookAppointmentDialogState extends State<BookAppointmentDialog> {
         const SizedBox(height: 8),
         GestureDetector(
           onTap: () async {
+            DateTime today = DateTime.now();
+            DateTime initial =
+                _selectedDate ?? today.add(const Duration(days: 1));
+
             DateTime? picked = await showDatePicker(
               context: context,
-              initialDate: DateTime.now().add(const Duration(days: 1)),
-              firstDate: DateTime.now().add(const Duration(days: 1)),
-              lastDate: DateTime.now().add(const Duration(days: 365)),
+              initialDate: initial,
+              firstDate: today,
+              lastDate: today.add(const Duration(days: 365)),
             );
             if (picked != null) {
+              if (!_isAllowedDate(picked)) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                          'Appointments are only available on Tuesday, Wednesday, Friday (4:00 PM - 6:00 PM) and Saturday (2:00 PM - 6:00 PM).'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+                return;
+              }
               setState(() {
                 _selectedDate = picked;
+                _selectedTimeSlot = null;
               });
             }
           },
@@ -1193,7 +1212,7 @@ class _BookAppointmentDialogState extends State<BookAppointmentDialog> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Availability time is starting 8:00 AM - 3:00 PM with 2 hours interval between appointments',
+          'Available days: Tuesday, Wednesday, Friday (4:00 PM - 6:00 PM) and Saturday (2:00 PM - 6:00 PM).',
           style: TextStyle(
             fontSize: 12,
             fontFamily: 'Regular',
@@ -1280,11 +1299,39 @@ class _BookAppointmentDialogState extends State<BookAppointmentDialog> {
     );
   }
 
-  Future<List<bool>> _getTimeSlotAvailability() async {
-    if (_selectedDate == null) return List.filled(_timeSlots.length, true);
+  bool _isAllowedDate(DateTime date) {
+    final int weekday = date.weekday;
+    return weekday == DateTime.tuesday ||
+        weekday == DateTime.wednesday ||
+        weekday == DateTime.friday ||
+        weekday == DateTime.saturday;
+  }
 
+  List<String> _allowedSlotsForDate(DateTime date) {
+    final int weekday = date.weekday;
+    if (weekday == DateTime.saturday) {
+      // Saturday: 2:00 PM - 6:00 PM
+      return ['2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM', '6:00 PM'];
+    }
+    if (weekday == DateTime.tuesday ||
+        weekday == DateTime.wednesday ||
+        weekday == DateTime.friday) {
+      // Tue/Wed/Fri: 4:00 PM - 6:00 PM
+      return ['4:00 PM', '5:00 PM', '6:00 PM'];
+    }
+    return const [];
+  }
+
+  Future<List<bool>> _getTimeSlotAvailability() async {
+    if (_selectedDate == null) return List.filled(_timeSlots.length, false);
+
+    final allowedForDate = _allowedSlotsForDate(_selectedDate!);
     List<bool> availability = [];
     for (String timeSlot in _timeSlots) {
+      if (!allowedForDate.contains(timeSlot)) {
+        availability.add(false);
+        continue;
+      }
       int count =
           await _getAppointmentCountForTimeSlot(_selectedDate!, timeSlot);
       availability.add(count < 3);

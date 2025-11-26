@@ -86,6 +86,79 @@ class _TransferRecordRequestScreenState
     }
   }
 
+  Future<void> _cancelExistingRequest() async {
+    final String? id = _existingRequest?['id'] as String?;
+    if (id == null) return;
+
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+          'Cancel Transfer Request',
+          style: TextStyle(fontFamily: 'Bold'),
+        ),
+        content: const Text(
+          'Are you sure you want to cancel this transfer of record request?',
+          style: TextStyle(fontFamily: 'Regular'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              'No',
+              style:
+                  TextStyle(color: Colors.grey.shade700, fontFamily: 'Medium'),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(
+              'Yes, Cancel',
+              style: TextStyle(color: primary, fontFamily: 'Bold'),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await _firestore.collection('transferRequests').doc(id).update({
+        'status': 'Cancelled',
+        'updatedAt': FieldValue.serverTimestamp(),
+        'cancelledBy': 'patient',
+      });
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            'Transfer request cancelled successfully',
+            style: TextStyle(fontFamily: 'Regular'),
+          ),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+
+      await _checkExistingRequest();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            'Failed to cancel transfer request. Please try again.',
+            style: TextStyle(fontFamily: 'Regular'),
+          ),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
   Future<void> _checkExistingRequest() async {
     try {
       User? user = _auth.currentUser;
@@ -333,25 +406,45 @@ class _TransferRecordRequestScreenState
                   ],
                 ),
               ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                decoration: BoxDecoration(
-                  color: _existingRequest?['status'] == 'Pending'
-                      ? Colors.orange.shade100
-                      : Colors.blue.shade100,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  _existingRequest?['status'] ?? 'Pending',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontFamily: 'Bold',
-                    color: _existingRequest?['status'] == 'Pending'
-                        ? Colors.orange.shade700
-                        : Colors.blue.shade700,
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: _existingRequest?['status'] == 'Pending'
+                          ? Colors.orange.shade100
+                          : Colors.blue.shade100,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      _existingRequest?['status'] ?? 'Pending',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontFamily: 'Bold',
+                        color: _existingRequest?['status'] == 'Pending'
+                            ? Colors.orange.shade700
+                            : Colors.blue.shade700,
+                      ),
+                    ),
                   ),
-                ),
+                  if ((_existingRequest?['status'] ?? 'Pending') == 'Pending')
+                    PopupMenuButton<String>(
+                      icon: const Icon(Icons.more_vert),
+                      onSelected: (value) {
+                        if (value == 'cancel') {
+                          _cancelExistingRequest();
+                        }
+                      },
+                      itemBuilder: (context) => const [
+                        PopupMenuItem<String>(
+                          value: 'cancel',
+                          child: Text('Cancel request'),
+                        ),
+                      ],
+                    ),
+                ],
               ),
             ],
           ),
@@ -806,7 +899,6 @@ class _TransferRecordRequestScreenState
         const SizedBox(height: 10),
         _buildRadioOption('Pick-up by Patient/Authorized Representative'),
         _buildRadioOption('Send through Email'),
-        _buildRadioOption('Postal Mail to the address above'),
         const SizedBox(height: 30),
 
         const Text(

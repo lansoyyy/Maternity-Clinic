@@ -993,7 +993,7 @@ class _AdminAppointmentSchedulingScreenState
         if (systolic >= 140 || diastolic >= 90) {
           highRisk = true;
           reasons.add(
-              'BP 9140/90 (possible postpartum hypertension / preeclampsia)');
+              'BP 9140/90 (possible postpartum hypertension / preeclampsia)');
         }
       }
 

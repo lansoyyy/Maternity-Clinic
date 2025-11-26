@@ -402,14 +402,54 @@ class _PostnatalHistoryCheckupScreenState
 
   Widget _buildAppointmentSummaryCard(
       Map<String, dynamic> appointment, int visitNumber) {
-    String date = 'N/A';
+    // Completed date
+    String completedDate = 'N/A';
     if (appointment['createdAt'] != null) {
       try {
         DateTime dateTime = (appointment['createdAt'] as Timestamp).toDate();
-        date = '${dateTime.day}/${dateTime.month}/${dateTime.year}';
-      } catch (e) {
-        date = 'N/A';
+        completedDate = '${dateTime.day}/${dateTime.month}/${dateTime.year}';
+      } catch (_) {
+        completedDate = 'N/A';
       }
+    }
+
+    // Schedule (Date, Time)
+    String scheduleDate = 'N/A';
+    String scheduleTime = 'N/A';
+    if (appointment['appointmentDate'] is Timestamp) {
+      try {
+        final DateTime schedDate =
+            (appointment['appointmentDate'] as Timestamp).toDate();
+        scheduleDate = '${schedDate.day}/${schedDate.month}/${schedDate.year}';
+      } catch (_) {}
+    } else if (appointment['day'] != null) {
+      scheduleDate = appointment['day'].toString();
+    }
+    if (appointment['timeSlot'] != null) {
+      scheduleTime = appointment['timeSlot'].toString();
+    }
+
+    // Findings and notes (prescription / recommendation)
+    final String findingsText;
+    final rawFindings = appointment['findings']?.toString();
+    if (rawFindings != null && rawFindings.trim().isNotEmpty) {
+      findingsText = rawFindings;
+    } else {
+      findingsText = 'No findings recorded';
+    }
+
+    String notesText = '';
+    final rawNotes = appointment['notes']?.toString();
+    if (rawNotes != null && rawNotes.trim().isNotEmpty) {
+      notesText = rawNotes;
+    } else {
+      final advice = appointment['advice']?.toString();
+      if (advice != null && advice.trim().isNotEmpty) {
+        notesText = advice;
+      }
+    }
+    if (notesText.isEmpty) {
+      notesText = 'No prescription / recommendation';
     }
 
     return Container(
@@ -461,7 +501,7 @@ class _PostnatalHistoryCheckupScreenState
                       ),
                     ),
                     Text(
-                      'Completed on $date',
+                      'Completed on $completedDate',
                       style: TextStyle(
                         fontSize: 12,
                         fontFamily: 'Regular',
@@ -519,10 +559,10 @@ class _PostnatalHistoryCheckupScreenState
                       ],
                     ),
                     const SizedBox(height: 8),
-                    _buildInfoRow('Day:', appointment['day'] ?? 'N/A'),
-                    _buildInfoRow('Time:', appointment['timeSlot'] ?? 'N/A'),
+                    _buildInfoRow('Date:', scheduleDate),
+                    _buildInfoRow('Time:', scheduleTime),
                     if (appointment['rescheduledAt'] != null)
-                      _buildInfoRow('Rescheduled:',
+                      _buildInfoRow('Rescheduled on:',
                           _formatDate(appointment['rescheduledAt'])),
                   ],
                 ),
@@ -559,7 +599,7 @@ class _PostnatalHistoryCheckupScreenState
                   ],
                 ),
               ),
-              // Column 3: Notes
+              // Column 3: Findings and Notes
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -569,7 +609,7 @@ class _PostnatalHistoryCheckupScreenState
                         Icon(Icons.note_alt, size: 16, color: primary),
                         const SizedBox(width: 6),
                         const Text(
-                          'Notes',
+                          'Findings',
                           style: TextStyle(
                             fontSize: 13,
                             fontFamily: 'Bold',
@@ -580,9 +620,26 @@ class _PostnatalHistoryCheckupScreenState
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      appointment['notes']?.toString().isNotEmpty == true
-                          ? appointment['notes']
-                          : 'No notes',
+                      findingsText,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontFamily: 'Regular',
+                        color: Colors.grey.shade700,
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Notes (Prescription / Recommendation)',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontFamily: 'Bold',
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      notesText,
                       style: TextStyle(
                         fontSize: 12,
                         fontFamily: 'Regular',

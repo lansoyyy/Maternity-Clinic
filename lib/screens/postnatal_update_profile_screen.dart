@@ -19,6 +19,7 @@ class _PostnatalUpdateProfileScreenState
 
   bool _isLoading = true;
   bool _isSaving = false;
+  bool _isProfileCompleted = false;
 
   final TextEditingController _fullNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
@@ -113,6 +114,8 @@ class _PostnatalUpdateProfileScreenState
       if (doc.exists) {
         final data = doc.data() as Map<String, dynamic>;
 
+        _isProfileCompleted = data['profileCompleted'] == true;
+
         _fullNameController.text = (data['name'] ?? '').toString();
         _emailController.text = (data['email'] ?? user.email ?? '').toString();
         _contactNumberController.text =
@@ -193,7 +196,7 @@ class _PostnatalUpdateProfileScreenState
   }
 
   Future<void> _saveProfile() async {
-    if (_isSaving) return;
+    if (_isSaving || _isProfileCompleted) return;
 
     if (_fullNameController.text.trim().isEmpty) {
       _showError('Please enter your full name');
@@ -290,6 +293,9 @@ class _PostnatalUpdateProfileScreenState
       await _firestore.collection('users').doc(user.uid).update(updateData);
 
       if (mounted) {
+        setState(() {
+          _isProfileCompleted = true;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text(
@@ -330,10 +336,6 @@ class _PostnatalUpdateProfileScreenState
     return Scaffold(
       appBar: AppBar(
         backgroundColor: primary,
-        title: const Text(
-          'Update Profile',
-          style: TextStyle(fontFamily: 'Bold'),
-        ),
       ),
       body: _isLoading
           ? Center(
@@ -353,13 +355,27 @@ class _PostnatalUpdateProfileScreenState
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: Colors.orange.shade200),
                     ),
-                    child: const Text(
-                      'Before you can book an appointment, you need to complete your profile information below.',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontFamily: 'Regular',
-                        color: Colors.black87,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text(
+                          'Before you can book an appointment, you need to complete your profile information below.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontFamily: 'Regular',
+                            color: Colors.black87,
+                          ),
+                        ),
+                        SizedBox(height: 6),
+                        Text(
+                          'Once you have saved the required details, they can no longer be edited in the system. Only the clinic information can be changed.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontFamily: 'Regular',
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   _buildBasicInfoSection(),
@@ -375,7 +391,9 @@ class _PostnatalUpdateProfileScreenState
                   Align(
                     alignment: Alignment.centerRight,
                     child: ElevatedButton(
-                      onPressed: _isSaving ? null : _saveProfile,
+                      onPressed: _isSaving || _isProfileCompleted
+                          ? null
+                          : _saveProfile,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: primary,
                         padding: const EdgeInsets.symmetric(
@@ -434,6 +452,7 @@ class _PostnatalUpdateProfileScreenState
           _buildTextField(
             label: 'Full Name',
             controller: _fullNameController,
+            hintText: 'e.g. Maria Dela Cruz',
           ),
           const SizedBox(height: 12),
           Row(
@@ -455,11 +474,13 @@ class _PostnatalUpdateProfileScreenState
           _buildTextField(
             label: 'Email Address',
             controller: _emailController,
+            hintText: 'e.g. name@example.com',
           ),
           const SizedBox(height: 12),
           _buildTextField(
             label: 'Contact Number',
             controller: _contactNumberController,
+            hintText: '11-digit mobile number',
           ),
         ],
       ),
@@ -481,6 +502,7 @@ class _PostnatalUpdateProfileScreenState
         const SizedBox(height: 6),
         GestureDetector(
           onTap: () async {
+            if (_isProfileCompleted) return;
             final now = DateTime.now();
             final initial = _dob ?? DateTime(now.year - 25, now.month, now.day);
             final picked = await showDatePicker(
@@ -560,6 +582,7 @@ class _PostnatalUpdateProfileScreenState
                 child: _buildTextField(
                   label: 'House No.',
                   controller: _houseNoController,
+                  hintText: 'House / block / lot number',
                 ),
               ),
               const SizedBox(width: 12),
@@ -567,6 +590,7 @@ class _PostnatalUpdateProfileScreenState
                 child: _buildTextField(
                   label: 'Street',
                   controller: _streetController,
+                  hintText: 'Street name or subdivision',
                 ),
               ),
             ],
@@ -578,6 +602,7 @@ class _PostnatalUpdateProfileScreenState
                 child: _buildTextField(
                   label: 'Barangay',
                   controller: _barangayController,
+                  hintText: 'Your barangay',
                 ),
               ),
               const SizedBox(width: 12),
@@ -585,6 +610,7 @@ class _PostnatalUpdateProfileScreenState
                 child: _buildTextField(
                   label: 'City',
                   controller: _cityController,
+                  hintText: 'City or municipality',
                 ),
               ),
             ],
@@ -593,6 +619,7 @@ class _PostnatalUpdateProfileScreenState
           _buildTextField(
             label: 'Civil Status (e.g., Single, Married, Live-in Partner)',
             controller: _civilStatusController,
+            hintText: 'e.g. Married',
           ),
           const SizedBox(height: 16),
           const Text(
@@ -607,11 +634,13 @@ class _PostnatalUpdateProfileScreenState
           _buildTextField(
             label: 'Emergency Contact Name',
             controller: _emergencyNameController,
+            hintText: 'e.g. Spouse or close relative',
           ),
           const SizedBox(height: 12),
           _buildTextField(
             label: 'Emergency Contact Number',
             controller: _emergencyNumberController,
+            hintText: 'Mobile number of emergency contact',
           ),
         ],
       ),
@@ -649,6 +678,7 @@ class _PostnatalUpdateProfileScreenState
           const SizedBox(height: 6),
           GestureDetector(
             onTap: () async {
+              if (_isProfileCompleted) return;
               final now = DateTime.now();
               final initial = _deliveryDate ?? now;
               final picked = await showDatePicker(
@@ -716,11 +746,13 @@ class _PostnatalUpdateProfileScreenState
                   ),
                 )
                 .toList(),
-            onChanged: (value) {
-              setState(() {
-                _deliveryPlace = value;
-              });
-            },
+            onChanged: _isProfileCompleted
+                ? null
+                : (value) {
+                    setState(() {
+                      _deliveryPlace = value;
+                    });
+                  },
             decoration: InputDecoration(
               filled: true,
               fillColor: Colors.white,
@@ -766,11 +798,13 @@ class _PostnatalUpdateProfileScreenState
                   ),
                 )
                 .toList(),
-            onChanged: (value) {
-              setState(() {
-                _deliveryType = value;
-              });
-            },
+            onChanged: _isProfileCompleted
+                ? null
+                : (value) {
+                    setState(() {
+                      _deliveryType = value;
+                    });
+                  },
             decoration: InputDecoration(
               filled: true,
               fillColor: Colors.white,
@@ -818,47 +852,57 @@ class _PostnatalUpdateProfileScreenState
           CheckboxListTile(
             title: const Text('Excessive bleeding'),
             value: _excessiveBleeding,
-            onChanged: (value) {
-              setState(() {
-                _excessiveBleeding = value ?? false;
-              });
-            },
+            onChanged: _isProfileCompleted
+                ? null
+                : (value) {
+                    setState(() {
+                      _excessiveBleeding = value ?? false;
+                    });
+                  },
           ),
           CheckboxListTile(
             title: const Text('Fever'),
             value: _fever,
-            onChanged: (value) {
-              setState(() {
-                _fever = value ?? false;
-              });
-            },
+            onChanged: _isProfileCompleted
+                ? null
+                : (value) {
+                    setState(() {
+                      _fever = value ?? false;
+                    });
+                  },
           ),
           CheckboxListTile(
             title: const Text('Pain'),
             value: _pain,
-            onChanged: (value) {
-              setState(() {
-                _pain = value ?? false;
-              });
-            },
+            onChanged: _isProfileCompleted
+                ? null
+                : (value) {
+                    setState(() {
+                      _pain = value ?? false;
+                    });
+                  },
           ),
           CheckboxListTile(
             title: const Text('Breastfeeding difficulty'),
             value: _breastfeedingDifficulty,
-            onChanged: (value) {
-              setState(() {
-                _breastfeedingDifficulty = value ?? false;
-              });
-            },
+            onChanged: _isProfileCompleted
+                ? null
+                : (value) {
+                    setState(() {
+                      _breastfeedingDifficulty = value ?? false;
+                    });
+                  },
           ),
           CheckboxListTile(
             title: const Text('Wound infection signs'),
             value: _woundInfection,
-            onChanged: (value) {
-              setState(() {
-                _woundInfection = value ?? false;
-              });
-            },
+            onChanged: _isProfileCompleted
+                ? null
+                : (value) {
+                    setState(() {
+                      _woundInfection = value ?? false;
+                    });
+                  },
           ),
           const SizedBox(height: 12),
           const Text(
@@ -873,6 +917,7 @@ class _PostnatalUpdateProfileScreenState
           TextField(
             controller: _otherConcernsController,
             maxLines: 3,
+            enabled: !_isProfileCompleted,
             decoration: InputDecoration(
               filled: true,
               fillColor: Colors.white,
@@ -966,6 +1011,7 @@ class _PostnatalUpdateProfileScreenState
     required String label,
     required TextEditingController controller,
     TextInputType keyboardType = TextInputType.text,
+    String? hintText,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -982,9 +1028,16 @@ class _PostnatalUpdateProfileScreenState
         TextField(
           controller: controller,
           keyboardType: keyboardType,
+          enabled: !_isProfileCompleted,
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.white,
+            hintText: hintText,
+            hintStyle: TextStyle(
+              color: Colors.grey.shade500,
+              fontFamily: 'Regular',
+              fontSize: 12,
+            ),
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             border: OutlineInputBorder(

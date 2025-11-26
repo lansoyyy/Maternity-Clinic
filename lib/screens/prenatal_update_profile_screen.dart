@@ -52,15 +52,8 @@ class _PrenatalUpdateProfileScreenState
   DateTime? _estimatedDueDate;
   int? _gestationalWeeks;
 
-  // View-only clinical fields that staff/admin may update later
-  String? _height;
-  String? _weight;
-  String? _bloodPressure;
-  DateTime? _confirmedEdd;
-  int? _confirmedGestationWeeks;
-  String? _pregnancyStatus;
-  String? _specificComplication;
-  String? _riskStatus;
+  // Whether profile has already been completed and locked for editing
+  bool _isProfileCompleted = false;
 
   @override
   void initState() {
@@ -100,6 +93,8 @@ class _PrenatalUpdateProfileScreenState
       if (doc.exists) {
         final data = doc.data() as Map<String, dynamic>;
 
+        _isProfileCompleted = data['profileCompleted'] == true;
+
         _fullNameController.text = (data['name'] ?? '').toString();
         _emailController.text = (data['email'] ?? user.email ?? '').toString();
         _contactNumberController.text =
@@ -127,21 +122,6 @@ class _PrenatalUpdateProfileScreenState
         _gravidaController.text = data['gravida']?.toString() ?? '';
         _paraController.text = data['para']?.toString() ?? '';
         _miscarriagesController.text = data['miscarriages']?.toString() ?? '';
-
-        // View-only clinical fields
-        _height = data['height']?.toString();
-        _weight = data['weight']?.toString();
-        _bloodPressure = data['bloodPressure']?.toString();
-        if (data['confirmedEdd'] is Timestamp) {
-          _confirmedEdd = (data['confirmedEdd'] as Timestamp).toDate();
-        }
-        if (data['confirmedGestationWeeks'] != null) {
-          _confirmedGestationWeeks =
-              int.tryParse(data['confirmedGestationWeeks'].toString());
-        }
-        _pregnancyStatus = data['pregnancyStatus']?.toString();
-        _specificComplication = data['specificComplication']?.toString();
-        _riskStatus = data['riskStatus']?.toString();
 
         _recomputeDerivedValues();
       }
@@ -178,7 +158,7 @@ class _PrenatalUpdateProfileScreenState
   }
 
   Future<void> _saveProfile() async {
-    if (_isSaving) return;
+    if (_isSaving || _isProfileCompleted) return;
 
     if (_fullNameController.text.trim().isEmpty) {
       _showError('Please enter your full name');
@@ -326,10 +306,6 @@ class _PrenatalUpdateProfileScreenState
     return Scaffold(
       appBar: AppBar(
         backgroundColor: primary,
-        title: const Text(
-          'Update Profile',
-          style: TextStyle(fontFamily: 'Bold'),
-        ),
       ),
       body: _isLoading
           ? Center(
@@ -342,34 +318,48 @@ class _PrenatalUpdateProfileScreenState
                 children: [
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(14),
                     margin: const EdgeInsets.only(bottom: 24),
                     decoration: BoxDecoration(
                       color: Colors.orange.shade50,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: Colors.orange.shade200),
                     ),
-                    child: const Text(
-                      'Before you can book an appointment, you need to complete your profile information below.',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontFamily: 'Regular',
-                        color: Colors.black87,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text(
+                          'Before you can book an appointment, you need to complete your profile information below.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontFamily: 'Regular',
+                            color: Colors.black87,
+                          ),
+                        ),
+                        SizedBox(height: 6),
+                        Text(
+                          'Once you have saved the required details, they can no longer be edited in the system. Only the clinic information can be changed.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontFamily: 'Regular',
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   _buildBasicInfoSection(),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
                   _buildRequiredProfileSection(),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
                   _buildDerivedInfoSection(),
-                  const SizedBox(height: 24),
-                  _buildClinicalViewOnlySection(),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 28),
                   Align(
                     alignment: Alignment.centerRight,
                     child: ElevatedButton(
-                      onPressed: _isSaving ? null : _saveProfile,
+                      onPressed: _isSaving || _isProfileCompleted
+                          ? null
+                          : _saveProfile,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: primary,
                         padding: const EdgeInsets.symmetric(
@@ -407,7 +397,7 @@ class _PrenatalUpdateProfileScreenState
 
   Widget _buildBasicInfoSection() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.grey.shade100,
         borderRadius: BorderRadius.circular(12),
@@ -424,12 +414,13 @@ class _PrenatalUpdateProfileScreenState
               color: Colors.black87,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           _buildTextField(
             label: 'Full Name',
             controller: _fullNameController,
+            hintText: 'e.g. Maria Dela Cruz',
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Row(
             children: [
               Expanded(
@@ -439,21 +430,23 @@ class _PrenatalUpdateProfileScreenState
                       _computedAge?.toString() ?? 'Will be calculated from DOB',
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
               Expanded(
                 child: _buildDobPicker(),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           _buildTextField(
             label: 'Email Address',
             controller: _emailController,
+            hintText: 'e.g. name@example.com',
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           _buildTextField(
             label: 'Contact Number',
             controller: _contactNumberController,
+            hintText: '11-digit mobile number',
           ),
         ],
       ),
@@ -467,14 +460,15 @@ class _PrenatalUpdateProfileScreenState
         const Text(
           'Date of Birth (DOB)',
           style: TextStyle(
-            fontSize: 13,
+            fontSize: 12,
             fontFamily: 'Regular',
             color: Colors.black87,
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 4),
         GestureDetector(
           onTap: () async {
+            if (_isProfileCompleted) return;
             final now = DateTime.now();
             final initial = _dob ?? DateTime(now.year - 25, now.month, now.day);
             final picked = await showDatePicker(
@@ -491,7 +485,7 @@ class _PrenatalUpdateProfileScreenState
             }
           },
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(8),
@@ -506,7 +500,7 @@ class _PrenatalUpdateProfileScreenState
                       ? 'Select Date of Birth'
                       : '${_dob!.month.toString().padLeft(2, '0')}/${_dob!.day.toString().padLeft(2, '0')}/${_dob!.year}',
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 12,
                     fontFamily: 'Regular',
                     color: _dob == null ? Colors.grey.shade600 : Colors.black87,
                   ),
@@ -521,7 +515,7 @@ class _PrenatalUpdateProfileScreenState
 
   Widget _buildRequiredProfileSection() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -547,13 +541,14 @@ class _PrenatalUpdateProfileScreenState
               color: Colors.black87,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Row(
             children: [
               Expanded(
                 child: _buildTextField(
                   label: 'House No.',
                   controller: _houseNoController,
+                  hintText: 'House / block / lot number',
                 ),
               ),
               const SizedBox(width: 12),
@@ -561,17 +556,19 @@ class _PrenatalUpdateProfileScreenState
                 child: _buildTextField(
                   label: 'Street',
                   controller: _streetController,
+                  hintText: 'Street name or subdivision',
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Row(
             children: [
               Expanded(
                 child: _buildTextField(
                   label: 'Barangay',
                   controller: _barangayController,
+                  hintText: 'Your barangay',
                 ),
               ),
               const SizedBox(width: 12),
@@ -579,16 +576,18 @@ class _PrenatalUpdateProfileScreenState
                 child: _buildTextField(
                   label: 'City',
                   controller: _cityController,
+                  hintText: 'City or municipality',
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           _buildTextField(
             label: 'Civil Status (e.g., Single, Married, Live-in Partner)',
             controller: _civilStatusController,
+            hintText: 'e.g. Married',
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           const Text(
             'Emergency Contact',
             style: TextStyle(
@@ -597,17 +596,19 @@ class _PrenatalUpdateProfileScreenState
               color: Colors.black87,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           _buildTextField(
             label: 'Emergency Contact Name',
             controller: _emergencyNameController,
+            hintText: 'e.g. Spouse or close relative',
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           _buildTextField(
             label: 'Emergency Contact Number',
             controller: _emergencyNumberController,
+            hintText: 'Mobile number of emergency contact',
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           const Text(
             'Pregnancy Details',
             style: TextStyle(
@@ -618,7 +619,7 @@ class _PrenatalUpdateProfileScreenState
           ),
           const SizedBox(height: 8),
           _buildLmpPicker(),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Row(
             children: [
               Expanded(
@@ -626,6 +627,7 @@ class _PrenatalUpdateProfileScreenState
                   label: 'Number of Previous Pregnancies (Gravida)',
                   controller: _gravidaController,
                   keyboardType: TextInputType.number,
+                  hintText: 'Total times you have been pregnant',
                 ),
               ),
               const SizedBox(width: 12),
@@ -634,15 +636,17 @@ class _PrenatalUpdateProfileScreenState
                   label: 'Number of Living Children (Para)',
                   controller: _paraController,
                   keyboardType: TextInputType.number,
+                  hintText: 'Number of live births',
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           _buildTextField(
             label: 'Number of Miscarriages / Abortions',
             controller: _miscarriagesController,
             keyboardType: TextInputType.number,
+            hintText: 'Number of previous miscarriages / abortions',
           ),
         ],
       ),
@@ -656,7 +660,7 @@ class _PrenatalUpdateProfileScreenState
         const Text(
           'Last Menstrual Period (LMP)',
           style: TextStyle(
-            fontSize: 13,
+            fontSize: 12,
             fontFamily: 'Regular',
             color: Colors.black87,
           ),
@@ -664,6 +668,7 @@ class _PrenatalUpdateProfileScreenState
         const SizedBox(height: 6),
         GestureDetector(
           onTap: () async {
+            if (_isProfileCompleted) return;
             final now = DateTime.now();
             final initial = _lmpDate ?? now.subtract(const Duration(days: 28));
             final picked = await showDatePicker(
@@ -712,7 +717,7 @@ class _PrenatalUpdateProfileScreenState
 
   Widget _buildDerivedInfoSection() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.grey.shade100,
         borderRadius: BorderRadius.circular(12),
@@ -748,78 +753,11 @@ class _PrenatalUpdateProfileScreenState
     );
   }
 
-  Widget _buildClinicalViewOnlySection() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Clinical Information (updated by staff/admin)',
-            style: TextStyle(
-              fontSize: 16,
-              fontFamily: 'Bold',
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 16),
-          _buildReadOnlyField(
-            label: 'Risk Level',
-            value: _riskStatus ?? 'Not yet recorded',
-          ),
-          const SizedBox(height: 8),
-          _buildReadOnlyField(
-            label: 'Height',
-            value: _height ?? 'Not yet recorded',
-          ),
-          const SizedBox(height: 8),
-          _buildReadOnlyField(
-            label: 'Weight',
-            value: _weight ?? 'Not yet recorded',
-          ),
-          const SizedBox(height: 8),
-          _buildReadOnlyField(
-            label: 'Blood Pressure',
-            value: _bloodPressure ?? 'Not yet recorded',
-          ),
-          const SizedBox(height: 8),
-          _buildReadOnlyField(
-            label: 'Confirmed EDD',
-            value: _confirmedEdd == null
-                ? 'Not yet recorded'
-                : '${_confirmedEdd!.month.toString().padLeft(2, '0')}/${_confirmedEdd!.day.toString().padLeft(2, '0')}/${_confirmedEdd!.year}',
-          ),
-          const SizedBox(height: 8),
-          _buildReadOnlyField(
-            label: 'Age of Gestation (confirmed)',
-            value: _confirmedGestationWeeks == null
-                ? 'Not yet recorded'
-                : '${_confirmedGestationWeeks.toString()} weeks',
-          ),
-          const SizedBox(height: 8),
-          _buildReadOnlyField(
-            label: 'Pregnancy Status',
-            value: _pregnancyStatus ?? 'Not yet recorded',
-          ),
-          const SizedBox(height: 8),
-          _buildReadOnlyField(
-            label: 'Specific Complication',
-            value: _specificComplication ?? 'Not yet recorded',
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildTextField({
     required String label,
     required TextEditingController controller,
     TextInputType keyboardType = TextInputType.text,
+    String? hintText,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -827,20 +765,27 @@ class _PrenatalUpdateProfileScreenState
         Text(
           label,
           style: const TextStyle(
-            fontSize: 13,
+            fontSize: 12,
             fontFamily: 'Regular',
             color: Colors.black87,
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 4),
         TextField(
           controller: controller,
           keyboardType: keyboardType,
+          enabled: !_isProfileCompleted,
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.white,
+            hintText: hintText,
+            hintStyle: TextStyle(
+              fontSize: 12,
+              fontFamily: 'Regular',
+              color: Colors.grey.shade500,
+            ),
             contentPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(color: Colors.grey.shade400),
@@ -874,10 +819,10 @@ class _PrenatalUpdateProfileScreenState
             color: Colors.black87,
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 4),
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           decoration: BoxDecoration(
             color: Colors.grey.shade100,
             borderRadius: BorderRadius.circular(8),
@@ -886,7 +831,7 @@ class _PrenatalUpdateProfileScreenState
           child: Text(
             value,
             style: TextStyle(
-              fontSize: 13,
+              fontSize: 12,
               fontFamily: 'Regular',
               color: Colors.grey.shade800,
             ),

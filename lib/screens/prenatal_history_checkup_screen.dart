@@ -433,14 +433,53 @@ class _PrenatalHistoryCheckupScreenState
 
   Widget _buildAppointmentSummaryCard(
       Map<String, dynamic> appointment, int visitNumber) {
-    String date = 'N/A';
+    String completedDate = 'N/A';
     if (appointment['createdAt'] != null) {
       try {
         DateTime dateTime = (appointment['createdAt'] as Timestamp).toDate();
-        date = '${dateTime.day}/${dateTime.month}/${dateTime.year}';
+        completedDate = '${dateTime.day}/${dateTime.month}/${dateTime.year}';
       } catch (e) {
-        date = 'N/A';
+        completedDate = 'N/A';
       }
+    }
+
+    // Schedule (Date, Time)
+    String scheduleDate = 'N/A';
+    String scheduleTime = 'N/A';
+    if (appointment['appointmentDate'] is Timestamp) {
+      try {
+        final DateTime schedDate =
+            (appointment['appointmentDate'] as Timestamp).toDate();
+        scheduleDate = '${schedDate.day}/${schedDate.month}/${schedDate.year}';
+      } catch (_) {}
+    } else if (appointment['day'] != null) {
+      scheduleDate = appointment['day'].toString();
+    }
+    if (appointment['timeSlot'] != null) {
+      scheduleTime = appointment['timeSlot'].toString();
+    }
+
+    // Findings and notes (prescription / recommendation)
+    final String findingsText;
+    final rawFindings = appointment['findings']?.toString();
+    if (rawFindings != null && rawFindings.trim().isNotEmpty) {
+      findingsText = rawFindings;
+    } else {
+      findingsText = 'No findings recorded';
+    }
+
+    String notesText = '';
+    final rawNotes = appointment['notes']?.toString();
+    if (rawNotes != null && rawNotes.trim().isNotEmpty) {
+      notesText = rawNotes;
+    } else {
+      final advice = appointment['advice']?.toString();
+      if (advice != null && advice.trim().isNotEmpty) {
+        notesText = advice;
+      }
+    }
+    if (notesText.isEmpty) {
+      notesText = 'No prescription / recommendation';
     }
 
     return Container(
@@ -492,7 +531,7 @@ class _PrenatalHistoryCheckupScreenState
                       ),
                     ),
                     Text(
-                      'Completed on $date',
+                      'Completed on $completedDate',
                       style: TextStyle(
                         fontSize: 12,
                         fontFamily: 'Regular',
@@ -550,10 +589,10 @@ class _PrenatalHistoryCheckupScreenState
                       ],
                     ),
                     const SizedBox(height: 8),
-                    _buildInfoRow('Day:', appointment['day'] ?? 'N/A'),
-                    _buildInfoRow('Time:', appointment['timeSlot'] ?? 'N/A'),
+                    _buildInfoRow('Date:', scheduleDate),
+                    _buildInfoRow('Time:', scheduleTime),
                     if (appointment['rescheduledAt'] != null)
-                      _buildInfoRow('Rescheduled:',
+                      _buildInfoRow('Rescheduled on:',
                           _formatDate(appointment['rescheduledAt'])),
                   ],
                 ),
@@ -590,7 +629,7 @@ class _PrenatalHistoryCheckupScreenState
                   ],
                 ),
               ),
-              // Column 3: Notes
+              // Column 3: Findings and Notes
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -600,7 +639,7 @@ class _PrenatalHistoryCheckupScreenState
                         Icon(Icons.note_alt, size: 16, color: primary),
                         const SizedBox(width: 6),
                         const Text(
-                          'Notes',
+                          'Findings',
                           style: TextStyle(
                             fontSize: 13,
                             fontFamily: 'Bold',
@@ -611,9 +650,26 @@ class _PrenatalHistoryCheckupScreenState
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      appointment['notes']?.toString().isNotEmpty == true
-                          ? appointment['notes']
-                          : 'No notes',
+                      findingsText,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontFamily: 'Regular',
+                        color: Colors.grey.shade700,
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Notes (Prescription / Recommendation)',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontFamily: 'Bold',
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      notesText,
                       style: TextStyle(
                         fontSize: 12,
                         fontFamily: 'Regular',
@@ -687,11 +743,12 @@ class _PrenatalHistoryCheckupScreenState
               children: [
                 _buildTableHeaderCell('Visit No.', flex: 1),
                 _buildTableHeaderCell('Date', flex: 2),
-                _buildTableHeaderCell('Day', flex: 2),
-                _buildTableHeaderCell('Time Slot', flex: 2),
-                _buildTableHeaderCell('Type', flex: 2),
-                _buildTableHeaderCell('Reason', flex: 3),
-                _buildTableHeaderCell('Notes', flex: 3),
+                _buildTableHeaderCell('Weight (kg)', flex: 2),
+                _buildTableHeaderCell('Blood Pressure (mmHg)', flex: 3),
+                _buildTableHeaderCell('Fetal Heart Rate (bpm)', flex: 3),
+                _buildTableHeaderCell('Fundal Height (cm)', flex: 3),
+                _buildTableHeaderCell('Remarks / Observation', flex: 3),
+                _buildTableHeaderCell('Risk Classification', flex: 3),
               ],
             ),
           ),
@@ -750,19 +807,80 @@ class _PrenatalHistoryCheckupScreenState
   Widget _buildTableRowFromAppointment(
       String visitNo, Map<String, dynamic> appointment) {
     String date = 'N/A';
-    if (appointment['createdAt'] != null) {
+    DateTime? dateTime;
+    if (appointment['appointmentDate'] is Timestamp) {
       try {
-        DateTime dateTime;
-        if (appointment['createdAt'] is Timestamp) {
-          dateTime = (appointment['createdAt'] as Timestamp).toDate();
+        dateTime = (appointment['appointmentDate'] as Timestamp).toDate();
+      } catch (_) {}
+    } else if (appointment['createdAt'] is Timestamp) {
+      try {
+        dateTime = (appointment['createdAt'] as Timestamp).toDate();
+      } catch (_) {}
+    }
+    if (dateTime != null) {
+      date = '${dateTime.day}/${dateTime.month}/${dateTime.year}';
+    }
+
+    String weightText = 'N/A';
+    final weightValue = appointment['checkupWeightKg'];
+    if (weightValue != null) {
+      if (weightValue is num) {
+        weightText = weightValue.toStringAsFixed(weightValue is int ? 0 : 1);
+      } else {
+        final parsed = double.tryParse(weightValue.toString());
+        if (parsed != null) {
+          weightText = parsed.toStringAsFixed(1);
         } else {
-          dateTime = DateTime.now();
+          weightText = weightValue.toString();
         }
-        date = '${dateTime.day}/${dateTime.month}/${dateTime.year}';
-      } catch (e) {
-        date = 'N/A';
       }
     }
+
+    String bpText = '';
+    final bpValue = appointment['checkupBloodPressure'];
+    if (bpValue != null && bpValue.toString().trim().isNotEmpty) {
+      bpText = bpValue.toString();
+    } else {
+      final sys = appointment['checkupBP_Systolic'];
+      final dia = appointment['checkupBP_Diastolic'];
+      if (sys != null && dia != null) {
+        bpText = '${sys.toString()}/${dia.toString()}';
+      }
+    }
+    if (bpText.isEmpty) {
+      bpText = 'N/A';
+    }
+
+    String fhrText = 'N/A';
+    final fhr = appointment['checkupFetalHeartRateBpm'];
+    if (fhr != null) {
+      fhrText = fhr.toString();
+    }
+
+    String fundalText = 'N/A';
+    final fh = appointment['checkupFundalHeightCm'];
+    if (fh != null) {
+      if (fh is num) {
+        fundalText = fh.toStringAsFixed(fh is int ? 0 : 1);
+      } else {
+        final parsed = double.tryParse(fh.toString());
+        if (parsed != null) {
+          fundalText = parsed.toStringAsFixed(1);
+        } else {
+          fundalText = fh.toString();
+        }
+      }
+    }
+
+    String remarksText =
+        appointment['checkupRemarks']?.toString().trim().isNotEmpty == true
+            ? appointment['checkupRemarks'].toString()
+            : (appointment['notes']?.toString() ?? '-');
+
+    String riskText =
+        appointment['visitRiskStatus']?.toString().trim().isNotEmpty == true
+            ? appointment['visitRiskStatus'].toString()
+            : (appointment['riskStatus']?.toString() ?? 'N/A');
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
@@ -775,11 +893,12 @@ class _PrenatalHistoryCheckupScreenState
         children: [
           _buildTableCell(visitNo, flex: 1),
           _buildTableCell(date, flex: 2),
-          _buildTableCell(appointment['day'] ?? 'N/A', flex: 2),
-          _buildTableCell(appointment['timeSlot'] ?? 'N/A', flex: 2),
-          _buildTableCell(appointment['appointmentType'] ?? 'N/A', flex: 2),
-          _buildTableCell(appointment['reason'] ?? 'N/A', flex: 3),
-          _buildTableCell(appointment['notes'] ?? '-', flex: 3),
+          _buildTableCell(weightText, flex: 2),
+          _buildTableCell(bpText, flex: 3),
+          _buildTableCell(fhrText, flex: 3),
+          _buildTableCell(fundalText, flex: 3),
+          _buildTableCell(remarksText, flex: 3),
+          _buildTableCell(riskText, flex: 3),
         ],
       ),
     );

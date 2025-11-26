@@ -5,7 +5,6 @@ import '../utils/colors.dart';
 import 'postnatal_history_checkup_screen.dart';
 import 'notification_appointment_screen.dart';
 import 'transfer_record_request_screen.dart';
-import 'postnatal_checkup_requests_screen.dart';
 import 'postnatal_update_profile_screen.dart';
 import 'auth/home_screen.dart';
 
@@ -74,15 +73,6 @@ class _PostnatalDashboardScreenState extends State<PostnatalDashboardScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Welcome, $_userName',
-                    style: const TextStyle(
-                      fontSize: 26,
-                      fontFamily: 'Bold',
-                      color: Colors.black,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
                   if (!_profileCompleted)
                     Container(
                       width: double.infinity,
@@ -158,7 +148,7 @@ class _PostnatalDashboardScreenState extends State<PostnatalDashboardScreen> {
                     runSpacing: 12,
                     children: [
                       _buildDashboardAction(
-                        title: 'Update Profile',
+                        title: 'Personal Details',
                         icon: Icons.person,
                         onTap: () {
                           Navigator.push(
@@ -173,34 +163,25 @@ class _PostnatalDashboardScreenState extends State<PostnatalDashboardScreen> {
                         },
                       ),
                       _buildDashboardAction(
-                        title: 'Request Postnatal Checkup',
-                        icon: Icons.event_available,
+                        title: 'Educational Learners',
+                        icon: Icons.menu_book,
+                        onTap: () {},
+                      ),
+                      _buildDashboardAction(
+                        title: 'History of Check Up',
+                        icon: Icons.history,
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) =>
-                                  const NotificationAppointmentScreen(
-                                      patientType: 'POSTNATAL'),
+                                  const PostnatalHistoryCheckupScreen(),
                             ),
                           );
                         },
                       ),
                       _buildDashboardAction(
-                        title: 'View Checkup Requests',
-                        icon: Icons.list_alt,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const PostnatalCheckupRequestsScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildDashboardAction(
-                        title: 'View Appointments',
+                        title: 'Request & Notification Appointment',
                         icon: Icons.calendar_today,
                         onTap: () {
                           Navigator.push(
@@ -214,14 +195,18 @@ class _PostnatalDashboardScreenState extends State<PostnatalDashboardScreen> {
                         },
                       ),
                       _buildDashboardAction(
-                        title: 'Baby Records (coming soon)',
-                        icon: Icons.child_care,
-                        onTap: () {},
-                      ),
-                      _buildDashboardAction(
-                        title: 'Education for Postnatal Care',
-                        icon: Icons.menu_book,
-                        onTap: () {},
+                        title: 'Transfer of Record Request',
+                        icon: Icons.swap_horiz,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const TransferRecordRequestScreen(
+                                      patientType: 'POSTNATAL'),
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -506,9 +491,10 @@ class _PostnatalDashboardScreenState extends State<PostnatalDashboardScreen> {
           const SizedBox(height: 20),
 
           // Menu Items
+          _buildMenuItem('PERSONAL DETAILS', false),
           _buildMenuItem('EDUCATIONAL\nLEARNERS', false),
           _buildMenuItem('HISTORY OF\nCHECK UP', false),
-          _buildMenuItem('NOTIFICATION\nAPPOINTMENT', false),
+          _buildMenuItem('REQUEST &\nNOTIFICATION APPOINTMENT', false),
           _buildMenuItem('TRANSFER OF\nRECORD REQUEST', false),
           const Spacer(),
           _buildMenuItem('LOGOUT', false),
@@ -527,13 +513,20 @@ class _PostnatalDashboardScreenState extends State<PostnatalDashboardScreen> {
             _showLogoutConfirmationDialog();
             return;
           }
-          if (title == 'HISTORY OF\nCHECK UP') {
+          if (title == 'PERSONAL DETAILS') {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const PostnatalUpdateProfileScreen(),
+              ),
+            );
+          } else if (title == 'HISTORY OF\nCHECK UP') {
             Navigator.push(
               context,
               MaterialPageRoute(
                   builder: (context) => const PostnatalHistoryCheckupScreen()),
             );
-          } else if (title == 'NOTIFICATION\nAPPOINTMENT') {
+          } else if (title == 'REQUEST &\nNOTIFICATION APPOINTMENT') {
             Navigator.push(
               context,
               MaterialPageRoute(

@@ -11,8 +11,6 @@ import 'prenatal_update_profile_screen.dart';
 import 'postnatal_update_profile_screen.dart';
 import 'auth/home_screen.dart';
 import '../widgets/book_appointment_dialog.dart';
-import '../widgets/request_checkup_dialog.dart';
-import 'prenatal_checkup_requests_screen.dart';
 
 class NotificationAppointmentScreen extends StatefulWidget {
   final String patientType; // 'PRENATAL' or 'POSTNATAL'
@@ -79,7 +77,7 @@ class _NotificationAppointmentScreenState
 
     await showDialog(
       context: context,
-      builder: (context) => RequestCheckupDialog(
+      builder: (context) => BookAppointmentDialog(
         patientType: widget.patientType,
       ),
     );
@@ -198,7 +196,7 @@ class _NotificationAppointmentScreenState
 
   bool _canCancelAppointment(Map<String, dynamic> appointment) {
     final status = (appointment['status'] ?? 'Pending').toString();
-    if (status == 'Completed' || status == 'Cancelled' || status == 'No-show') {
+    if (status != 'Pending') {
       return false;
     }
     if (appointment['appointmentDate'] is! Timestamp) {
@@ -330,22 +328,6 @@ class _NotificationAppointmentScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          await _openRequestCheckup();
-        },
-        backgroundColor: primary,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: Text(
-          widget.patientType == 'POSTNATAL'
-              ? 'Request Postnatal Checkup'
-              : 'Request Checkup',
-          style: const TextStyle(
-            color: Colors.white,
-            fontFamily: 'Bold',
-          ),
-        ),
-      ),
       body: Row(
         children: [
           // Sidebar
@@ -360,7 +342,7 @@ class _NotificationAppointmentScreenState
                 children: [
                   // Title
                   Text(
-                    'My Appointments',
+                    'Book & Notification Appointment',
                     style: TextStyle(
                       fontSize: 24,
                       fontFamily: 'Bold',
@@ -370,7 +352,7 @@ class _NotificationAppointmentScreenState
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'View and manage your scheduled appointments',
+                    'Request a checkup and manage your appointments',
                     style: TextStyle(
                       fontSize: 14,
                       fontFamily: 'Regular',
@@ -378,71 +360,40 @@ class _NotificationAppointmentScreenState
                     ),
                   ),
                   const SizedBox(height: 20),
-                  if (widget.patientType == 'PRENATAL') ...[
-                    Row(
-                      children: [
-                        ElevatedButton.icon(
-                          onPressed: _openRequestCheckup,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: primary,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 10,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
+                  Row(
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: _openRequestCheckup,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primary,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
                           ),
-                          icon: const Icon(Icons.note_add,
-                              color: Colors.white, size: 18),
-                          label: const Text(
-                            'Request Checkup',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                              fontFamily: 'Bold',
-                            ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        OutlinedButton.icon(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const PrenatalCheckupRequestsScreen(),
-                              ),
-                            );
-                          },
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 10,
-                            ),
-                            side: BorderSide(color: primary),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          icon: Icon(Icons.list_alt, color: primary, size: 18),
-                          label: Text(
-                            'View Checkup Requests',
-                            style: TextStyle(
-                              color: primary,
-                              fontSize: 13,
-                              fontFamily: 'Bold',
-                            ),
+                        icon: const Icon(Icons.note_add,
+                            color: Colors.white, size: 18),
+                        label: Text(
+                          widget.patientType == 'POSTNATAL'
+                              ? 'Request Postnatal Checkup'
+                              : 'Request Checkup',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontFamily: 'Bold',
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                  ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
 
                   Row(
                     children: [
-                      _buildTabButton('UPCOMING APPOINTMENTS', 0),
+                      _buildTabButton('PENDING & UPCOMING', 0),
                       const SizedBox(width: 8),
                       _buildTabButton('APPOINTMENT HISTORY', 1),
                     ],
@@ -483,7 +434,7 @@ class _NotificationAppointmentScreenState
                                 const SizedBox(height: 20),
                                 Text(
                                   _selectedTabIndex == 0
-                                      ? 'No Upcoming Appointments'
+                                      ? 'No Pending or Upcoming Appointments'
                                       : 'No Appointment History',
                                   style: TextStyle(
                                     fontSize: 20,
