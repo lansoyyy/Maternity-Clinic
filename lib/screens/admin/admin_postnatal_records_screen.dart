@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:maternity_clinic/screens/admin/admin_postnatal_patient_detail_screen.dart';
 import 'package:maternity_clinic/screens/admin/admin_transfer_requests_screen.dart';
 import 'package:maternity_clinic/screens/transfer_record_request_screen.dart';
@@ -9,6 +10,7 @@ import 'admin_prenatal_records_screen.dart';
 import 'admin_appointment_scheduling_screen.dart';
 import 'admin_dashboard_screen.dart';
 import 'admin_educational_cms_screen.dart';
+import '../auth/home_screen.dart';
 
 class AdminPostnatalRecordsScreen extends StatefulWidget {
   final String userRole;
@@ -28,6 +30,7 @@ class AdminPostnatalRecordsScreen extends StatefulWidget {
 class _AdminPostnatalRecordsScreenState
     extends State<AdminPostnatalRecordsScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   final TextEditingController _searchController = TextEditingController();
   String _selectedFilter = 'ACTIVE';
   List<Map<String, dynamic>> _patients = [];
@@ -739,6 +742,8 @@ class _AdminPostnatalRecordsScreenState
           _buildMenuItem('APPOINTMENT\nSCHEDULING', false),
           _buildMenuItem('TRANSFER\nREQUESTS', false),
           _buildMenuItem('EDUCATIONAL CMS', false),
+          const Spacer(),
+          _buildMenuItem('LOGOUT', false),
         ],
       ),
     );
@@ -749,6 +754,10 @@ class _AdminPostnatalRecordsScreenState
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
         onTap: () {
+          if (title == 'LOGOUT') {
+            _showLogoutConfirmationDialog();
+            return;
+          }
           if (!isActive) {
             _handleNavigation(title);
           }
@@ -1077,6 +1086,46 @@ class _AdminPostnatalRecordsScreenState
           color: text.isNotEmpty ? Colors.grey.shade700 : Colors.grey.shade400,
         ),
         textAlign: TextAlign.center,
+      ),
+    );
+  }
+
+  void _showLogoutConfirmationDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+          'Logout Confirmation',
+          style: TextStyle(fontFamily: 'Bold'),
+        ),
+        content: const Text(
+          'Are you sure you want to logout?',
+          style: TextStyle(fontFamily: 'Regular'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancel',
+              style:
+                  TextStyle(color: Colors.grey.shade600, fontFamily: 'Medium'),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _auth.signOut();
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (context) => const HomeScreen()),
+                (route) => false,
+              );
+            },
+            child: Text(
+              'Logout',
+              style: TextStyle(color: Colors.red.shade600, fontFamily: 'Bold'),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:maternity_clinic/screens/admin/admin_transfer_requests_screen.dart';
 import 'package:maternity_clinic/utils/colors.dart';
 
@@ -7,6 +8,7 @@ import 'admin_prenatal_records_screen.dart';
 import 'admin_postnatal_records_screen.dart';
 import 'admin_dashboard_screen.dart';
 import 'admin_educational_cms_screen.dart';
+import '../auth/home_screen.dart';
 
 class AdminAppointmentSchedulingScreen extends StatefulWidget {
   final String userRole;
@@ -26,6 +28,7 @@ class AdminAppointmentSchedulingScreen extends StatefulWidget {
 class _AdminAppointmentSchedulingScreenState
     extends State<AdminAppointmentSchedulingScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   List<Map<String, dynamic>> _appointments = [];
   List<Map<String, dynamic>> _users = [];
   bool _isLoading = true;
@@ -2079,6 +2082,8 @@ class _AdminAppointmentSchedulingScreenState
           _buildMenuItem('APPOINTMENT\nSCHEDULING', true),
           _buildMenuItem('TRANSFER\nREQUESTS', false),
           _buildMenuItem('EDUCATIONAL CMS', false),
+          const Spacer(),
+          _buildMenuItem('LOGOUT', false),
         ],
       ),
     );
@@ -2089,6 +2094,10 @@ class _AdminAppointmentSchedulingScreenState
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
         onTap: () {
+          if (title == 'LOGOUT') {
+            _showLogoutConfirmationDialog();
+            return;
+          }
           if (!isActive) {
             _handleNavigation(title);
           }
@@ -2116,6 +2125,46 @@ class _AdminAppointmentSchedulingScreenState
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  void _showLogoutConfirmationDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+          'Logout Confirmation',
+          style: TextStyle(fontFamily: 'Bold'),
+        ),
+        content: const Text(
+          'Are you sure you want to logout?',
+          style: TextStyle(fontFamily: 'Regular'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancel',
+              style:
+                  TextStyle(color: Colors.grey.shade600, fontFamily: 'Medium'),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _auth.signOut();
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (context) => const HomeScreen()),
+                (route) => false,
+              );
+            },
+            child: Text(
+              'Logout',
+              style: TextStyle(color: Colors.red.shade600, fontFamily: 'Bold'),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -2180,6 +2229,9 @@ class _AdminAppointmentSchedulingScreenState
           ),
         );
         break;
+      case 'LOGOUT':
+        _showLogoutConfirmationDialog();
+        break;
     }
   }
 
@@ -2187,35 +2239,43 @@ class _AdminAppointmentSchedulingScreenState
     return Container(
       padding: const EdgeInsets.all(25),
       decoration: BoxDecoration(
-        color: Colors.grey.shade300,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade200,
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (icon != null) ...[
-                Icon(icon, size: 40, color: Colors.black87),
-                const SizedBox(width: 10),
+                Icon(icon, size: 28, color: primary),
+                const SizedBox(width: 8),
               ],
               Text(
                 number,
                 style: const TextStyle(
-                  fontSize: 48,
+                  fontSize: 28,
                   fontFamily: 'Bold',
                   color: Colors.black87,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           Text(
             label,
-            style: const TextStyle(
-              fontSize: 14,
-              fontFamily: 'Bold',
-              color: Colors.black87,
+            style: TextStyle(
+              fontSize: 13,
+              fontFamily: 'Regular',
+              color: Colors.grey.shade700,
             ),
             textAlign: TextAlign.center,
           ),

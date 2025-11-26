@@ -5,15 +5,18 @@ import '../utils/colors.dart';
 import 'prenatal_dashboard_screen.dart';
 import 'notification_appointment_screen.dart';
 import 'transfer_record_request_screen.dart';
+import 'auth/home_screen.dart';
 
 class PrenatalHistoryCheckupScreen extends StatefulWidget {
   const PrenatalHistoryCheckupScreen({super.key});
 
   @override
-  State<PrenatalHistoryCheckupScreen> createState() => _PrenatalHistoryCheckupScreenState();
+  State<PrenatalHistoryCheckupScreen> createState() =>
+      _PrenatalHistoryCheckupScreenState();
 }
 
-class _PrenatalHistoryCheckupScreenState extends State<PrenatalHistoryCheckupScreen> {
+class _PrenatalHistoryCheckupScreenState
+    extends State<PrenatalHistoryCheckupScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   String _userName = 'Loading...';
@@ -33,13 +36,12 @@ class _PrenatalHistoryCheckupScreenState extends State<PrenatalHistoryCheckupScr
     try {
       User? user = _auth.currentUser;
       if (user != null) {
-        DocumentSnapshot userDoc = await _firestore
-            .collection('users')
-            .doc(user.uid)
-            .get();
-        
+        DocumentSnapshot userDoc =
+            await _firestore.collection('users').doc(user.uid).get();
+
         if (userDoc.exists) {
-          Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+          Map<String, dynamic> userData =
+              userDoc.data() as Map<String, dynamic>;
           if (mounted) {
             setState(() {
               _userName = userData['name'] ?? 'User';
@@ -60,11 +62,9 @@ class _PrenatalHistoryCheckupScreenState extends State<PrenatalHistoryCheckupScr
     try {
       User? user = _auth.currentUser;
       if (user != null) {
-        DocumentSnapshot userDoc = await _firestore
-            .collection('users')
-            .doc(user.uid)
-            .get();
-        
+        DocumentSnapshot userDoc =
+            await _firestore.collection('users').doc(user.uid).get();
+
         if (userDoc.exists && mounted) {
           setState(() {
             _userData = userDoc.data() as Map<String, dynamic>;
@@ -83,8 +83,7 @@ class _PrenatalHistoryCheckupScreenState extends State<PrenatalHistoryCheckupScr
         QuerySnapshot appointmentSnapshot = await _firestore
             .collection('appointments')
             .where('userId', isEqualTo: user.uid)
-            .where('status', whereIn: ['Completed', 'Rescheduled'])
-            .get();
+            .where('status', whereIn: ['Completed', 'Rescheduled']).get();
 
         List<Map<String, dynamic>> appointments = [];
         for (var doc in appointmentSnapshot.docs) {
@@ -175,7 +174,8 @@ class _PrenatalHistoryCheckupScreenState extends State<PrenatalHistoryCheckupScr
                       Map<String, dynamic> appointment = entry.value;
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 20),
-                        child: _buildAppointmentSummaryCard(appointment, index + 1),
+                        child: _buildAppointmentSummaryCard(
+                            appointment, index + 1),
                       );
                     }).toList(),
                     const SizedBox(height: 30),
@@ -250,6 +250,8 @@ class _PrenatalHistoryCheckupScreenState extends State<PrenatalHistoryCheckupScr
           _buildMenuItem('HISTORY OF\nCHECK UP', true),
           _buildMenuItem('NOTIFICATION\nAPPOINTMENT', false),
           _buildMenuItem('TRANSFER OF\nRECORD REQUEST', false),
+          const Spacer(),
+          _buildMenuItem('LOGOUT', false),
         ],
       ),
     );
@@ -260,6 +262,10 @@ class _PrenatalHistoryCheckupScreenState extends State<PrenatalHistoryCheckupScr
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
         onTap: () {
+          if (title == 'LOGOUT') {
+            _showLogoutConfirmationDialog();
+            return;
+          }
           if (!isActive) {
             _handleNavigation(title);
           }
@@ -268,7 +274,8 @@ class _PrenatalHistoryCheckupScreenState extends State<PrenatalHistoryCheckupScr
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
           decoration: BoxDecoration(
-            color: isActive ? Colors.white.withOpacity(0.2) : Colors.transparent,
+            color:
+                isActive ? Colors.white.withOpacity(0.2) : Colors.transparent,
             border: Border(
               left: BorderSide(
                 color: isActive ? Colors.white : Colors.transparent,
@@ -295,7 +302,8 @@ class _PrenatalHistoryCheckupScreenState extends State<PrenatalHistoryCheckupScr
       case 'EDUCATIONAL\nLEARNERS':
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const PrenatalDashboardScreen()),
+          MaterialPageRoute(
+              builder: (context) => const PrenatalDashboardScreen()),
         );
         break;
       case 'HISTORY OF\nCHECK UP':
@@ -304,13 +312,17 @@ class _PrenatalHistoryCheckupScreenState extends State<PrenatalHistoryCheckupScr
       case 'NOTIFICATION\nAPPOINTMENT':
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const NotificationAppointmentScreen(patientType: 'PRENATAL')),
+          MaterialPageRoute(
+              builder: (context) =>
+                  const NotificationAppointmentScreen(patientType: 'PRENATAL')),
         );
         break;
       case 'TRANSFER OF\nRECORD REQUEST':
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const TransferRecordRequestScreen(patientType: 'PRENATAL')),
+          MaterialPageRoute(
+              builder: (context) =>
+                  const TransferRecordRequestScreen(patientType: 'PRENATAL')),
         );
         break;
     }
@@ -419,7 +431,8 @@ class _PrenatalHistoryCheckupScreenState extends State<PrenatalHistoryCheckupScr
     );
   }
 
-  Widget _buildAppointmentSummaryCard(Map<String, dynamic> appointment, int visitNumber) {
+  Widget _buildAppointmentSummaryCard(
+      Map<String, dynamic> appointment, int visitNumber) {
     String date = 'N/A';
     if (appointment['createdAt'] != null) {
       try {
@@ -490,7 +503,8 @@ class _PrenatalHistoryCheckupScreenState extends State<PrenatalHistoryCheckupScr
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: appointment['status'] == 'Rescheduled'
                       ? Colors.blue.shade100
@@ -511,7 +525,7 @@ class _PrenatalHistoryCheckupScreenState extends State<PrenatalHistoryCheckupScr
             ],
           ),
           const SizedBox(height: 20),
-          
+
           // Details in 3 columns
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -539,7 +553,8 @@ class _PrenatalHistoryCheckupScreenState extends State<PrenatalHistoryCheckupScr
                     _buildInfoRow('Day:', appointment['day'] ?? 'N/A'),
                     _buildInfoRow('Time:', appointment['timeSlot'] ?? 'N/A'),
                     if (appointment['rescheduledAt'] != null)
-                      _buildInfoRow('Rescheduled:', _formatDate(appointment['rescheduledAt'])),
+                      _buildInfoRow('Rescheduled:',
+                          _formatDate(appointment['rescheduledAt'])),
                   ],
                 ),
               ),
@@ -732,7 +747,8 @@ class _PrenatalHistoryCheckupScreenState extends State<PrenatalHistoryCheckupScr
     );
   }
 
-  Widget _buildTableRowFromAppointment(String visitNo, Map<String, dynamic> appointment) {
+  Widget _buildTableRowFromAppointment(
+      String visitNo, Map<String, dynamic> appointment) {
     String date = 'N/A';
     if (appointment['createdAt'] != null) {
       try {
@@ -780,6 +796,49 @@ class _PrenatalHistoryCheckupScreenState extends State<PrenatalHistoryCheckupScr
           color: Colors.grey.shade700,
         ),
         textAlign: TextAlign.center,
+      ),
+    );
+  }
+
+  void _showLogoutConfirmationDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+          'Logout Confirmation',
+          style: TextStyle(fontFamily: 'Bold'),
+        ),
+        content: const Text(
+          'Are you sure you want to logout?',
+          style: TextStyle(fontFamily: 'Regular'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancel',
+              style:
+                  TextStyle(color: Colors.grey.shade600, fontFamily: 'Medium'),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _auth.signOut();
+              if (mounted) {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const HomeScreen()),
+                  (route) => false,
+                );
+              }
+            },
+            child: const Text(
+              'Logout',
+              style: TextStyle(color: Color(0xffEC008C), fontFamily: 'Bold'),
+            ),
+          ),
+        ],
       ),
     );
   }

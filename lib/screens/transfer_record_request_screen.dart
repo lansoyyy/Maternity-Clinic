@@ -7,20 +7,23 @@ import 'postnatal_dashboard_screen.dart';
 import 'prenatal_history_checkup_screen.dart';
 import 'postnatal_history_checkup_screen.dart';
 import 'notification_appointment_screen.dart';
+import 'auth/home_screen.dart';
 
 class TransferRecordRequestScreen extends StatefulWidget {
   final String patientType; // 'PRENATAL' or 'POSTNATAL'
-  
+
   const TransferRecordRequestScreen({
     super.key,
     required this.patientType,
   });
 
   @override
-  State<TransferRecordRequestScreen> createState() => _TransferRecordRequestScreenState();
+  State<TransferRecordRequestScreen> createState() =>
+      _TransferRecordRequestScreenState();
 }
 
-class _TransferRecordRequestScreenState extends State<TransferRecordRequestScreen> {
+class _TransferRecordRequestScreenState
+    extends State<TransferRecordRequestScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   String _userName = 'Loading...';
@@ -35,11 +38,13 @@ class _TransferRecordRequestScreenState extends State<TransferRecordRequestScree
   final TextEditingController _otherController = TextEditingController();
   final TextEditingController _transferToController = TextEditingController();
   final TextEditingController _newDoctorController = TextEditingController();
-  final TextEditingController _clinicAddressController = TextEditingController();
+  final TextEditingController _clinicAddressController =
+      TextEditingController();
   final TextEditingController _contactInfoController = TextEditingController();
   final TextEditingController _reasonController = TextEditingController();
   final TextEditingController _printedNameController = TextEditingController();
-  final TextEditingController _signatureDateController = TextEditingController();
+  final TextEditingController _signatureDateController =
+      TextEditingController();
 
   bool _laboratoryResults = false;
   bool _diagnosticReports = false;
@@ -59,13 +64,12 @@ class _TransferRecordRequestScreenState extends State<TransferRecordRequestScree
     try {
       User? user = _auth.currentUser;
       if (user != null) {
-        DocumentSnapshot userDoc = await _firestore
-            .collection('users')
-            .doc(user.uid)
-            .get();
-        
+        DocumentSnapshot userDoc =
+            await _firestore.collection('users').doc(user.uid).get();
+
         if (userDoc.exists) {
-          Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+          Map<String, dynamic> userData =
+              userDoc.data() as Map<String, dynamic>;
           if (mounted) {
             setState(() {
               _userName = userData['name'] ?? 'User';
@@ -95,7 +99,8 @@ class _TransferRecordRequestScreenState extends State<TransferRecordRequestScree
           setState(() {
             _hasExistingRequest = requestSnapshot.docs.isNotEmpty;
             if (_hasExistingRequest) {
-              _existingRequest = requestSnapshot.docs.first.data() as Map<String, dynamic>;
+              _existingRequest =
+                  requestSnapshot.docs.first.data() as Map<String, dynamic>;
               _existingRequest!['id'] = requestSnapshot.docs.first.id;
             }
             _isLoading = false;
@@ -177,8 +182,8 @@ class _TransferRecordRequestScreenState extends State<TransferRecordRequestScree
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(_existingRequest != null 
-                  ? 'Transfer request updated successfully!' 
+              content: Text(_existingRequest != null
+                  ? 'Transfer request updated successfully!'
                   : 'Transfer request submitted successfully!'),
               backgroundColor: Colors.green,
             ),
@@ -240,7 +245,8 @@ class _TransferRecordRequestScreenState extends State<TransferRecordRequestScree
                             // Title
                             Center(
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 40, vertical: 15),
                                 decoration: BoxDecoration(
                                   color: Colors.grey.shade300,
                                   borderRadius: BorderRadius.circular(10),
@@ -288,6 +294,7 @@ class _TransferRecordRequestScreenState extends State<TransferRecordRequestScree
       padding: const EdgeInsets.all(40),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        // ... rest of the code remains the same ...
         children: [
           // Header
           Row(
@@ -298,7 +305,8 @@ class _TransferRecordRequestScreenState extends State<TransferRecordRequestScree
                   color: Colors.green.shade100,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(Icons.check_circle, size: 40, color: Colors.green.shade700),
+                child: Icon(Icons.check_circle,
+                    size: 40, color: Colors.green.shade700),
               ),
               const SizedBox(width: 20),
               Expanded(
@@ -326,10 +334,11 @@ class _TransferRecordRequestScreenState extends State<TransferRecordRequestScree
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 decoration: BoxDecoration(
-                  color: _existingRequest?['status'] == 'Pending' 
-                      ? Colors.orange.shade100 
+                  color: _existingRequest?['status'] == 'Pending'
+                      ? Colors.orange.shade100
                       : Colors.blue.shade100,
                   borderRadius: BorderRadius.circular(20),
                 ),
@@ -361,9 +370,12 @@ class _TransferRecordRequestScreenState extends State<TransferRecordRequestScree
                       'Personal Information',
                       Icons.person,
                       [
-                        _buildDetailRow('Full Name', _existingRequest?['fullName']),
-                        _buildDetailRow('Date of Birth', _existingRequest?['dateOfBirth']),
-                        _buildDetailRow('Address', _existingRequest?['address']),
+                        _buildDetailRow(
+                            'Full Name', _existingRequest?['fullName']),
+                        _buildDetailRow(
+                            'Date of Birth', _existingRequest?['dateOfBirth']),
+                        _buildDetailRow(
+                            'Address', _existingRequest?['address']),
                       ],
                     ),
                     const SizedBox(height: 25),
@@ -371,10 +383,26 @@ class _TransferRecordRequestScreenState extends State<TransferRecordRequestScree
                       'Records Requested',
                       Icons.folder_copy,
                       [
-                        _buildCheckRow('Laboratory Results', _existingRequest?['recordsRequested']?['laboratoryResults'] ?? false),
-                        _buildCheckRow('Diagnostic Reports', _existingRequest?['recordsRequested']?['diagnosticReports'] ?? false),
-                        _buildCheckRow('Vaccination Records', _existingRequest?['recordsRequested']?['vaccinationRecords'] ?? false),
-                        _buildCheckRow('Clinical Notes', _existingRequest?['recordsRequested']?['clinicalNotes'] ?? false),
+                        _buildCheckRow(
+                            'Laboratory Results',
+                            _existingRequest?['recordsRequested']
+                                    ?['laboratoryResults'] ??
+                                false),
+                        _buildCheckRow(
+                            'Diagnostic Reports',
+                            _existingRequest?['recordsRequested']
+                                    ?['diagnosticReports'] ??
+                                false),
+                        _buildCheckRow(
+                            'Vaccination Records',
+                            _existingRequest?['recordsRequested']
+                                    ?['vaccinationRecords'] ??
+                                false),
+                        _buildCheckRow(
+                            'Clinical Notes',
+                            _existingRequest?['recordsRequested']
+                                    ?['clinicalNotes'] ??
+                                false),
                       ],
                     ),
                   ],
@@ -391,10 +419,14 @@ class _TransferRecordRequestScreenState extends State<TransferRecordRequestScree
                       'Transfer Information',
                       Icons.local_hospital,
                       [
-                        _buildDetailRow('Transfer To', _existingRequest?['transferTo']),
-                        _buildDetailRow('New Doctor/Clinic', _existingRequest?['newDoctor']),
-                        _buildDetailRow('Clinic Address', _existingRequest?['clinicAddress']),
-                        _buildDetailRow('Contact Info', _existingRequest?['contactInfo']),
+                        _buildDetailRow(
+                            'Transfer To', _existingRequest?['transferTo']),
+                        _buildDetailRow('New Doctor/Clinic',
+                            _existingRequest?['newDoctor']),
+                        _buildDetailRow('Clinic Address',
+                            _existingRequest?['clinicAddress']),
+                        _buildDetailRow(
+                            'Contact Info', _existingRequest?['contactInfo']),
                         _buildDetailRow('Reason', _existingRequest?['reason']),
                       ],
                     ),
@@ -403,7 +435,8 @@ class _TransferRecordRequestScreenState extends State<TransferRecordRequestScree
                       'Transfer Method',
                       Icons.send,
                       [
-                        _buildDetailRow('Method', _existingRequest?['transferMethod']),
+                        _buildDetailRow(
+                            'Method', _existingRequest?['transferMethod']),
                       ],
                     ),
                   ],
@@ -433,7 +466,8 @@ class _TransferRecordRequestScreenState extends State<TransferRecordRequestScree
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: primary,
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 18),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 40, vertical: 18),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -445,7 +479,8 @@ class _TransferRecordRequestScreenState extends State<TransferRecordRequestScree
     );
   }
 
-  Widget _buildDetailSection(String title, IconData icon, List<Widget> children) {
+  Widget _buildDetailSection(
+      String title, IconData icon, List<Widget> children) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -549,13 +584,21 @@ class _TransferRecordRequestScreenState extends State<TransferRecordRequestScree
       _reasonController.text = _existingRequest!['reason'] ?? '';
       _printedNameController.text = _existingRequest!['printedName'] ?? '';
       _signatureDateController.text = _existingRequest!['signatureDate'] ?? '';
-      
+
       setState(() {
-        _laboratoryResults = _existingRequest!['recordsRequested']?['laboratoryResults'] ?? false;
-        _diagnosticReports = _existingRequest!['recordsRequested']?['diagnosticReports'] ?? false;
-        _vaccinationRecords = _existingRequest!['recordsRequested']?['vaccinationRecords'] ?? false;
-        _clinicalNotes = _existingRequest!['recordsRequested']?['clinicalNotes'] ?? false;
-        _transferMethod = _existingRequest!['transferMethod'] ?? 'Pick-up by Patient/Authorized Representative';
+        _laboratoryResults = _existingRequest!['recordsRequested']
+                ?['laboratoryResults'] ??
+            false;
+        _diagnosticReports = _existingRequest!['recordsRequested']
+                ?['diagnosticReports'] ??
+            false;
+        _vaccinationRecords = _existingRequest!['recordsRequested']
+                ?['vaccinationRecords'] ??
+            false;
+        _clinicalNotes =
+            _existingRequest!['recordsRequested']?['clinicalNotes'] ?? false;
+        _transferMethod = _existingRequest!['transferMethod'] ??
+            'Pick-up by Patient/Authorized Representative';
       });
     }
   }
@@ -609,6 +652,8 @@ class _TransferRecordRequestScreenState extends State<TransferRecordRequestScree
           _buildMenuItem('HISTORY OF\nCHECK UP', false),
           _buildMenuItem('NOTIFICATION\nAPPOINTMENT', false),
           _buildMenuItem('TRANSFER OF\nRECORD REQUEST', true),
+          const Spacer(),
+          _buildMenuItem('LOGOUT', false),
         ],
       ),
     );
@@ -619,6 +664,10 @@ class _TransferRecordRequestScreenState extends State<TransferRecordRequestScree
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
         onTap: () {
+          if (title == 'LOGOUT') {
+            _showLogoutConfirmationDialog();
+            return;
+          }
           if (!isActive) {
             _handleNavigation(title);
           }
@@ -627,7 +676,8 @@ class _TransferRecordRequestScreenState extends State<TransferRecordRequestScree
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
           decoration: BoxDecoration(
-            color: isActive ? Colors.white.withOpacity(0.2) : Colors.transparent,
+            color:
+                isActive ? Colors.white.withOpacity(0.2) : Colors.transparent,
             border: Border(
               left: BorderSide(
                 color: isActive ? Colors.white : Colors.transparent,
@@ -655,12 +705,14 @@ class _TransferRecordRequestScreenState extends State<TransferRecordRequestScree
         if (widget.patientType == 'PRENATAL') {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const PrenatalDashboardScreen()),
+            MaterialPageRoute(
+                builder: (context) => const PrenatalDashboardScreen()),
           );
         } else {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const PostnatalDashboardScreen()),
+            MaterialPageRoute(
+                builder: (context) => const PostnatalDashboardScreen()),
           );
         }
         break;
@@ -668,19 +720,23 @@ class _TransferRecordRequestScreenState extends State<TransferRecordRequestScree
         if (widget.patientType == 'PRENATAL') {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const PrenatalHistoryCheckupScreen()),
+            MaterialPageRoute(
+                builder: (context) => const PrenatalHistoryCheckupScreen()),
           );
         } else {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const PostnatalHistoryCheckupScreen()),
+            MaterialPageRoute(
+                builder: (context) => const PostnatalHistoryCheckupScreen()),
           );
         }
         break;
       case 'NOTIFICATION\nAPPOINTMENT':
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => NotificationAppointmentScreen(patientType: widget.patientType)),
+          MaterialPageRoute(
+              builder: (context) => NotificationAppointmentScreen(
+                  patientType: widget.patientType)),
         );
         break;
       case 'TRANSFER OF\nRECORD REQUEST':
@@ -703,7 +759,8 @@ class _TransferRecordRequestScreenState extends State<TransferRecordRequestScree
         // Records to Transfer
         const Text(
           'Medical History',
-          style: TextStyle(fontSize: 14, fontFamily: 'Regular', color: Colors.black87),
+          style: TextStyle(
+              fontSize: 14, fontFamily: 'Regular', color: Colors.black87),
         ),
         const SizedBox(height: 10),
         _buildCheckbox('Laboratory Results', _laboratoryResults, (value) {
@@ -723,7 +780,8 @@ class _TransferRecordRequestScreenState extends State<TransferRecordRequestScree
         const SizedBox(height: 25),
 
         // Transfer Information
-        _buildTextField('Transfer To (New Clinic/Physician):', _transferToController),
+        _buildTextField(
+            'Transfer To (New Clinic/Physician):', _transferToController),
         const SizedBox(height: 15),
         _buildTextField('Name of New Doctor/Clinic:', _newDoctorController),
         const SizedBox(height: 15),
@@ -742,7 +800,8 @@ class _TransferRecordRequestScreenState extends State<TransferRecordRequestScree
       children: [
         const Text(
           'Method of Transfer:',
-          style: TextStyle(fontSize: 14, fontFamily: 'Bold', color: Colors.black87),
+          style: TextStyle(
+              fontSize: 14, fontFamily: 'Bold', color: Colors.black87),
         ),
         const SizedBox(height: 10),
         _buildRadioOption('Pick-up by Patient/Authorized Representative'),
@@ -752,7 +811,8 @@ class _TransferRecordRequestScreenState extends State<TransferRecordRequestScree
 
         const Text(
           'Patient/ Legal Guardian:',
-          style: TextStyle(fontSize: 14, fontFamily: 'Bold', color: Colors.black87),
+          style: TextStyle(
+              fontSize: 14, fontFamily: 'Bold', color: Colors.black87),
         ),
         const SizedBox(height: 10),
         _buildTextField('Printed Name:', _printedNameController),
@@ -812,7 +872,8 @@ class _TransferRecordRequestScreenState extends State<TransferRecordRequestScree
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.grey.shade100,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide.none,
@@ -878,6 +939,49 @@ class _TransferRecordRequestScreenState extends State<TransferRecordRequestScree
           ),
         ),
       ],
+    );
+  }
+
+  void _showLogoutConfirmationDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+          'Logout Confirmation',
+          style: TextStyle(fontFamily: 'Bold'),
+        ),
+        content: const Text(
+          'Are you sure you want to logout?',
+          style: TextStyle(fontFamily: 'Regular'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancel',
+              style:
+                  TextStyle(color: Colors.grey.shade600, fontFamily: 'Medium'),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _auth.signOut();
+              if (mounted) {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const HomeScreen()),
+                  (route) => false,
+                );
+              }
+            },
+            child: const Text(
+              'Logout',
+              style: TextStyle(color: Color(0xffEC008C), fontFamily: 'Bold'),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

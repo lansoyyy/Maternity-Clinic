@@ -5,15 +5,18 @@ import '../utils/colors.dart';
 import 'postnatal_dashboard_screen.dart';
 import 'notification_appointment_screen.dart';
 import 'transfer_record_request_screen.dart';
+import 'auth/home_screen.dart';
 
 class PostnatalHistoryCheckupScreen extends StatefulWidget {
   const PostnatalHistoryCheckupScreen({super.key});
 
   @override
-  State<PostnatalHistoryCheckupScreen> createState() => _PostnatalHistoryCheckupScreenState();
+  State<PostnatalHistoryCheckupScreen> createState() =>
+      _PostnatalHistoryCheckupScreenState();
 }
 
-class _PostnatalHistoryCheckupScreenState extends State<PostnatalHistoryCheckupScreen> {
+class _PostnatalHistoryCheckupScreenState
+    extends State<PostnatalHistoryCheckupScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   String _userName = 'Loading...';
@@ -33,13 +36,12 @@ class _PostnatalHistoryCheckupScreenState extends State<PostnatalHistoryCheckupS
     try {
       User? user = _auth.currentUser;
       if (user != null) {
-        DocumentSnapshot userDoc = await _firestore
-            .collection('users')
-            .doc(user.uid)
-            .get();
-        
+        DocumentSnapshot userDoc =
+            await _firestore.collection('users').doc(user.uid).get();
+
         if (userDoc.exists) {
-          Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+          Map<String, dynamic> userData =
+              userDoc.data() as Map<String, dynamic>;
           if (mounted) {
             setState(() {
               _userName = userData['name'] ?? 'User';
@@ -60,11 +62,9 @@ class _PostnatalHistoryCheckupScreenState extends State<PostnatalHistoryCheckupS
     try {
       User? user = _auth.currentUser;
       if (user != null) {
-        DocumentSnapshot userDoc = await _firestore
-            .collection('users')
-            .doc(user.uid)
-            .get();
-        
+        DocumentSnapshot userDoc =
+            await _firestore.collection('users').doc(user.uid).get();
+
         if (userDoc.exists && mounted) {
           setState(() {
             _userData = userDoc.data() as Map<String, dynamic>;
@@ -83,8 +83,7 @@ class _PostnatalHistoryCheckupScreenState extends State<PostnatalHistoryCheckupS
         QuerySnapshot appointmentSnapshot = await _firestore
             .collection('appointments')
             .where('userId', isEqualTo: user.uid)
-            .where('status', whereIn: ['Completed', 'Rescheduled'])
-            .get();
+            .where('status', whereIn: ['Completed', 'Rescheduled']).get();
 
         List<Map<String, dynamic>> appointments = [];
         for (var doc in appointmentSnapshot.docs) {
@@ -175,7 +174,8 @@ class _PostnatalHistoryCheckupScreenState extends State<PostnatalHistoryCheckupS
                       Map<String, dynamic> appointment = entry.value;
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 20),
-                        child: _buildAppointmentSummaryCard(appointment, index + 1),
+                        child: _buildAppointmentSummaryCard(
+                            appointment, index + 1),
                       );
                     }).toList(),
                     const SizedBox(height: 30),
@@ -250,6 +250,8 @@ class _PostnatalHistoryCheckupScreenState extends State<PostnatalHistoryCheckupS
           _buildMenuItem('HISTORY OF\nCHECK UP', true),
           _buildMenuItem('NOTIFICATION\nAPPOINTMENT', false),
           _buildMenuItem('TRANSFER OF\nRECORD REQUEST', false),
+          const Spacer(),
+          _buildMenuItem('LOGOUT', false),
         ],
       ),
     );
@@ -260,6 +262,10 @@ class _PostnatalHistoryCheckupScreenState extends State<PostnatalHistoryCheckupS
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
         onTap: () {
+          if (title == 'LOGOUT') {
+            _showLogoutConfirmationDialog();
+            return;
+          }
           if (!isActive) {
             _handleNavigation(title);
           }
@@ -268,7 +274,8 @@ class _PostnatalHistoryCheckupScreenState extends State<PostnatalHistoryCheckupS
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
           decoration: BoxDecoration(
-            color: isActive ? Colors.white.withOpacity(0.2) : Colors.transparent,
+            color:
+                isActive ? Colors.white.withOpacity(0.2) : Colors.transparent,
             border: Border(
               left: BorderSide(
                 color: isActive ? Colors.white : Colors.transparent,
@@ -393,7 +400,8 @@ class _PostnatalHistoryCheckupScreenState extends State<PostnatalHistoryCheckupS
     );
   }
 
-  Widget _buildAppointmentSummaryCard(Map<String, dynamic> appointment, int visitNumber) {
+  Widget _buildAppointmentSummaryCard(
+      Map<String, dynamic> appointment, int visitNumber) {
     String date = 'N/A';
     if (appointment['createdAt'] != null) {
       try {
@@ -464,7 +472,8 @@ class _PostnatalHistoryCheckupScreenState extends State<PostnatalHistoryCheckupS
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: appointment['status'] == 'Rescheduled'
                       ? Colors.blue.shade100
@@ -485,7 +494,7 @@ class _PostnatalHistoryCheckupScreenState extends State<PostnatalHistoryCheckupS
             ],
           ),
           const SizedBox(height: 20),
-          
+
           // Details in 3 columns
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -513,7 +522,8 @@ class _PostnatalHistoryCheckupScreenState extends State<PostnatalHistoryCheckupS
                     _buildInfoRow('Day:', appointment['day'] ?? 'N/A'),
                     _buildInfoRow('Time:', appointment['timeSlot'] ?? 'N/A'),
                     if (appointment['rescheduledAt'] != null)
-                      _buildInfoRow('Rescheduled:', _formatDate(appointment['rescheduledAt'])),
+                      _buildInfoRow('Rescheduled:',
+                          _formatDate(appointment['rescheduledAt'])),
                   ],
                 ),
               ),
@@ -595,7 +605,8 @@ class _PostnatalHistoryCheckupScreenState extends State<PostnatalHistoryCheckupS
       case 'EDUCATIONAL\nLEARNERS':
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const PostnatalDashboardScreen()),
+          MaterialPageRoute(
+              builder: (context) => const PostnatalDashboardScreen()),
         );
         break;
       case 'HISTORY OF\nCHECK UP':
@@ -604,13 +615,17 @@ class _PostnatalHistoryCheckupScreenState extends State<PostnatalHistoryCheckupS
       case 'NOTIFICATION\nAPPOINTMENT':
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const NotificationAppointmentScreen(patientType: 'POSTNATAL')),
+          MaterialPageRoute(
+              builder: (context) => const NotificationAppointmentScreen(
+                  patientType: 'POSTNATAL')),
         );
         break;
       case 'TRANSFER OF\nRECORD REQUEST':
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const TransferRecordRequestScreen(patientType: 'POSTNATAL')),
+          MaterialPageRoute(
+              builder: (context) =>
+                  const TransferRecordRequestScreen(patientType: 'POSTNATAL')),
         );
         break;
     }
@@ -732,7 +747,8 @@ class _PostnatalHistoryCheckupScreenState extends State<PostnatalHistoryCheckupS
     );
   }
 
-  Widget _buildTableRowFromAppointment(String visitNo, Map<String, dynamic> appointment) {
+  Widget _buildTableRowFromAppointment(
+      String visitNo, Map<String, dynamic> appointment) {
     String date = 'N/A';
     if (appointment['createdAt'] != null) {
       try {
@@ -780,6 +796,49 @@ class _PostnatalHistoryCheckupScreenState extends State<PostnatalHistoryCheckupS
           color: Colors.grey.shade700,
         ),
         textAlign: TextAlign.center,
+      ),
+    );
+  }
+
+  void _showLogoutConfirmationDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+          'Logout Confirmation',
+          style: TextStyle(fontFamily: 'Bold'),
+        ),
+        content: const Text(
+          'Are you sure you want to logout?',
+          style: TextStyle(fontFamily: 'Regular'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancel',
+              style:
+                  TextStyle(color: Colors.grey.shade600, fontFamily: 'Medium'),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _auth.signOut();
+              if (mounted) {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const HomeScreen()),
+                  (route) => false,
+                );
+              }
+            },
+            child: const Text(
+              'Logout',
+              style: TextStyle(color: Color(0xffEC008C), fontFamily: 'Bold'),
+            ),
+          ),
+        ],
       ),
     );
   }
