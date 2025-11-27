@@ -4,9 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:maternity_clinic/screens/admin/admin_appointment_scheduling_screen.dart';
 import 'package:maternity_clinic/screens/admin/admin_appointment_management_screen.dart';
-import 'package:maternity_clinic/screens/admin/admin_prenatal_records_screen.dart';
+import 'package:maternity_clinic/screens/admin/admin_patient_records_screen.dart';
 import 'package:maternity_clinic/screens/admin/admin_transfer_requests_screen.dart';
-import 'package:maternity_clinic/screens/admin/admin_educational_cms_screen.dart';
 import '../../utils/colors.dart';
 import '../auth/home_screen.dart';
 
@@ -511,7 +510,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           _buildMenuItem('APPOINTMENT MANAGEMENT', false),
           _buildMenuItem('APPROVE SCHEDULES', false),
           _buildMenuItem('PATIENT RECORDS', false),
-          _buildMenuItem('CONTENT MANAGEMENT', false),
 
           const Spacer(),
 
@@ -661,13 +659,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         );
         break;
       case 'PATIENT RECORDS':
-        screen = AdminPrenatalRecordsScreen(
-          userRole: widget.userRole,
-          userName: widget.userName,
-        );
-        break;
-      case 'CONTENT MANAGEMENT':
-        screen = AdminEducationalCmsScreen(
+        screen = AdminPatientRecordsScreen(
           userRole: widget.userRole,
           userName: widget.userName,
         );

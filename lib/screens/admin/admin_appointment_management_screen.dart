@@ -4,12 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import 'admin_dashboard_screen.dart';
 import 'admin_appointment_scheduling_screen.dart';
-import 'admin_prenatal_records_screen.dart';
-import 'admin_postnatal_records_screen.dart';
-import 'admin_transfer_requests_screen.dart';
+import 'admin_patient_records_screen.dart';
 import 'admin_prenatal_patient_detail_screen.dart';
 import 'admin_postnatal_patient_detail_screen.dart';
-import 'admin_educational_cms_screen.dart';
 import '../auth/home_screen.dart';
 import '../../utils/colors.dart';
 
@@ -869,7 +866,6 @@ class _AdminAppointmentManagementScreenState
           _buildMenuItem('APPOINTMENT MANAGEMENT', true),
           _buildMenuItem('APPROVE SCHEDULES', false),
           _buildMenuItem('PATIENT RECORDS', false),
-          _buildMenuItem('CONTENT MANAGEMENT', false),
           const Spacer(),
           _buildMenuItem('LOGOUT', false),
         ],
@@ -933,13 +929,7 @@ class _AdminAppointmentManagementScreenState
         );
         break;
       case 'PATIENT RECORDS':
-        screen = AdminPrenatalRecordsScreen(
-          userRole: widget.userRole,
-          userName: widget.userName,
-        );
-        break;
-      case 'CONTENT MANAGEMENT':
-        screen = AdminEducationalCmsScreen(
+        screen = AdminPatientRecordsScreen(
           userRole: widget.userRole,
           userName: widget.userName,
         );

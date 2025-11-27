@@ -3,10 +3,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../utils/colors.dart';
 import 'admin_dashboard_screen.dart';
-import 'admin_prenatal_records_screen.dart';
+import 'admin_patient_records_screen.dart';
 import 'admin_appointment_scheduling_screen.dart';
 import 'admin_appointment_management_screen.dart';
-import 'admin_educational_cms_screen.dart';
 import '../auth/home_screen.dart';
 
 class AdminTransferRequestsScreen extends StatefulWidget {
@@ -170,7 +169,6 @@ class _AdminTransferRequestsScreenState
           _buildMenuItem('APPOINTMENT MANAGEMENT', false),
           _buildMenuItem('APPROVE SCHEDULES', false),
           _buildMenuItem('PATIENT RECORDS', false),
-          _buildMenuItem('CONTENT MANAGEMENT', false),
           const Spacer(),
           _buildMenuItem('LOGOUT', false),
         ],
@@ -257,18 +255,7 @@ class _AdminTransferRequestsScreenState
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => AdminPrenatalRecordsScreen(
-              userRole: widget.userRole,
-              userName: widget.userName,
-            ),
-          ),
-        );
-        break;
-      case 'CONTENT MANAGEMENT':
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => AdminEducationalCmsScreen(
+            builder: (context) => AdminPatientRecordsScreen(
               userRole: widget.userRole,
               userName: widget.userName,
             ),
