@@ -59,6 +59,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   : _buildMobileLayout(screenWidth, screenHeight),
             ),
 
+            const SizedBox(height: 30),
+
+            // About Us, Mission & Vision
+            _buildAboutSection(),
+
             // Footer Section
             _buildFooter(),
           ],
@@ -103,7 +108,6 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildNavItem('HOME', true),
               _buildNavItem('ABOUT US', false),
               _buildNavItem('SERVICES', false),
-        
               _buildNavItem('CONTACT US', false),
             ],
           ),
@@ -149,7 +153,7 @@ class _HomeScreenState extends State<HomeScreen> {
           MaterialPageRoute(builder: (context) => const ServicesScreen()),
         );
         break;
-     
+
       case 'CONTACT US':
         Navigator.push(
           context,
@@ -208,12 +212,14 @@ class _HomeScreenState extends State<HomeScreen> {
           if (patientType == 'PRENATAL') {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => const PrenatalDashboardScreen()),
+              MaterialPageRoute(
+                  builder: (context) => const PrenatalDashboardScreen()),
             );
           } else {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => const PostnatalDashboardScreen()),
+              MaterialPageRoute(
+                  builder: (context) => const PostnatalDashboardScreen()),
             );
           }
         }
@@ -226,11 +232,12 @@ class _HomeScreenState extends State<HomeScreen> {
           'createdAt': FieldValue.serverTimestamp(),
           'role': 'patient',
         });
-        
+
         if (mounted) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const PrenatalDashboardScreen()),
+            MaterialPageRoute(
+                builder: (context) => const PrenatalDashboardScreen()),
           );
         }
       }
@@ -286,14 +293,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildDesktopLayout(double screenWidth, double screenHeight) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         // Left Section - Services
         Expanded(
           flex: 3,
           child: Column(
-            
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildServiceItem(
@@ -305,7 +310,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 'assets/images/ultra sound.png',
                 'ULTRA SOUND',
               ),
-             
             ],
           ),
         ),
@@ -328,12 +332,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [primary.withOpacity(0.1), secondary.withOpacity(0.1)],
+                      colors: [
+                        primary.withOpacity(0.1),
+                        secondary.withOpacity(0.1)
+                      ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: primary.withOpacity(0.3), width: 1),
+                    border:
+                        Border.all(color: primary.withOpacity(0.3), width: 1),
                   ),
                   child: Column(
                     children: [
@@ -376,7 +384,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         child: ElevatedButton.icon(
                           onPressed: () async {
-                            final Uri videoUri = Uri.parse('https://web.facebook.com/share/v/1Gn41z66e8/?mibextid=adiEgM');
+                            final Uri videoUri = Uri.parse(
+                                'https://web.facebook.com/share/v/1Gn41z66e8/?mibextid=adiEgM');
                             if (!await launchUrl(videoUri)) {
                               _showErrorDialog('Could not launch video');
                             }
@@ -394,7 +403,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             backgroundColor: Colors.transparent,
                             foregroundColor: Colors.white,
                             shadowColor: Colors.transparent,
-                            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 30, vertical: 15),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(30),
                             ),
@@ -415,6 +425,83 @@ class _HomeScreenState extends State<HomeScreen> {
           child: _buildSignInCard(),
         ),
       ],
+    );
+  }
+
+  Widget _buildAboutSection() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'ABOUT US',
+            style: TextStyle(
+              fontSize: 24,
+              fontFamily: 'Bold',
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 30,
+            runSpacing: 20,
+            children: const [
+              _StaffProfileCard(
+                name: 'OB - Maureen R. Higoy MD',
+                role: 'Obstetrician-Gynecologist',
+              ),
+              _StaffProfileCard(
+                name: 'Girlie Hagos',
+                role: 'Staff',
+              ),
+              _StaffProfileCard(
+                name: 'Aprilyn Ay-Ayen',
+                role: 'Staff',
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'OUR MISSION',
+            style: TextStyle(
+              fontSize: 20,
+              fontFamily: 'Bold',
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'The Victory Lying-in Center is committed in serving the community by providing high quality care and medical services in a most affordable and compassionate manner.',
+            style: TextStyle(
+              fontSize: 14,
+              fontFamily: 'Regular',
+              color: Colors.black87,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            'OUR VISION',
+            style: TextStyle(
+              fontSize: 20,
+              fontFamily: 'Bold',
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'The Victory Lying-in Center envisions to be a leading provider of excellent health care to achieve the highest level of quality in Maternal and Child Health care and promote the highest standard of obstetric, gynecologic and reproductive health through personalize clinical care to our patient.',
+            style: TextStyle(
+              fontSize: 14,
+              fontFamily: 'Regular',
+              color: Colors.black87,
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -483,7 +570,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 child: ElevatedButton.icon(
                   onPressed: () async {
-                    final Uri videoUri = Uri.parse('https://web.facebook.com/share/v/1Gn41z66e8/?mibextid=adiEgM');
+                    final Uri videoUri = Uri.parse(
+                        'https://web.facebook.com/share/v/1Gn41z66e8/?mibextid=adiEgM');
                     if (!await launchUrl(videoUri)) {
                       _showErrorDialog('Could not launch video');
                     }
@@ -501,7 +589,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     backgroundColor: Colors.transparent,
                     foregroundColor: Colors.white,
                     shadowColor: Colors.transparent,
-                    padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 25, vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
                     ),
@@ -515,7 +604,6 @@ class _HomeScreenState extends State<HomeScreen> {
         _buildServiceItem('assets/images/ob-gyne.png', 'OB - GYNE'),
         const SizedBox(height: 20),
         _buildServiceItem('assets/images/ultra sound.png', 'ULTRA SOUND'),
-      
       ],
     );
   }
@@ -791,7 +879,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const SignupScreen()),
+                    MaterialPageRoute(
+                        builder: (context) => const SignupScreen()),
                   );
                 },
                 child: Text(
@@ -862,6 +951,61 @@ class _HomeScreenState extends State<HomeScreen> {
           height: 1.3,
           letterSpacing: 0.5,
         ),
+      ),
+    );
+  }
+}
+
+class _StaffProfileCard extends StatelessWidget {
+  final String name;
+  final String role;
+
+  const _StaffProfileCard({
+    required this.name,
+    required this.role,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 220,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: primary.withOpacity(0.15),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.person,
+              size: 42,
+              color: primary,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            name,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 14,
+              fontFamily: 'Bold',
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            role,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 12,
+              fontFamily: 'Regular',
+              color: Colors.grey.shade700,
+            ),
+          ),
+        ],
       ),
     );
   }

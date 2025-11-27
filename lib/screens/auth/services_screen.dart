@@ -128,7 +128,6 @@ class _ServicesScreenState extends State<ServicesScreen> {
               _buildNavItem('HOME', false),
               _buildNavItem('ABOUT US', false),
               _buildNavItem('SERVICES', true),
-            
               _buildNavItem('CONTACT US', false),
             ],
           ),
@@ -174,7 +173,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
       case 'SERVICES':
         // Already on services screen
         break;
-   
+
       case 'CONTACT US':
         Navigator.pushReplacement(
           context,
@@ -225,7 +224,6 @@ class _ServicesScreenState extends State<ServicesScreen> {
             'Pelvic ultrasound',
           ],
         ),
-       
       ],
     );
   }
@@ -350,22 +348,6 @@ class _ServicesScreenState extends State<ServicesScreen> {
             ),
             const SizedBox(width: 25),
             _buildAdditionalServiceCard(
-              Icons.local_pharmacy,
-              'Pharmacy',
-              'In-house pharmacy for convenient medication access',
-            ),
-            const SizedBox(width: 25),
-            _buildAdditionalServiceCard(
-              Icons.emergency,
-              '24/7 Emergency Care',
-              'Round-the-clock emergency obstetric services',
-            ),
-          ],
-        ),
-        const SizedBox(height: 25),
-        Row(
-          children: [
-            _buildAdditionalServiceCard(
               Icons.hotel,
               'Comfortable Rooms',
               'Clean and comfortable lying-in rooms for mothers',
@@ -376,7 +358,11 @@ class _ServicesScreenState extends State<ServicesScreen> {
               'Lactation Support',
               'Breastfeeding guidance and lactation consultation',
             ),
-            const SizedBox(width: 25),
+          ],
+        ),
+        const SizedBox(height: 25),
+        Row(
+          children: [
             _buildAdditionalServiceCard(
               Icons.school,
               'Prenatal Classes',
@@ -462,11 +448,11 @@ class _ServicesScreenState extends State<ServicesScreen> {
           ),
         ),
         const SizedBox(height: 30),
-        
+
         // Services Offered Section
         _buildServicesOffered(),
         const SizedBox(height: 40),
-        
+
         // Packages Section
         _buildPackages(),
       ],
@@ -593,7 +579,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
           ],
         ),
         const SizedBox(height: 30),
-        
+
         // Newborn Care Package
         _buildPackageCard(
           '👶 Newborn Care Package (NCP)',
@@ -618,7 +604,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
           ],
         ),
         const SizedBox(height: 30),
-        
+
         // NSD Package
         _buildPackageCard(
           '🤱 NSD Package (Mother and Baby)',
@@ -677,18 +663,18 @@ class _ServicesScreenState extends State<ServicesScreen> {
             ),
           ),
           const SizedBox(height: 20),
-          
+
           // Without PhilHealth Section
           _buildPackageSection('Without PhilHealth', withoutPhilHealth),
           const SizedBox(height: 15),
-          
+
           // PhilHealth Benefits Section
           _buildPackageSection('PhilHealth Benefits', philHealthBenefits),
           const SizedBox(height: 15),
-          
+
           // With PhilHealth Section
           _buildPackageSection('With PhilHealth', withPhilHealth),
-          
+
           if (inclusions.isNotEmpty) ...[
             const SizedBox(height: 20),
             Container(
@@ -733,17 +719,19 @@ class _ServicesScreenState extends State<ServicesScreen> {
             ),
           ),
           const SizedBox(height: 10),
-          ...items.map((item) => Padding(
-            padding: const EdgeInsets.symmetric(vertical: 3),
-            child: Text(
-              item,
-              style: const TextStyle(
-                fontSize: 14,
-                fontFamily: 'Regular',
-                color: Colors.black87,
-              ),
-            ),
-          )).toList(),
+          ...items
+              .map((item) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 3),
+                    child: Text(
+                      item,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontFamily: 'Regular',
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ))
+              .toList(),
         ],
       ),
     );
@@ -805,7 +793,8 @@ class _ServicesScreenState extends State<ServicesScreen> {
     );
   }
 
-  Widget _buildWhyChooseUsItem(IconData icon, String title, String description) {
+  Widget _buildWhyChooseUsItem(
+      IconData icon, String title, String description) {
     return Expanded(
       child: Column(
         children: [
