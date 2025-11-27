@@ -106,7 +106,6 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
               _buildNavItem('HOME', false),
               _buildNavItem('ABOUT US', false),
               _buildNavItem('SERVICES', false),
-            
               _buildNavItem('CONTACT US', true),
             ],
           ),
@@ -155,7 +154,7 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
           MaterialPageRoute(builder: (context) => const ServicesScreen()),
         );
         break;
- 
+
       case 'CONTACT US':
         // Already on contact us screen
         break;
@@ -374,69 +373,69 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
         const SizedBox(height: 30),
 
         // Map Section
-        const Text(
-          'ADDRESS & LOCATION',
-          style: TextStyle(
-            fontSize: 32,
-            fontFamily: 'Bold',
-            color: Colors.black,
-            letterSpacing: 0.5,
-          ),
-        ),
-        const SizedBox(height: 30),
+        // const Text(
+        //   'ADDRESS & LOCATION',
+        //   style: TextStyle(
+        //     fontSize: 32,
+        //     fontFamily: 'Bold',
+        //     color: Colors.black,
+        //     letterSpacing: 0.5,
+        //   ),
+        // ),
+        // const SizedBox(height: 30),
 
-        // Map Image
-        Container(
-          width: double.infinity,
-          height: 400,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.shade300,
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: Image.asset(
-              'assets/images/map.png',
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                // Fallback if map image doesn't exist
-                return Container(
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.map,
-                          size: 80,
-                          color: Colors.grey.shade400,
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          'Map Location',
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                            fontFamily: 'Medium',
-                            fontSize: 18,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
+        // // Map Image
+        // Container(
+        //   width: double.infinity,
+        //   height: 400,
+        //   decoration: BoxDecoration(
+        //     borderRadius: BorderRadius.circular(20),
+        //     boxShadow: [
+        //       BoxShadow(
+        //         color: Colors.grey.shade300,
+        //         blurRadius: 20,
+        //         offset: const Offset(0, 10),
+        //       ),
+        //     ],
+        //   ),
+        //   child: ClipRRect(
+        //     borderRadius: BorderRadius.circular(20),
+        //     child: Image.asset(
+        //       'assets/images/map.png',
+        //       fit: BoxFit.cover,
+        //       errorBuilder: (context, error, stackTrace) {
+        //         // Fallback if map image doesn't exist
+        //         return Container(
+        //           decoration: BoxDecoration(
+        //             color: Colors.grey.shade200,
+        //             borderRadius: BorderRadius.circular(20),
+        //           ),
+        //           child: Center(
+        //             child: Column(
+        //               mainAxisAlignment: MainAxisAlignment.center,
+        //               children: [
+        //                 Icon(
+        //                   Icons.map,
+        //                   size: 80,
+        //                   color: Colors.grey.shade400,
+        //                 ),
+        //                 const SizedBox(height: 10),
+        //                 Text(
+        //                   'Map Location',
+        //                   style: TextStyle(
+        //                     color: Colors.grey.shade600,
+        //                     fontFamily: 'Medium',
+        //                     fontSize: 18,
+        //                   ),
+        //                 ),
+        //               ],
+        //             ),
+        //           ),
+        //         );
+        //       },
+        //     ),
+        //   ),
+        // ),
       ],
     );
   }
@@ -521,7 +520,7 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
   Future<void> _launchInstagram(String username) async {
     final Uri instagramUri = Uri.parse('instagram://user/?username=$username');
     final Uri webUri = Uri.parse('https://www.instagram.com/$username');
-    
+
     if (!await launchUrl(instagramUri)) {
       // If app is not installed, try to open in web browser
       if (!await launchUrl(webUri)) {
@@ -533,7 +532,7 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
   Future<void> _launchFacebook() async {
     const String facebookUrl = 'https://www.facebook.com/VictoryLyingInCenter';
     final Uri facebookUri = Uri.parse(facebookUrl);
-    
+
     if (!await launchUrl(facebookUri)) {
       _showErrorDialog('Could not launch Facebook');
     }
