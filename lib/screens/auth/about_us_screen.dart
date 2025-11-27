@@ -54,14 +54,10 @@ class _AboutUsScreenState extends State<AboutUsScreen> {
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  const SizedBox(height: 50),
+                  const SizedBox(height: 40),
 
-                  // About Section
+                  // Staff Profiles + Mission & Vision
                   _buildAboutSection(),
-                  const SizedBox(height: 60),
-
-                  // Mission & Vision Section
-                  _buildMissionVisionSection(),
                   const SizedBox(height: 60),
 
                   // Services Overview
@@ -114,7 +110,6 @@ class _AboutUsScreenState extends State<AboutUsScreen> {
               _buildNavItem('HOME', false),
               _buildNavItem('ABOUT US', true),
               _buildNavItem('SERVICES', false),
-        
               _buildNavItem('CONTACT US', false),
             ],
           ),
@@ -160,7 +155,7 @@ class _AboutUsScreenState extends State<AboutUsScreen> {
           MaterialPageRoute(builder: (context) => const ServicesScreen()),
         );
         break;
-   
+
       case 'CONTACT US':
         Navigator.pushReplacement(
           context,
@@ -171,237 +166,63 @@ class _AboutUsScreenState extends State<AboutUsScreen> {
   }
 
   Widget _buildAboutSection() {
-    return Row(
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Left - Image
-        Expanded(
-          flex: 1,
-          child: Container(
-            height: 350,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: primary.withOpacity(0.2),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
+        Wrap(
+          spacing: 30,
+          runSpacing: 20,
+          children: const [
+            _StaffProfileCard(
+              name: 'OB - Maureen R. Higoy MD',
+              role: 'Obstetrician-Gynecologist',
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: Image.asset(
-                'assets/images/figure.png',
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    decoration: BoxDecoration(
-                      color: orangePallete,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Center(
-                      child: Icon(
-                        Icons.medical_services,
-                        size: 80,
-                        color: primary,
-                      ),
-                    ),
-                  );
-                },
-              ),
+            _StaffProfileCard(
+              name: 'Girlie Hagos',
+              role: 'Staff',
             ),
+            _StaffProfileCard(
+              name: 'Aprilyn Ay-Ayen',
+              role: 'Staff',
+            ),
+          ],
+        ),
+        const SizedBox(height: 32),
+        const Text(
+          'OUR MISSION',
+          style: TextStyle(
+            fontSize: 22,
+            fontFamily: 'Bold',
+            color: Colors.black87,
           ),
         ),
-        const SizedBox(width: 60),
-
-        // Right - Content
-        Expanded(
-          flex: 1,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Welcome to Victory Lying In',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontFamily: 'Bold',
-                  color: primary,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Victory Lying In is a premier maternity clinic dedicated to providing exceptional care for mothers and their babies. Our state-of-the-art facility combines modern medical technology with compassionate, personalized care.',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontFamily: 'Regular',
-                  color: Colors.black87,
-                  height: 1.8,
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'We understand that pregnancy and childbirth are among life\'s most precious moments. Our experienced team of healthcare professionals is committed to ensuring the health and well-being of both mother and child throughout every stage of the journey.',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontFamily: 'Regular',
-                  color: Colors.black87,
-                  height: 1.8,
-                ),
-              ),
-              const SizedBox(height: 30),
-              Container(
-                padding: const EdgeInsets.all(25),
-                decoration: BoxDecoration(
-                  color: orangePallete,
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.favorite,
-                      color: primary,
-                      size: 40,
-                    ),
-                    const SizedBox(width: 20),
-                    const Expanded(
-                      child: Text(
-                        'Trusted by thousands of families for quality maternal care',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontFamily: 'Medium',
-                          color: Colors.black87,
-                          height: 1.5,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+        const SizedBox(height: 8),
+        const Text(
+          'The Victory Lying-in Center is committed in serving the community by providing high quality care and medical services in a most affordable and compassionate manner.',
+          style: TextStyle(
+            fontSize: 15,
+            fontFamily: 'Regular',
+            color: Colors.black87,
+            height: 1.6,
           ),
         ),
-      ],
-    );
-  }
-
-  Widget _buildMissionVisionSection() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Mission
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.all(40),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [primary.withOpacity(0.1), secondary.withOpacity(0.1)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: primary.withOpacity(0.3), width: 2),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: primary,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.flag,
-                        color: Colors.white,
-                        size: 30,
-                      ),
-                    ),
-                    const SizedBox(width: 15),
-                    Text(
-                      'OUR MISSION',
-                      style: TextStyle(
-                        fontSize: 26,
-                        fontFamily: 'Bold',
-                        color: primary,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 25),
-                const Text(
-                  'To provide comprehensive, compassionate, and high-quality maternal and child healthcare services. We strive to create a safe, comfortable, and supportive environment where every mother feels valued and cared for throughout her pregnancy journey.',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontFamily: 'Regular',
-                    color: Colors.black87,
-                    height: 1.8,
-                  ),
-                ),
-              ],
-            ),
+        const SizedBox(height: 24),
+        const Text(
+          'OUR VISION',
+          style: TextStyle(
+            fontSize: 22,
+            fontFamily: 'Bold',
+            color: Colors.black87,
           ),
         ),
-        const SizedBox(width: 40),
-
-        // Vision
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.all(40),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [primary.withOpacity(0.1), secondary.withOpacity(0.1)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: primary.withOpacity(0.3), width: 2),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: primary,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.visibility,
-                        color: Colors.white,
-                        size: 30,
-                      ),
-                    ),
-                    const SizedBox(width: 15),
-                    Text(
-                      'OUR VISION',
-                      style: TextStyle(
-                        fontSize: 26,
-                        fontFamily: 'Bold',
-                        color: primary,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 25),
-                const Text(
-                  'To be the leading maternity clinic recognized for excellence in maternal and child healthcare. We envision a future where every family has access to world-class medical care, delivered with warmth, respect, and dedication.',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontFamily: 'Regular',
-                    color: Colors.black87,
-                    height: 1.8,
-                  ),
-                ),
-              ],
-            ),
+        const SizedBox(height: 8),
+        const Text(
+          'The Victory Lying-in Center envisions to be a leading provider of excellent health care to achieve the highest level of quality in Maternal and Child Health care and promote the highest standard of obstetric, gynecologic and reproductive health through personalize clinical care to our patient.',
+          style: TextStyle(
+            fontSize: 15,
+            fontFamily: 'Regular',
+            color: Colors.black87,
+            height: 1.6,
           ),
         ),
       ],
@@ -435,7 +256,6 @@ class _AboutUsScreenState extends State<AboutUsScreen> {
               'ULTRASOUND',
               'Advanced ultrasound imaging for prenatal monitoring and diagnostics',
             ),
-            
           ],
         ),
       ],
@@ -528,6 +348,61 @@ class _AboutUsScreenState extends State<AboutUsScreen> {
           height: 1.3,
           letterSpacing: 0.5,
         ),
+      ),
+    );
+  }
+}
+
+class _StaffProfileCard extends StatelessWidget {
+  final String name;
+  final String role;
+
+  const _StaffProfileCard({
+    required this.name,
+    required this.role,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 230,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 90,
+            height: 90,
+            decoration: BoxDecoration(
+              color: primary.withOpacity(0.15),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.person,
+              size: 46,
+              color: primary,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            name,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 15,
+              fontFamily: 'Bold',
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            role,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 13,
+              fontFamily: 'Regular',
+              color: Colors.grey.shade700,
+            ),
+          ),
+        ],
       ),
     );
   }

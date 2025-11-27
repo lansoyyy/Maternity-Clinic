@@ -59,11 +59,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   : _buildMobileLayout(screenWidth, screenHeight),
             ),
 
-            const SizedBox(height: 30),
-
-            // About Us, Mission & Vision
-            _buildAboutSection(),
-
             // Footer Section
             _buildFooter(),
           ],
@@ -425,83 +420,6 @@ class _HomeScreenState extends State<HomeScreen> {
           child: _buildSignInCard(),
         ),
       ],
-    );
-  }
-
-  Widget _buildAboutSection() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'ABOUT US',
-            style: TextStyle(
-              fontSize: 24,
-              fontFamily: 'Bold',
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Wrap(
-            spacing: 30,
-            runSpacing: 20,
-            children: const [
-              _StaffProfileCard(
-                name: 'OB - Maureen R. Higoy MD',
-                role: 'Obstetrician-Gynecologist',
-              ),
-              _StaffProfileCard(
-                name: 'Girlie Hagos',
-                role: 'Staff',
-              ),
-              _StaffProfileCard(
-                name: 'Aprilyn Ay-Ayen',
-                role: 'Staff',
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          const Text(
-            'OUR MISSION',
-            style: TextStyle(
-              fontSize: 20,
-              fontFamily: 'Bold',
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'The Victory Lying-in Center is committed in serving the community by providing high quality care and medical services in a most affordable and compassionate manner.',
-            style: TextStyle(
-              fontSize: 14,
-              fontFamily: 'Regular',
-              color: Colors.black87,
-              height: 1.5,
-            ),
-          ),
-          const SizedBox(height: 20),
-          const Text(
-            'OUR VISION',
-            style: TextStyle(
-              fontSize: 20,
-              fontFamily: 'Bold',
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'The Victory Lying-in Center envisions to be a leading provider of excellent health care to achieve the highest level of quality in Maternal and Child Health care and promote the highest standard of obstetric, gynecologic and reproductive health through personalize clinical care to our patient.',
-            style: TextStyle(
-              fontSize: 14,
-              fontFamily: 'Regular',
-              color: Colors.black87,
-              height: 1.5,
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -951,61 +869,6 @@ class _HomeScreenState extends State<HomeScreen> {
           height: 1.3,
           letterSpacing: 0.5,
         ),
-      ),
-    );
-  }
-}
-
-class _StaffProfileCard extends StatelessWidget {
-  final String name;
-  final String role;
-
-  const _StaffProfileCard({
-    required this.name,
-    required this.role,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 220,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              color: primary.withOpacity(0.15),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.person,
-              size: 42,
-              color: primary,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            name,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 14,
-              fontFamily: 'Bold',
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            role,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 12,
-              fontFamily: 'Regular',
-              color: Colors.grey.shade700,
-            ),
-          ),
-        ],
       ),
     );
   }
