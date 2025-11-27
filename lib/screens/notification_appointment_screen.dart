@@ -531,7 +531,7 @@ class _NotificationAppointmentScreenState
           _buildMenuItem('HISTORY OF\nCHECK UP', false),
           _buildMenuItem('NOTIFICATION\nAPPOINTMENT', true),
           _buildMenuItem('TRANSFER OF\nRECORD REQUEST', false),
-          const Spacer(),
+
           _buildMenuItem('LOGOUT', false),
         ],
       ),

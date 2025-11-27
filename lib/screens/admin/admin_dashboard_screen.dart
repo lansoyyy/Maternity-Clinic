@@ -511,8 +511,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           _buildMenuItem('APPROVE SCHEDULES', false),
           _buildMenuItem('PATIENT RECORDS', false),
 
-          const Spacer(),
-
           // Logout Menu Item
           Padding(
             padding: const EdgeInsets.only(bottom: 20),

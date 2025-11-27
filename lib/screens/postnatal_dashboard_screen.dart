@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../utils/colors.dart';
+import '../widgets/forgot_password_dialog.dart';
 import 'postnatal_history_checkup_screen.dart';
 import 'notification_appointment_screen.dart';
 import 'transfer_record_request_screen.dart';
@@ -9,7 +10,12 @@ import 'postnatal_update_profile_screen.dart';
 import 'auth/home_screen.dart';
 
 class PostnatalDashboardScreen extends StatefulWidget {
-  const PostnatalDashboardScreen({super.key});
+  final bool openPersonalDetailsOnLoad;
+
+  const PostnatalDashboardScreen({
+    super.key,
+    this.openPersonalDetailsOnLoad = false,
+  });
 
   @override
   State<PostnatalDashboardScreen> createState() =>
@@ -27,6 +33,17 @@ class _PostnatalDashboardScreenState extends State<PostnatalDashboardScreen> {
   void initState() {
     super.initState();
     _loadUserName();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (widget.openPersonalDetailsOnLoad) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const PostnatalUpdateProfileScreen(),
+          ),
+        );
+      }
+    });
   }
 
   Future<void> _loadUserName() async {
@@ -142,76 +159,6 @@ class _PostnatalDashboardScreenState extends State<PostnatalDashboardScreen> {
                         ],
                       ),
                     ),
-                  if (!_profileCompleted) const SizedBox(height: 24),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: [
-                      _buildDashboardAction(
-                        title: 'Personal Details',
-                        icon: Icons.person,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const PostnatalUpdateProfileScreen(),
-                            ),
-                          ).then((_) {
-                            _loadUserName();
-                          });
-                        },
-                      ),
-                      _buildDashboardAction(
-                        title: 'Educational Learners',
-                        icon: Icons.menu_book,
-                        onTap: () {},
-                      ),
-                      _buildDashboardAction(
-                        title: 'History of Check Up',
-                        icon: Icons.history,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const PostnatalHistoryCheckupScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildDashboardAction(
-                        title: 'Request & Notification Appointment',
-                        icon: Icons.calendar_today,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const NotificationAppointmentScreen(
-                                      patientType: 'POSTNATAL'),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildDashboardAction(
-                        title: 'Transfer of Record Request',
-                        icon: Icons.swap_horiz,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const TransferRecordRequestScreen(
-                                      patientType: 'POSTNATAL'),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  _buildPersonalizedEducationalSection(),
                   const SizedBox(height: 32),
                   const Text(
                     'Life After Birth: Essential Postnatal Care Tips',
@@ -496,7 +443,8 @@ class _PostnatalDashboardScreenState extends State<PostnatalDashboardScreen> {
           _buildMenuItem('HISTORY OF\nCHECK UP', false),
           _buildMenuItem('REQUEST &\nNOTIFICATION APPOINTMENT', false),
           _buildMenuItem('TRANSFER OF\nRECORD REQUEST', false),
-          const Spacer(),
+
+          _buildMenuItem('CHANGE PASSWORD', false),
           _buildMenuItem('LOGOUT', false),
         ],
       ),
@@ -511,6 +459,13 @@ class _PostnatalDashboardScreenState extends State<PostnatalDashboardScreen> {
           // Handle menu navigation
           if (title == 'LOGOUT') {
             _showLogoutConfirmationDialog();
+            return;
+          }
+          if (title == 'CHANGE PASSWORD') {
+            showDialog(
+              context: context,
+              builder: (context) => const ForgotPasswordDialog(),
+            );
             return;
           }
           if (title == 'PERSONAL DETAILS') {

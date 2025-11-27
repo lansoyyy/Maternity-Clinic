@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../utils/colors.dart';
+import '../widgets/forgot_password_dialog.dart';
 import 'prenatal_history_checkup_screen.dart';
 import 'notification_appointment_screen.dart';
 import 'transfer_record_request_screen.dart';
@@ -9,7 +10,12 @@ import 'prenatal_update_profile_screen.dart';
 import 'auth/home_screen.dart';
 
 class PrenatalDashboardScreen extends StatefulWidget {
-  const PrenatalDashboardScreen({super.key});
+  final bool openPersonalDetailsOnLoad;
+
+  const PrenatalDashboardScreen({
+    super.key,
+    this.openPersonalDetailsOnLoad = false,
+  });
 
   @override
   State<PrenatalDashboardScreen> createState() =>
@@ -27,6 +33,17 @@ class _PrenatalDashboardScreenState extends State<PrenatalDashboardScreen> {
   void initState() {
     super.initState();
     _loadUserName();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (widget.openPersonalDetailsOnLoad) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const PrenatalUpdateProfileScreen(),
+          ),
+        );
+      }
+    });
   }
 
   Future<void> _loadUserName() async {
@@ -140,74 +157,6 @@ class _PrenatalDashboardScreenState extends State<PrenatalDashboardScreen> {
                         ],
                       ),
                     ),
-                  if (!_profileCompleted) const SizedBox(height: 24),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: [
-                      _buildDashboardAction(
-                        title: 'Personal Details',
-                        icon: Icons.person,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const PrenatalUpdateProfileScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildDashboardAction(
-                        title: 'Educational Learners',
-                        icon: Icons.menu_book,
-                        onTap: () {},
-                      ),
-                      _buildDashboardAction(
-                        title: 'History of Check Up',
-                        icon: Icons.history,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const PrenatalHistoryCheckupScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildDashboardAction(
-                        title: 'Request & Notification Appointment',
-                        icon: Icons.calendar_today,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const NotificationAppointmentScreen(
-                                      patientType: 'PRENATAL'),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildDashboardAction(
-                        title: 'Transfer of Record Request',
-                        icon: Icons.swap_horiz,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const TransferRecordRequestScreen(
-                                      patientType: 'PRENATAL'),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  _buildPersonalizedEducationalSection(),
                   const SizedBox(height: 32),
                   const Text(
                     'Healthy Pregnancy, Healthy Baby: A Guide to\nPrenatal Care',
@@ -508,7 +457,8 @@ class _PrenatalDashboardScreenState extends State<PrenatalDashboardScreen> {
           _buildMenuItem('HISTORY OF\nCHECK UP', false),
           _buildMenuItem('REQUEST &\nNOTIFICATION APPOINTMENT', false),
           _buildMenuItem('TRANSFER OF\nRECORD REQUEST', false),
-          const Spacer(),
+
+          _buildMenuItem('CHANGE PASSWORD', false),
           _buildMenuItem('LOGOUT', false),
         ],
       ),
@@ -523,6 +473,13 @@ class _PrenatalDashboardScreenState extends State<PrenatalDashboardScreen> {
           // Handle menu navigation
           if (title == 'LOGOUT') {
             _showLogoutConfirmationDialog();
+            return;
+          }
+          if (title == 'CHANGE PASSWORD') {
+            showDialog(
+              context: context,
+              builder: (context) => const ForgotPasswordDialog(),
+            );
             return;
           }
           if (title == 'PERSONAL DETAILS') {

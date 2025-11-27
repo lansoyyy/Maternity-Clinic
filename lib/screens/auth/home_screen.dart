@@ -208,13 +208,19 @@ class _HomeScreenState extends State<HomeScreen> {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                  builder: (context) => const PrenatalDashboardScreen()),
+                builder: (context) => const PrenatalDashboardScreen(
+                  openPersonalDetailsOnLoad: true,
+                ),
+              ),
             );
           } else {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                  builder: (context) => const PostnatalDashboardScreen()),
+                builder: (context) => const PostnatalDashboardScreen(
+                  openPersonalDetailsOnLoad: true,
+                ),
+              ),
             );
           }
         }
@@ -232,7 +238,10 @@ class _HomeScreenState extends State<HomeScreen> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-                builder: (context) => const PrenatalDashboardScreen()),
+              builder: (context) => const PrenatalDashboardScreen(
+                openPersonalDetailsOnLoad: true,
+              ),
+            ),
           );
         }
       }

@@ -169,25 +169,6 @@ class _AboutUsScreenState extends State<AboutUsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Wrap(
-          spacing: 30,
-          runSpacing: 20,
-          children: const [
-            _StaffProfileCard(
-              name: 'OB - Maureen R. Higoy MD',
-              role: 'Obstetrician-Gynecologist',
-            ),
-            _StaffProfileCard(
-              name: 'Girlie Hagos',
-              role: 'Staff',
-            ),
-            _StaffProfileCard(
-              name: 'Aprilyn Ay-Ayen',
-              role: 'Staff',
-            ),
-          ],
-        ),
-        const SizedBox(height: 32),
         const Text(
           'OUR MISSION',
           style: TextStyle(
@@ -217,13 +198,32 @@ class _AboutUsScreenState extends State<AboutUsScreen> {
         ),
         const SizedBox(height: 8),
         const Text(
-          'The Victory Lying-in Center envisions to be a leading provider of excellent health care to achieve the highest level of quality in Maternal and Child Health care and promote the highest standard of obstetric, gynecologic and reproductive health through personalize clinical care to our patient.',
+          'The Victory Lying-in Center envisions to be a leading provider of excellent health care to achieve the highest level of quality in Maternal and Child Health care and promote the highest standard of obstetric, gynecologic and reproductive health through personalize clinical care to our patient',
           style: TextStyle(
             fontSize: 15,
             fontFamily: 'Regular',
             color: Colors.black87,
             height: 1.6,
           ),
+        ),
+        const SizedBox(height: 32),
+        Wrap(
+          spacing: 30,
+          runSpacing: 20,
+          children: const [
+            _StaffProfileCard(
+              name: 'OB - Maureen R. Higoy MD',
+              role: 'Obstetrician-Gynecologist',
+            ),
+            _StaffProfileCard(
+              name: 'Girlie Hagos',
+              role: 'Staff',
+            ),
+            _StaffProfileCard(
+              name: 'Aprilyn Ay-Ayen',
+              role: 'Staff',
+            ),
+          ],
         ),
       ],
     );

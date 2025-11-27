@@ -2077,7 +2077,7 @@ class _AdminAppointmentSchedulingScreenState
           _buildMenuItem('APPOINTMENT MANAGEMENT', false),
           _buildMenuItem('APPROVE SCHEDULES', true),
           _buildMenuItem('PATIENT RECORDS', false),
-          const Spacer(),
+
           _buildMenuItem('LOGOUT', false),
         ],
       ),

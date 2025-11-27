@@ -250,7 +250,7 @@ class _PrenatalHistoryCheckupScreenState
           _buildMenuItem('HISTORY OF\nCHECK UP', true),
           _buildMenuItem('NOTIFICATION\nAPPOINTMENT', false),
           _buildMenuItem('TRANSFER OF\nRECORD REQUEST', false),
-          const Spacer(),
+
           _buildMenuItem('LOGOUT', false),
         ],
       ),

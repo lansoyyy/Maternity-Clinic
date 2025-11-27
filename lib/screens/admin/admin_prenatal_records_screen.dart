@@ -490,7 +490,7 @@ class _AdminPrenatalRecordsScreenState
           _buildMenuItem('APPROVE SCHEDULES', false),
           _buildMenuItem('PATIENT RECORDS', true),
           _buildMenuItem('CONTENT MANAGEMENT', false),
-          const Spacer(),
+
           _buildMenuItem('LOGOUT', false),
         ],
       ),

@@ -745,7 +745,7 @@ class _TransferRecordRequestScreenState
           _buildMenuItem('HISTORY OF\nCHECK UP', false),
           _buildMenuItem('NOTIFICATION\nAPPOINTMENT', false),
           _buildMenuItem('TRANSFER OF\nRECORD REQUEST', true),
-          const Spacer(),
+
           _buildMenuItem('LOGOUT', false),
         ],
       ),
