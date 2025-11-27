@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:maternity_clinic/screens/admin/admin_postnatal_patient_detail_screen.dart';
-import 'package:maternity_clinic/screens/admin/admin_transfer_requests_screen.dart';
 import 'package:maternity_clinic/screens/transfer_record_request_screen.dart';
 import 'package:maternity_clinic/utils/colors.dart';
 
 import 'admin_prenatal_records_screen.dart';
+import 'admin_appointment_management_screen.dart';
 import 'admin_appointment_scheduling_screen.dart';
 import 'admin_dashboard_screen.dart';
 import 'admin_educational_cms_screen.dart';
@@ -737,11 +737,10 @@ class _AdminPostnatalRecordsScreenState
 
           // Menu Items
           _buildMenuItem('DATA GRAPHS', false),
-          _buildMenuItem('PRENATAL PATIENT\nRECORD', false),
-          _buildMenuItem('POSTNATAL PATIENT\nRECORD', true),
-          _buildMenuItem('APPOINTMENT\nSCHEDULING', false),
-          _buildMenuItem('TRANSFER\nREQUESTS', false),
-          _buildMenuItem('EDUCATIONAL CMS', false),
+          _buildMenuItem('APPOINTMENT MANAGEMENT', false),
+          _buildMenuItem('APPROVE SCHEDULES', false),
+          _buildMenuItem('PATIENT RECORDS', true),
+          _buildMenuItem('CONTENT MANAGEMENT', false),
           const Spacer(),
           _buildMenuItem('LOGOUT', false),
         ],
@@ -802,21 +801,18 @@ class _AdminPostnatalRecordsScreenState
           ),
         );
         break;
-      case 'PRENATAL PATIENT\nRECORD':
+      case 'APPOINTMENT MANAGEMENT':
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => AdminPrenatalRecordsScreen(
+            builder: (context) => AdminAppointmentManagementScreen(
               userRole: widget.userRole,
               userName: widget.userName,
             ),
           ),
         );
         break;
-      case 'POSTNATAL PATIENT\nRECORD':
-        // Already on this screen
-        break;
-      case 'APPOINTMENT\nSCHEDULING':
+      case 'APPROVE SCHEDULES':
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -827,18 +823,7 @@ class _AdminPostnatalRecordsScreenState
           ),
         );
         break;
-      case 'TRANSFER\nREQUESTS':
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => AdminTransferRequestsScreen(
-              userRole: widget.userRole,
-              userName: widget.userName,
-            ),
-          ),
-        );
-        break;
-      case 'EDUCATIONAL CMS':
+      case 'CONTENT MANAGEMENT':
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(

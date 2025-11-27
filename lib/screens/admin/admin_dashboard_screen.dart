@@ -3,7 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:maternity_clinic/screens/admin/admin_appointment_scheduling_screen.dart';
-import 'package:maternity_clinic/screens/admin/admin_postnatal_records_screen.dart';
+import 'package:maternity_clinic/screens/admin/admin_appointment_management_screen.dart';
 import 'package:maternity_clinic/screens/admin/admin_prenatal_records_screen.dart';
 import 'package:maternity_clinic/screens/admin/admin_transfer_requests_screen.dart';
 import 'package:maternity_clinic/screens/admin/admin_educational_cms_screen.dart';
@@ -507,12 +507,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           const SizedBox(height: 20),
 
           // Menu Items
-          _buildMenuItem('DATA GRAPHS', _isNurse ? false : true),
-          _buildMenuItem('PRENATAL PATIENT\nRECORD', false),
-          _buildMenuItem('POSTNATAL PATIENT\nRECORD', false),
-          _buildMenuItem('APPOINTMENT\nSCHEDULING', false),
-          _buildMenuItem('TRANSFER\nREQUESTS', _isNurse ? true : false),
-          _buildMenuItem('EDUCATIONAL CMS', false),
+          _buildMenuItem('DATA GRAPHS', true),
+          _buildMenuItem('APPOINTMENT MANAGEMENT', false),
+          _buildMenuItem('APPROVE SCHEDULES', false),
+          _buildMenuItem('PATIENT RECORDS', false),
+          _buildMenuItem('CONTENT MANAGEMENT', false),
 
           const Spacer(),
 
@@ -647,37 +646,28 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     Widget screen;
     switch (title) {
       case 'DATA GRAPHS':
-        // Already on this screen, do nothing
+        // Already on this screen
         return;
-      case 'EDUCATIONAL CMS':
-        screen = AdminEducationalCmsScreen(
+      case 'APPOINTMENT MANAGEMENT':
+        screen = AdminAppointmentManagementScreen(
           userRole: widget.userRole,
           userName: widget.userName,
         );
         break;
-      case 'TRANSFER\nREQUESTS':
-        // Navigate to transfer requests screen for both admin and nurse
-        screen = AdminTransferRequestsScreen(
+      case 'APPROVE SCHEDULES':
+        screen = AdminAppointmentSchedulingScreen(
           userRole: widget.userRole,
           userName: widget.userName,
         );
         break;
-      case 'PRENATAL PATIENT\nRECORD':
-        // Allow both admin and nurse to access, but nurse will have read-only view
+      case 'PATIENT RECORDS':
         screen = AdminPrenatalRecordsScreen(
           userRole: widget.userRole,
           userName: widget.userName,
         );
         break;
-      case 'POSTNATAL PATIENT\nRECORD':
-        // Allow both admin and nurse to access, but nurse will have read-only view
-        screen = AdminPostnatalRecordsScreen(
-          userRole: widget.userRole,
-          userName: widget.userName,
-        );
-        break;
-      case 'APPOINTMENT\nSCHEDULING':
-        screen = AdminAppointmentSchedulingScreen(
+      case 'CONTENT MANAGEMENT':
+        screen = AdminEducationalCmsScreen(
           userRole: widget.userRole,
           userName: widget.userName,
         );
