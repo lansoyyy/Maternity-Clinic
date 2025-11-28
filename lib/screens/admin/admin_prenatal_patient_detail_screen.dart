@@ -4,10 +4,12 @@ import '../../utils/colors.dart';
 
 class AdminPrenatalPatientDetailScreen extends StatefulWidget {
   final Map<String, String> patientData;
+  final String initialView; // 'personal' or 'history'
 
   const AdminPrenatalPatientDetailScreen({
     super.key,
     required this.patientData,
+    this.initialView = 'personal',
   });
 
   @override
@@ -20,19 +22,29 @@ class _AdminPrenatalPatientDetailScreenState
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   List<Map<String, dynamic>> _appointments = [];
   bool _isLoading = true;
+  Map<String, dynamic>? _userData;
+  DateTime? _dob;
+  DateTime? _lmpDate;
+  DateTime? _estimatedDueDate;
+  int? _gestationalWeeks;
+  int? _computedAge;
+  late String _activeView; // 'personal' or 'history'
 
   @override
   void initState() {
     super.initState();
+    _activeView = widget.initialView;
     _fetchPatientData();
   }
 
   Future<void> _fetchPatientData() async {
     try {
+      final String? userId = widget.patientData['patientId'];
+
       // Fetch appointments for this patient
       final appointmentsSnapshot = await _firestore
           .collection('appointments')
-          .where('userId', isEqualTo: widget.patientData['patientId'])
+          .where('userId', isEqualTo: userId)
           .orderBy('createdAt', descending: true)
           .get();
 
@@ -43,8 +55,39 @@ class _AdminPrenatalPatientDetailScreenState
         appointments.add(appointment);
       }
 
-      // Fetch medical records (if you have a separate collection)
-      // For now, we'll use appointments as records
+      // Fetch basic user profile for personal details view
+      if (userId != null && userId.isNotEmpty) {
+        final userDoc = await _firestore.collection('users').doc(userId).get();
+        if (userDoc.exists) {
+          final data = userDoc.data() as Map<String, dynamic>;
+          _userData = data;
+
+          if (data['dob'] is Timestamp) {
+            _dob = (data['dob'] as Timestamp).toDate();
+          }
+          if (data['lmpDate'] is Timestamp) {
+            _lmpDate = (data['lmpDate'] as Timestamp).toDate();
+          }
+
+          final now = DateTime.now();
+          if (_dob != null) {
+            int age = now.year - _dob!.year;
+            final birthdayThisYear = DateTime(now.year, _dob!.month, _dob!.day);
+            if (now.isBefore(birthdayThisYear)) {
+              age -= 1;
+            }
+            _computedAge = age;
+          }
+
+          if (_lmpDate != null) {
+            _estimatedDueDate = _lmpDate!.add(const Duration(days: 280));
+            final days = now.difference(_lmpDate!).inDays;
+            if (days >= 0) {
+              _gestationalWeeks = days ~/ 7;
+            }
+          }
+        }
+      }
 
       if (mounted) {
         setState(() {
@@ -104,23 +147,29 @@ class _AdminPrenatalPatientDetailScreenState
                         ),
                         const SizedBox(height: 20),
 
-                        // Top Section - Information Cards
+                        // View Toggle
                         Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(child: _buildPatientInfoCard()),
-                            const SizedBox(width: 20),
-                            Expanded(child: _buildObstetricHistoryCard()),
-                            const SizedBox(width: 20),
-                            Expanded(child: _buildMedicalHistoryCard()),
-                            const SizedBox(width: 20),
-                            Expanded(child: _buildLaboratoryResultsCard()),
+                            _buildViewToggleButton(
+                                'Personal Details', 'personal'),
+                            const SizedBox(width: 10),
+                            _buildViewToggleButton(
+                                'History Checkup', 'history'),
                           ],
                         ),
-                        const SizedBox(height: 30),
+                        const SizedBox(height: 20),
 
-                        // Checkup History Table
-                        _buildCheckupHistoryTable(),
+                        if (_activeView == 'personal') ...[
+                          _buildBasicInformationSection(),
+                          const SizedBox(height: 20),
+                          _buildRequiredProfileSection(),
+                          const SizedBox(height: 20),
+                          _buildSystemCalculationsSection(),
+                        ] else ...[
+                          _buildObstetricHistoryCard(),
+                          const SizedBox(height: 30),
+                          _buildCheckupHistoryTable(),
+                        ],
                       ],
                     ),
                   ),
@@ -206,6 +255,206 @@ class _AdminPrenatalPatientDetailScreenState
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildViewToggleButton(String label, String view) {
+    final bool isSelected = _activeView == view;
+    return TextButton(
+      onPressed: isSelected
+          ? null
+          : () {
+              setState(() {
+                _activeView = view;
+              });
+            },
+      style: TextButton.styleFrom(
+        backgroundColor: isSelected ? primary : Colors.grey.shade200,
+        foregroundColor: isSelected ? Colors.white : Colors.black87,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 13,
+          fontFamily: 'Medium',
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBasicInformationSection() {
+    final String name =
+        (_userData?['name'] ?? widget.patientData['name'] ?? 'N/A').toString();
+    final String email =
+        (_userData?['email'] ?? widget.patientData['email'] ?? 'N/A')
+            .toString();
+    final String contact = (_userData?['contactNumber'] ?? 'N/A').toString();
+
+    String dobText = 'N/A';
+    if (_dob != null) {
+      dobText =
+          '${_dob!.month.toString().padLeft(2, '0')}/${_dob!.day.toString().padLeft(2, '0')}/${_dob!.year}';
+    }
+
+    final String ageText = _computedAge != null ? '$_computedAge' : 'N/A';
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade200,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Basic Information',
+            style: TextStyle(
+              fontSize: 14,
+              fontFamily: 'Bold',
+              color: Colors.black,
+            ),
+          ),
+          const SizedBox(height: 15),
+          _buildInfoRow('Full Name:', name),
+          _buildInfoRow('Age (years):', ageText),
+          _buildInfoRow('Date of Birth:', dobText),
+          _buildInfoRow('Email Address:', email),
+          _buildInfoRow('Contact Number:', contact),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRequiredProfileSection() {
+    final String addressHouseNo =
+        (_userData?['addressHouseNo'] ?? 'N/A').toString();
+    final String addressStreet =
+        (_userData?['addressStreet'] ?? 'N/A').toString();
+    final String addressBarangay =
+        (_userData?['addressBarangay'] ?? 'N/A').toString();
+    final String addressCity = (_userData?['addressCity'] ?? 'N/A').toString();
+    final String civilStatus = (_userData?['civilStatus'] ?? 'N/A').toString();
+    final String emergencyName =
+        (_userData?['emergencyContactName'] ?? 'N/A').toString();
+    final String emergencyNumber =
+        (_userData?['emergencyContactNumber'] ?? 'N/A').toString();
+
+    final String lmpText;
+    if (_lmpDate != null) {
+      lmpText =
+          '${_lmpDate!.month.toString().padLeft(2, '0')}/${_lmpDate!.day.toString().padLeft(2, '0')}/${_lmpDate!.year}';
+    } else {
+      lmpText = 'N/A';
+    }
+
+    final String gravida = _userData?['gravida']?.toString() ?? 'N/A';
+    final String para = _userData?['para']?.toString() ?? 'N/A';
+    final String miscarriages = _userData?['miscarriages']?.toString() ?? 'N/A';
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Required Profile Information (for booking appointments)',
+            style: TextStyle(
+              fontSize: 14,
+              fontFamily: 'Bold',
+              color: Colors.black,
+            ),
+          ),
+          const SizedBox(height: 15),
+          const Text(
+            'Complete Address',
+            style: TextStyle(
+              fontSize: 13,
+              fontFamily: 'Bold',
+              color: Colors.black,
+            ),
+          ),
+          const SizedBox(height: 8),
+          _buildInfoRow('House No.:', addressHouseNo),
+          _buildInfoRow('Street:', addressStreet),
+          _buildInfoRow('Barangay:', addressBarangay),
+          _buildInfoRow('City:', addressCity),
+          const SizedBox(height: 10),
+          _buildInfoRow('Civil Status:', civilStatus),
+          const SizedBox(height: 10),
+          const Text(
+            'Emergency Contact',
+            style: TextStyle(
+              fontSize: 13,
+              fontFamily: 'Bold',
+              color: Colors.black,
+            ),
+          ),
+          const SizedBox(height: 6),
+          _buildInfoRow('Name:', emergencyName),
+          _buildInfoRow('Contact Number:', emergencyNumber),
+          const SizedBox(height: 10),
+          const Text(
+            'Pregnancy Details',
+            style: TextStyle(
+              fontSize: 13,
+              fontFamily: 'Bold',
+              color: Colors.black,
+            ),
+          ),
+          const SizedBox(height: 6),
+          _buildInfoRow('LMP Date:', lmpText),
+          _buildInfoRow('Gravida:', gravida),
+          _buildInfoRow('Para:', para),
+          _buildInfoRow('Miscarriages/Abortions:', miscarriages),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSystemCalculationsSection() {
+    String eddText = 'N/A';
+    String gaText = 'N/A';
+
+    if (_estimatedDueDate != null) {
+      eddText =
+          '${_estimatedDueDate!.month.toString().padLeft(2, '0')}/${_estimatedDueDate!.day.toString().padLeft(2, '0')}/${_estimatedDueDate!.year}';
+    }
+
+    if (_gestationalWeeks != null) {
+      gaText = '$_gestationalWeeks weeks';
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade200,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'System Calculations (based on LMP)',
+            style: TextStyle(
+              fontSize: 14,
+              fontFamily: 'Bold',
+              color: Colors.black,
+            ),
+          ),
+          const SizedBox(height: 15),
+          _buildInfoRow('Estimated Due Date (EDD):', eddText),
+          _buildInfoRow('Age of Gestation (weeks):', gaText),
+        ],
       ),
     );
   }

@@ -343,6 +343,18 @@ class _AdminPatientRecordsScreenState extends State<AdminPatientRecordsScreen> {
                   ),
                 ),
               ),
+              Expanded(
+                flex: 2,
+                child: Text(
+                  'STATUS',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontFamily: 'Bold',
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
               SizedBox(
                 width: 40,
               ),
@@ -362,6 +374,11 @@ class _AdminPatientRecordsScreenState extends State<AdminPatientRecordsScreen> {
     final String email = patient['email']?.toString() ?? '';
     final String contact = patient['contact']?.toString() ?? '';
     final String dob = _formatDob(patient['dob']);
+    final String status = (patient['status']?.toString().isNotEmpty ?? false)
+        ? patient['status'].toString()
+        : 'Active';
+
+    final bool isActive = status.toLowerCase() == 'active';
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
@@ -427,26 +444,79 @@ class _AdminPatientRecordsScreenState extends State<AdminPatientRecordsScreen> {
               ),
             ),
           ),
+          Expanded(
+            flex: 2,
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isActive
+                      ? Colors.green.withOpacity(0.1)
+                      : Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isActive ? Colors.green : Colors.red,
+                  ),
+                ),
+                child: Text(
+                  isActive ? 'Active' : 'Inactive',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontFamily: 'Bold',
+                    color: isActive ? Colors.green : Colors.red,
+                  ),
+                ),
+              ),
+            ),
+          ),
           SizedBox(
             width: 40,
             child: Align(
               alignment: Alignment.center,
               child: PopupMenuButton<String>(
                 onSelected: (value) {
-                  if (value == 'personal' || value == 'history') {
-                    _openPatientDetail(patient);
+                  if (value == 'personal') {
+                    _openPatientDetail(patient, initialView: 'personal');
+                  } else if (value == 'history') {
+                    _openPatientDetail(patient, initialView: 'history');
+                  } else if (value == 'inactive') {
+                    _confirmSetPatientStatus(patient, 'Inactive');
+                  } else if (value == 'active') {
+                    _confirmSetPatientStatus(patient, 'Active');
+                  } else if (value == 'transition') {
+                    _showMaternalTransitionDialog(patient);
                   }
                 },
-                itemBuilder: (context) => const [
-                  PopupMenuItem<String>(
-                    value: 'personal',
-                    child: Text('Personal Details'),
-                  ),
-                  PopupMenuItem<String>(
-                    value: 'history',
-                    child: Text('Complete History Checkup'),
-                  ),
-                ],
+                itemBuilder: (context) {
+                  return <PopupMenuEntry<String>>[
+                    const PopupMenuItem<String>(
+                      value: 'personal',
+                      child: Text('Personal Details'),
+                    ),
+                    const PopupMenuItem<String>(
+                      value: 'history',
+                      child: Text('Complete History Checkup'),
+                    ),
+                    const PopupMenuDivider(),
+                    if (isActive)
+                      const PopupMenuItem<String>(
+                        value: 'inactive',
+                        child: Text('Set as Inactive'),
+                      )
+                    else
+                      const PopupMenuItem<String>(
+                        value: 'active',
+                        child: Text('Set as Active'),
+                      ),
+                    if (_selectedType == 'PRENATAL') ...[
+                      const PopupMenuDivider(),
+                      const PopupMenuItem<String>(
+                        value: 'transition',
+                        child: Text('Maternal Transition'),
+                      ),
+                    ],
+                  ];
+                },
               ),
             ),
           ),
@@ -455,7 +525,335 @@ class _AdminPatientRecordsScreenState extends State<AdminPatientRecordsScreen> {
     );
   }
 
-  void _openPatientDetail(Map<String, dynamic> patient) {
+  void _confirmSetPatientStatus(
+      Map<String, dynamic> patient, String newStatus) {
+    final String name = patient['name']?.toString() ?? 'this patient';
+    final bool toInactive = newStatus.toLowerCase() == 'inactive';
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          toInactive ? 'Mark as Inactive' : 'Mark as Active',
+          style: const TextStyle(fontFamily: 'Bold'),
+        ),
+        content: Text(
+          toInactive
+              ? 'Are you sure this patient is Inactive?'
+              : 'Are you sure this patient is Active again?',
+          style: const TextStyle(fontFamily: 'Regular'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: Colors.grey.shade600,
+                fontFamily: 'Medium',
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _setPatientStatus(patient, newStatus);
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Status for $name updated to $newStatus',
+                    style: const TextStyle(fontFamily: 'Regular'),
+                  ),
+                  backgroundColor: toInactive ? Colors.orange : Colors.green,
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+            child: Text(
+              'Confirm',
+              style: TextStyle(
+                color: toInactive ? Colors.red.shade600 : Colors.green.shade700,
+                fontFamily: 'Bold',
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _setPatientStatus(
+      Map<String, dynamic> patient, String newStatus) async {
+    final String userId = patient['userId']?.toString() ?? '';
+    if (userId.isEmpty) return;
+
+    try {
+      await _firestore.collection('users').doc(userId).update({
+        'accountStatus': newStatus,
+      });
+
+      if (!mounted) return;
+      setState(() {
+        for (var p in _patients) {
+          if (p['userId'] == userId) {
+            p['status'] = newStatus;
+          }
+        }
+        for (var p in _filteredPatients) {
+          if (p['userId'] == userId) {
+            p['status'] = newStatus;
+          }
+        }
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Failed to update status',
+            style: TextStyle(fontFamily: 'Regular'),
+          ),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  void _showMaternalTransitionDialog(Map<String, dynamic> patient) {
+    final String userId = patient['userId']?.toString() ?? '';
+    final String name = patient['name']?.toString() ?? 'Patient';
+    if (userId.isEmpty) return;
+
+    DateTime? deliveryDate;
+    final TextEditingController infantNameController = TextEditingController();
+    String? infantGender;
+    final TextEditingController infantAgeController = TextEditingController();
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              title: const Text(
+                'Maternal Transition',
+                style: TextStyle(fontFamily: 'Bold'),
+              ),
+              content: SizedBox(
+                width: 420,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontFamily: 'Bold',
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Delivery Date',
+                      style: TextStyle(fontSize: 13, fontFamily: 'Regular'),
+                    ),
+                    const SizedBox(height: 4),
+                    GestureDetector(
+                      onTap: () async {
+                        final now = DateTime.now();
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: deliveryDate ?? now,
+                          firstDate: DateTime(now.year - 1),
+                          lastDate: now,
+                        );
+                        if (picked != null) {
+                          setStateDialog(() {
+                            deliveryDate = picked;
+                          });
+                        }
+                      },
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey.shade400),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.calendar_today,
+                                size: 18, color: primary),
+                            const SizedBox(width: 8),
+                            Text(
+                              deliveryDate == null
+                                  ? 'Select delivery date'
+                                  : '${deliveryDate!.month.toString().padLeft(2, '0')}/${deliveryDate!.day.toString().padLeft(2, '0')}/${deliveryDate!.year}',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontFamily: 'Regular',
+                                color: deliveryDate == null
+                                    ? Colors.grey.shade600
+                                    : Colors.black87,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      "Infant's Name",
+                      style: TextStyle(fontSize: 13, fontFamily: 'Regular'),
+                    ),
+                    const SizedBox(height: 4),
+                    TextField(
+                      controller: infantNameController,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      "Infant's Gender",
+                      style: TextStyle(fontSize: 13, fontFamily: 'Regular'),
+                    ),
+                    const SizedBox(height: 4),
+                    DropdownButtonFormField<String>(
+                      value: infantGender,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'Male',
+                          child: Text('Male'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'Female',
+                          child: Text('Female'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'Others',
+                          child: Text('Others'),
+                        ),
+                      ],
+                      onChanged: (value) {
+                        setStateDialog(() {
+                          infantGender = value;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      "Infant's Age (months)",
+                      style: TextStyle(fontSize: 13, fontFamily: 'Regular'),
+                    ),
+                    const SizedBox(height: 4),
+                    TextField(
+                      controller: infantAgeController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop();
+                  },
+                  child: Text(
+                    'Cancel',
+                    style: TextStyle(
+                      color: Colors.grey.shade700,
+                      fontFamily: 'Regular',
+                    ),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (deliveryDate == null ||
+                        infantNameController.text.trim().isEmpty ||
+                        (infantGender ?? '').isEmpty ||
+                        infantAgeController.text.trim().isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Please fill in all required fields'),
+                          backgroundColor: Colors.red,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                      return;
+                    }
+
+                    try {
+                      await _firestore.collection('users').doc(userId).update({
+                        'patientType': 'POSTNATAL',
+                        'deliveryDate': Timestamp.fromDate(deliveryDate!),
+                        'infantName': infantNameController.text.trim(),
+                        'infantGender': infantGender,
+                        'infantAge': infantAgeController.text.trim(),
+                        'maternalTransition': true,
+                      });
+
+                      if (!mounted) return;
+                      Navigator.of(dialogContext).pop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            '$name has been transitioned to POSTNATAL.',
+                            style: const TextStyle(fontFamily: 'Regular'),
+                          ),
+                          backgroundColor: Colors.green,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                      await _fetchPatients();
+                    } catch (e) {
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content:
+                              Text('Failed to complete maternal transition'),
+                          backgroundColor: Colors.red,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primary,
+                  ),
+                  child: const Text(
+                    'Confirm Transition',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontFamily: 'Bold',
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _openPatientDetail(Map<String, dynamic> patient,
+      {required String initialView}) {
     final String userId = patient['userId']?.toString() ?? '';
     final String name = patient['name']?.toString() ?? '';
     final String email = patient['email']?.toString() ?? '';
@@ -474,6 +872,7 @@ class _AdminPatientRecordsScreenState extends State<AdminPatientRecordsScreen> {
         MaterialPageRoute(
           builder: (context) => AdminPrenatalPatientDetailScreen(
             patientData: patientData,
+            initialView: initialView,
           ),
         ),
       );
@@ -483,6 +882,7 @@ class _AdminPatientRecordsScreenState extends State<AdminPatientRecordsScreen> {
         MaterialPageRoute(
           builder: (context) => AdminPostnatalPatientDetailScreen(
             patientData: patientData,
+            initialView: initialView,
           ),
         ),
       );
