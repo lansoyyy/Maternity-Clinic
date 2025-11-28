@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 import 'package:maternity_clinic/screens/admin/admin_appointment_scheduling_screen.dart';
 import 'package:maternity_clinic/screens/admin/admin_appointment_management_screen.dart';
 import 'package:maternity_clinic/screens/admin/admin_patient_records_screen.dart';
@@ -12,11 +14,17 @@ import '../auth/home_screen.dart';
 class AdminDashboardScreen extends StatefulWidget {
   final String userRole;
   final String userName;
+  final bool openAddStaffOnLoad;
+  final bool openChangePasswordOnLoad;
+  final bool openHistoryLogsOnLoad;
 
   const AdminDashboardScreen({
     super.key,
     required this.userRole,
     required this.userName,
+    this.openAddStaffOnLoad = false,
+    this.openChangePasswordOnLoad = false,
+    this.openHistoryLogsOnLoad = false,
   });
 
   @override
@@ -26,6 +34,7 @@ class AdminDashboardScreen extends StatefulWidget {
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final ScrollController _scrollController = ScrollController();
 
   int _prenatalCount = 0;
   int _postnatalCount = 0;
@@ -47,9 +56,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     '40+': 0,
   };
 
-  // Delivery type statistics
-  int _normalDeliveryCount = 0;
-  int _cesareanDeliveryCount = 0;
+  // Daily patient statistics (by appointment date)
+  Map<DateTime, int> _dailyPatientCounts = {};
 
   bool _isLoading = true;
 
@@ -63,6 +71,22 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   void initState() {
     super.initState();
     _fetchDashboardData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (widget.openAddStaffOnLoad) {
+        _showAddStaffDialog();
+      } else if (widget.openChangePasswordOnLoad) {
+        _showChangePasswordDialog();
+      } else if (widget.openHistoryLogsOnLoad) {
+        _scrollToHistoryLogs();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchDashboardData() async {
@@ -84,10 +108,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
       final DateTime today = DateTime.now();
 
-      // Fetch delivery type data (simulated for now - in real app this would come from patient records)
-      // For demo purposes, we'll use some sample data
-      _normalDeliveryCount = (_postnatalCount * 0.7).round(); // 70% normal
-      _cesareanDeliveryCount = (_postnatalCount * 0.3).round(); // 30% cesarean
+      // Daily patient counts (by appointment date, excluding cancelled)
+      final Map<DateTime, int> dailyCounts = {};
 
       // Count appointments by status
       int pending = 0;
@@ -123,6 +145,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               status != 'cancelled') {
             todaysAppointments++;
           }
+        }
+
+        if (appointmentDate != null && status != 'cancelled') {
+          final dayKey = DateTime(
+            appointmentDate.year,
+            appointmentDate.month,
+            appointmentDate.day,
+          );
+          dailyCounts[dayKey] = (dailyCounts[dayKey] ?? 0) + 1;
         }
 
         DateTime sortKey;
@@ -268,6 +299,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           _prenatalYearlyCount = prenatalYearly;
           _postnatalYearlyCount = postnatalYearly;
           _ageGroupCounts = ageGroups;
+          _dailyPatientCounts = dailyCounts;
           _todaysAppointments = todaysAppointments;
           _highRiskPatients = highRiskCount;
           _isLoading = false;
@@ -297,6 +329,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             child: _isLoading
                 ? Center(child: CircularProgressIndicator(color: primary))
                 : SingleChildScrollView(
+                    controller: _scrollController,
                     padding: const EdgeInsets.all(30),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -356,22 +389,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                   ],
                                 ),
                               ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 20, vertical: 10),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(30),
-                                ),
-                                child: Text(
-                                  'Role: ${widget.userRole.toUpperCase()}',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                    fontFamily: 'Bold',
-                                  ),
-                                ),
-                              ),
                             ],
                           ),
                         ),
@@ -389,6 +406,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                   _handleMenuNavigation(
                                       'APPOINTMENT\nSCHEDULING');
                                 },
+                                onPdf: () {
+                                  _exportSimpleStatPdf(
+                                    'Pending Requests',
+                                    _pendingAppointments.toString(),
+                                  );
+                                },
                               ),
                             ),
                             const SizedBox(width: 20),
@@ -402,6 +425,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                   _handleMenuNavigation(
                                       'APPOINTMENT\nSCHEDULING');
                                 },
+                                onPdf: () {
+                                  _exportSimpleStatPdf(
+                                    "Today's Appointments",
+                                    _todaysAppointments.toString(),
+                                  );
+                                },
                               ),
                             ),
                             const SizedBox(width: 20),
@@ -411,6 +440,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                 '$_highRiskPatients',
                                 Icons.warning_amber_rounded,
                                 Colors.red,
+                                onPdf: () {
+                                  _exportSimpleStatPdf(
+                                    'High Risk Patients',
+                                    _highRiskPatients.toString(),
+                                  );
+                                },
                               ),
                             ),
                             const SizedBox(width: 20),
@@ -420,6 +455,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                 '${_prenatalCount + _postnatalCount}',
                                 Icons.people_rounded,
                                 const Color(0xFF5DCED9),
+                                onPdf: () {
+                                  _exportSimpleStatPdf(
+                                    'Total Active Patients',
+                                    (_prenatalCount + _postnatalCount)
+                                        .toString(),
+                                  );
+                                },
                               ),
                             ),
                           ],
@@ -438,7 +480,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             ),
                             const SizedBox(width: 20),
                             Expanded(
-                              child: _buildDeliveryTypeChart(),
+                              child: _buildDailyPatientChart(),
                             ),
                           ],
                         ),
@@ -458,6 +500,196 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildDailyPatientChart() {
+    if (_dailyPatientCounts.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(25),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.shade200,
+              blurRadius: 15,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: const Center(
+          child: Text(
+            'No daily patient data yet',
+            style: TextStyle(fontSize: 14, color: Colors.grey),
+          ),
+        ),
+      );
+    }
+
+    final List<DateTime> allDays = _dailyPatientCounts.keys.toList()
+      ..sort((a, b) => a.compareTo(b));
+    final List<DateTime> days =
+        allDays.length > 7 ? allDays.sublist(allDays.length - 7) : allDays;
+
+    final List<FlSpot> spots = [];
+    double maxY = 0;
+    for (int i = 0; i < days.length; i++) {
+      final d = days[i];
+      final count = (_dailyPatientCounts[d] ?? 0).toDouble();
+      spots.add(FlSpot(i.toDouble(), count));
+      if (count > maxY) maxY = count;
+    }
+    if (maxY == 0) maxY = 1;
+
+    return Container(
+      padding: const EdgeInsets.all(25),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade200,
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'DAILY PATIENT',
+            style: TextStyle(
+              fontSize: 16,
+              fontFamily: 'Bold',
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            height: 220,
+            child: LineChart(
+              LineChartData(
+                gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  horizontalInterval: (maxY / 4).clamp(1, maxY),
+                ),
+                titlesData: FlTitlesData(
+                  show: true,
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 30,
+                      getTitlesWidget: (value, meta) {
+                        final index = value.toInt();
+                        if (index < 0 || index >= days.length) {
+                          return const Text('');
+                        }
+                        final d = days[index];
+                        return Text(
+                          '${d.month}/${d.day}',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontFamily: 'Regular',
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 32,
+                      getTitlesWidget: (value, meta) {
+                        return Text(
+                          value.toInt().toString(),
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontFamily: 'Regular',
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                ),
+                borderData: FlBorderData(
+                  show: true,
+                  border: Border(
+                    bottom: BorderSide(color: Colors.grey.shade300),
+                    left: BorderSide(color: Colors.grey.shade300),
+                  ),
+                ),
+                minX: 0,
+                maxX: (days.length - 1).toDouble(),
+                minY: 0,
+                maxY: maxY + 1,
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: spots,
+                    isCurved: true,
+                    color: primary,
+                    barWidth: 3,
+                    isStrokeCapRound: true,
+                    dotData: FlDotData(show: true),
+                    belowBarData: BarAreaData(
+                      show: true,
+                      color: primary.withOpacity(0.1),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _exportSimpleStatPdf(String title, String value) async {
+    final doc = pw.Document();
+
+    doc.addPage(
+      pw.Page(
+        build: (pw.Context context) {
+          return pw.Padding(
+            padding: const pw.EdgeInsets.all(24),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text(
+                  title,
+                  style: pw.TextStyle(
+                    fontSize: 22,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
+                pw.SizedBox(height: 16),
+                pw.Text(
+                  'Value: $value',
+                  style: const pw.TextStyle(fontSize: 16),
+                ),
+                pw.SizedBox(height: 12),
+                pw.Text(
+                  'Generated: ${DateTime.now()}',
+                  style: const pw.TextStyle(fontSize: 10),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+
+    await Printing.layoutPdf(
+      onLayout: (format) async => doc.save(),
     );
   }
 
@@ -510,6 +742,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           _buildMenuItem('APPOINTMENT MANAGEMENT', false),
           _buildMenuItem('APPROVE SCHEDULES', false),
           _buildMenuItem('PATIENT RECORDS', false),
+          if (_isAdmin) _buildMenuItem('HISTORY LOGS', false),
+
+          if (_isAdmin) ...[
+            _buildMenuItem('ADD NEW STAFF/NURSE', false),
+            _buildMenuItem('CHANGE PASSWORD', false),
+          ],
 
           // Logout Menu Item
           Padding(
@@ -641,6 +879,27 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   void _handleMenuNavigation(String title) {
     Widget screen;
     switch (title) {
+      case 'ADD NEW STAFF/NURSE':
+        if (!_isAdmin) {
+          _showAccessDeniedDialog();
+          return;
+        }
+        _showAddStaffDialog();
+        return;
+      case 'CHANGE PASSWORD':
+        if (!_isAdmin) {
+          _showAccessDeniedDialog();
+          return;
+        }
+        _showChangePasswordDialog();
+        return;
+      case 'HISTORY LOGS':
+        if (!_isAdmin) {
+          _showAccessDeniedDialog();
+          return;
+        }
+        _scrollToHistoryLogs();
+        return;
       case 'DATA GRAPHS':
         // Already on this screen
         return;
@@ -668,6 +927,486 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => screen),
+    );
+  }
+
+  void _scrollToHistoryLogs() {
+    if (!_scrollController.hasClients) return;
+    _scrollController.animateTo(
+      _scrollController.position.maxScrollExtent,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeOut,
+    );
+  }
+
+  void _showAddStaffDialog() {
+    if (!_isAdmin) {
+      _showAccessDeniedDialog();
+      return;
+    }
+
+    final TextEditingController nameController = TextEditingController();
+    final TextEditingController usernameController = TextEditingController();
+    final TextEditingController passwordController = TextEditingController();
+    final TextEditingController confirmPasswordController =
+        TextEditingController();
+    bool isSaving = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              title: const Text(
+                'Add New Staff/Nurse',
+                style: TextStyle(fontFamily: 'Bold'),
+              ),
+              content: SizedBox(
+                width: 420,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Staff Name',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontFamily: 'Regular',
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      TextField(
+                        controller: nameController,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Username',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontFamily: 'Regular',
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      TextField(
+                        controller: usernameController,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Password',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontFamily: 'Regular',
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      TextField(
+                        controller: passwordController,
+                        obscureText: true,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Confirm Password',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontFamily: 'Regular',
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      TextField(
+                        controller: confirmPasswordController,
+                        obscureText: true,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Role: Nurse (staff)',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontFamily: 'Regular',
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isSaving
+                      ? null
+                      : () {
+                          Navigator.of(dialogContext).pop();
+                        },
+                  child: Text(
+                    'Cancel',
+                    style: TextStyle(
+                      color: Colors.grey.shade700,
+                      fontFamily: 'Regular',
+                    ),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: isSaving
+                      ? null
+                      : () async {
+                          final name = nameController.text.trim();
+                          final username = usernameController.text.trim();
+                          final password = passwordController.text.trim();
+                          final confirm = confirmPasswordController.text.trim();
+
+                          if (name.isEmpty ||
+                              username.isEmpty ||
+                              password.isEmpty ||
+                              confirm.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content:
+                                    Text('Please fill in all required fields'),
+                                behavior: SnackBarBehavior.floating,
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            return;
+                          }
+                          if (password != confirm) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content:
+                                    Text('Password and confirm do not match'),
+                                behavior: SnackBarBehavior.floating,
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            return;
+                          }
+
+                          setStateDialog(() {
+                            isSaving = true;
+                          });
+
+                          try {
+                            final docRef = _firestore
+                                .collection('staffAccounts')
+                                .doc(username);
+                            final existing = await docRef.get();
+                            if (existing.exists) {
+                              setStateDialog(() {
+                                isSaving = false;
+                              });
+                              if (!mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Username already exists'),
+                                  behavior: SnackBarBehavior.floating,
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                              return;
+                            }
+
+                            await docRef.set({
+                              'username': username,
+                              'name': name,
+                              'role': 'nurse',
+                              'password': password,
+                              'createdAt': FieldValue.serverTimestamp(),
+                              'createdBy': widget.userName,
+                            });
+
+                            if (!mounted) return;
+                            Navigator.of(dialogContext).pop();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Staff account added'),
+                                behavior: SnackBarBehavior.floating,
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          } catch (e) {
+                            setStateDialog(() {
+                              isSaving = false;
+                            });
+                            if (!mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Failed to add staff account'),
+                                behavior: SnackBarBehavior.floating,
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                  ),
+                  child: isSaving
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text(
+                          'Save',
+                          style: TextStyle(
+                            fontFamily: 'Bold',
+                          ),
+                        ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showChangePasswordDialog() {
+    if (!_isAdmin) {
+      _showAccessDeniedDialog();
+      return;
+    }
+
+    final TextEditingController currentController = TextEditingController();
+    final TextEditingController newController = TextEditingController();
+    final TextEditingController confirmController = TextEditingController();
+    bool isSaving = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              title: const Text(
+                'Change Password',
+                style: TextStyle(fontFamily: 'Bold'),
+              ),
+              content: SizedBox(
+                width: 420,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Current Password',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontFamily: 'Regular',
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      TextField(
+                        controller: currentController,
+                        obscureText: true,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'New Password',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontFamily: 'Regular',
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      TextField(
+                        controller: newController,
+                        obscureText: true,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Confirm New Password',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontFamily: 'Regular',
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      TextField(
+                        controller: confirmController,
+                        obscureText: true,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isSaving
+                      ? null
+                      : () {
+                          Navigator.of(dialogContext).pop();
+                        },
+                  child: Text(
+                    'Cancel',
+                    style: TextStyle(
+                      color: Colors.grey.shade700,
+                      fontFamily: 'Regular',
+                    ),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: isSaving
+                      ? null
+                      : () async {
+                          final current = currentController.text.trim();
+                          final newPass = newController.text.trim();
+                          final confirm = confirmController.text.trim();
+
+                          if (current.isEmpty ||
+                              newPass.isEmpty ||
+                              confirm.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content:
+                                    Text('Please fill in all required fields'),
+                                behavior: SnackBarBehavior.floating,
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            return;
+                          }
+                          if (newPass.length < 6) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                    'New password must be at least 6 characters'),
+                                behavior: SnackBarBehavior.floating,
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            return;
+                          }
+                          if (newPass != confirm) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                    'New password and confirm do not match'),
+                                behavior: SnackBarBehavior.floating,
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            return;
+                          }
+
+                          setStateDialog(() {
+                            isSaving = true;
+                          });
+
+                          try {
+                            final docRef = _firestore
+                                .collection('staffAccounts')
+                                .doc('admin');
+                            final snap = await docRef.get();
+
+                            String storedPassword = 'admin123';
+                            if (snap.exists) {
+                              final data = snap.data() as Map<String, dynamic>?;
+                              final pwd = data?['password']?.toString();
+                              if (pwd != null && pwd.isNotEmpty) {
+                                storedPassword = pwd;
+                              }
+                            }
+
+                            if (current != storedPassword) {
+                              setStateDialog(() {
+                                isSaving = false;
+                              });
+                              if (!mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content:
+                                      Text('Current password is incorrect'),
+                                  behavior: SnackBarBehavior.floating,
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                              return;
+                            }
+
+                            await docRef.set({
+                              'username': 'admin',
+                              'name': widget.userName,
+                              'role': 'admin',
+                              'password': newPass,
+                              'updatedAt': FieldValue.serverTimestamp(),
+                            }, SetOptions(merge: true));
+
+                            if (!mounted) return;
+                            Navigator.of(dialogContext).pop();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Password updated successfully'),
+                                behavior: SnackBarBehavior.floating,
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          } catch (e) {
+                            setStateDialog(() {
+                              isSaving = false;
+                            });
+                            if (!mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Failed to update password'),
+                                behavior: SnackBarBehavior.floating,
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                  ),
+                  child: isSaving
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text(
+                          'Save',
+                          style: TextStyle(
+                            fontFamily: 'Bold',
+                          ),
+                        ),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 
@@ -866,7 +1605,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   Widget _buildStatCard(String title, String value, IconData icon, Color color,
-      {VoidCallback? onTap}) {
+      {VoidCallback? onTap, VoidCallback? onPdf}) {
     return MouseRegion(
       cursor:
           onTap != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
@@ -903,10 +1642,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     ),
                   ),
                   const Spacer(),
-                  Icon(
-                    Icons.more_vert_rounded,
-                    color: Colors.grey.shade400,
-                  ),
+                  if (onPdf != null)
+                    IconButton(
+                      icon: const Icon(Icons.picture_as_pdf, size: 20),
+                      color: Colors.redAccent,
+                      tooltip: 'View & Print PDF',
+                      onPressed: onPdf,
+                    ),
                 ],
               ),
               const SizedBox(height: 20),
@@ -1065,88 +1807,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildDeliveryTypeChart() {
-    int totalDeliveries = _normalDeliveryCount + _cesareanDeliveryCount;
-
-    return Container(
-      padding: const EdgeInsets.all(25),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.shade200,
-            blurRadius: 15,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          const Text(
-            'DELIVERY TYPE',
-            style: TextStyle(
-              fontSize: 16,
-              fontFamily: 'Bold',
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            height: 200,
-            child: totalDeliveries > 0
-                ? PieChart(
-                    PieChartData(
-                      sectionsSpace: 2,
-                      centerSpaceRadius: 40,
-                      sections: [
-                        if (_normalDeliveryCount > 0)
-                          PieChartSectionData(
-                            value: _normalDeliveryCount.toDouble(),
-                            title:
-                                'Normal\n${((_normalDeliveryCount / totalDeliveries) * 100).toStringAsFixed(1)}%',
-                            color: const Color(0xFF4CAF50),
-                            radius: 70,
-                            titleStyle: const TextStyle(
-                              fontSize: 12,
-                              fontFamily: 'Bold',
-                              color: Colors.white,
-                            ),
-                          ),
-                        if (_cesareanDeliveryCount > 0)
-                          PieChartSectionData(
-                            value: _cesareanDeliveryCount.toDouble(),
-                            title:
-                                'Cesarean\n${((_cesareanDeliveryCount / totalDeliveries) * 100).toStringAsFixed(1)}%',
-                            color: const Color(0xFFF44336),
-                            radius: 70,
-                            titleStyle: const TextStyle(
-                              fontSize: 12,
-                              fontFamily: 'Bold',
-                              color: Colors.white,
-                            ),
-                          ),
-                      ],
-                    ),
-                  )
-                : const Center(
-                    child: Text('No delivery data yet',
-                        style: TextStyle(fontSize: 14, color: Colors.grey))),
-          ),
-          const SizedBox(height: 15),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildLegendItem('Normal', const Color(0xFF4CAF50)),
-              const SizedBox(width: 20),
-              _buildLegendItem('Cesarean', const Color(0xFFF44336)),
-            ],
-          ),
-        ],
-      ),
     );
   }
 

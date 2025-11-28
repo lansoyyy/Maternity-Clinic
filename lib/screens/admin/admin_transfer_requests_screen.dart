@@ -30,11 +30,24 @@ class _AdminTransferRequestsScreenState
   List<Map<String, dynamic>> _requests = [];
   bool _isLoading = true;
   String _filterStatus = 'All';
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     _fetchTransferRequests();
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text.trim().toLowerCase();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchTransferRequests() async {
@@ -93,10 +106,23 @@ class _AdminTransferRequestsScreenState
   }
 
   List<Map<String, dynamic>> get _filteredRequests {
+    List<Map<String, dynamic>> list;
     if (_filterStatus == 'All') {
-      return _requests;
+      list = _requests;
+    } else {
+      list =
+          _requests.where((r) => (r['status'] ?? '') == _filterStatus).toList();
     }
-    return _requests.where((r) => r['status'] == _filterStatus).toList();
+
+    if (_searchQuery.isEmpty) {
+      return list;
+    }
+
+    return list.where((r) {
+      final String name = (r['userName'] ?? '').toString().toLowerCase();
+      final String fullName = (r['fullName'] ?? '').toString().toLowerCase();
+      return name.contains(_searchQuery) || fullName.contains(_searchQuery);
+    }).toList();
   }
 
   @override
@@ -169,7 +195,11 @@ class _AdminTransferRequestsScreenState
           _buildMenuItem('APPOINTMENT MANAGEMENT', false),
           _buildMenuItem('APPROVE SCHEDULES', false),
           _buildMenuItem('PATIENT RECORDS', false),
-          const Spacer(),
+          if (widget.userRole == 'admin') _buildMenuItem('HISTORY LOGS', false),
+          if (widget.userRole == 'admin') ...[
+            _buildMenuItem('ADD NEW STAFF/NURSE', false),
+            _buildMenuItem('CHANGE PASSWORD', false),
+          ],
           _buildMenuItem('LOGOUT', false),
         ],
       ),
@@ -262,6 +292,42 @@ class _AdminTransferRequestsScreenState
           ),
         );
         break;
+      case 'HISTORY LOGS':
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AdminDashboardScreen(
+              userRole: widget.userRole,
+              userName: widget.userName,
+              openHistoryLogsOnLoad: true,
+            ),
+          ),
+        );
+        break;
+      case 'ADD NEW STAFF/NURSE':
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AdminDashboardScreen(
+              userRole: widget.userRole,
+              userName: widget.userName,
+              openAddStaffOnLoad: true,
+            ),
+          ),
+        );
+        break;
+      case 'CHANGE PASSWORD':
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AdminDashboardScreen(
+              userRole: widget.userRole,
+              userName: widget.userName,
+              openChangePasswordOnLoad: true,
+            ),
+          ),
+        );
+        break;
     }
   }
 
@@ -289,6 +355,40 @@ class _AdminTransferRequestsScreenState
             ),
           ),
           const Spacer(),
+          SizedBox(
+            width: 260,
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Search Name',
+                hintStyle: TextStyle(
+                  fontSize: 13,
+                  fontFamily: 'Regular',
+                  color: Colors.grey.shade500,
+                ),
+                prefixIcon: const Icon(
+                  Icons.search,
+                  size: 18,
+                ),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: primary, width: 1.5),
+                ),
+                isDense: true,
+              ),
+            ),
+          ),
+          const SizedBox(width: 20),
           _buildFilterChip('All'),
           const SizedBox(width: 10),
           _buildFilterChip('Pending'),

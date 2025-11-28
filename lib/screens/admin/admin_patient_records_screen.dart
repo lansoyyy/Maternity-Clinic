@@ -13,11 +13,13 @@ import '../auth/home_screen.dart';
 class AdminPatientRecordsScreen extends StatefulWidget {
   final String userRole;
   final String userName;
+  final String initialType;
 
   const AdminPatientRecordsScreen({
     super.key,
     required this.userRole,
     required this.userName,
+    this.initialType = 'PRENATAL',
   });
 
   @override
@@ -29,7 +31,7 @@ class _AdminPatientRecordsScreenState extends State<AdminPatientRecordsScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  String _selectedType = 'PRENATAL';
+  late String _selectedType;
   bool _isLoading = true;
   final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> _patients = [];
@@ -38,6 +40,7 @@ class _AdminPatientRecordsScreenState extends State<AdminPatientRecordsScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedType = widget.initialType;
     _fetchPatients();
     _searchController.addListener(_filterPatients);
   }
@@ -532,7 +535,11 @@ class _AdminPatientRecordsScreenState extends State<AdminPatientRecordsScreen> {
           _buildMenuItem('APPOINTMENT MANAGEMENT', false),
           _buildMenuItem('APPROVE SCHEDULES', false),
           _buildMenuItem('PATIENT RECORDS', true),
-          const Spacer(),
+          if (widget.userRole == 'admin') _buildMenuItem('HISTORY LOGS', false),
+          if (widget.userRole == 'admin') ...[
+            _buildMenuItem('ADD NEW STAFF/NURSE', false),
+            _buildMenuItem('CHANGE PASSWORD', false),
+          ],
           _buildMenuItem('LOGOUT', false),
         ],
       ),
@@ -603,6 +610,27 @@ class _AdminPatientRecordsScreenState extends State<AdminPatientRecordsScreen> {
       case 'PATIENT RECORDS':
         // Already on this screen
         return;
+      case 'HISTORY LOGS':
+        screen = AdminDashboardScreen(
+          userRole: widget.userRole,
+          userName: widget.userName,
+          openHistoryLogsOnLoad: true,
+        );
+        break;
+      case 'ADD NEW STAFF/NURSE':
+        screen = AdminDashboardScreen(
+          userRole: widget.userRole,
+          userName: widget.userName,
+          openAddStaffOnLoad: true,
+        );
+        break;
+      case 'CHANGE PASSWORD':
+        screen = AdminDashboardScreen(
+          userRole: widget.userRole,
+          userName: widget.userName,
+          openChangePasswordOnLoad: true,
+        );
+        break;
       default:
         return;
     }

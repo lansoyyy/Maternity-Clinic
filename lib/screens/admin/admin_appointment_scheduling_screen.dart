@@ -2077,6 +2077,12 @@ class _AdminAppointmentSchedulingScreenState
           _buildMenuItem('APPOINTMENT MANAGEMENT', false),
           _buildMenuItem('APPROVE SCHEDULES', true),
           _buildMenuItem('PATIENT RECORDS', false),
+          if (widget.userRole == 'admin') _buildMenuItem('HISTORY LOGS', false),
+
+          if (widget.userRole == 'admin') ...[
+            _buildMenuItem('ADD NEW STAFF/NURSE', false),
+            _buildMenuItem('CHANGE PASSWORD', false),
+          ],
 
           _buildMenuItem('LOGOUT', false),
         ],
@@ -2198,6 +2204,42 @@ class _AdminAppointmentSchedulingScreenState
             builder: (context) => AdminPatientRecordsScreen(
               userRole: widget.userRole,
               userName: widget.userName,
+            ),
+          ),
+        );
+        break;
+      case 'HISTORY LOGS':
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AdminDashboardScreen(
+              userRole: widget.userRole,
+              userName: widget.userName,
+              openHistoryLogsOnLoad: true,
+            ),
+          ),
+        );
+        break;
+      case 'ADD NEW STAFF/NURSE':
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AdminDashboardScreen(
+              userRole: widget.userRole,
+              userName: widget.userName,
+              openAddStaffOnLoad: true,
+            ),
+          ),
+        );
+        break;
+      case 'CHANGE PASSWORD':
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AdminDashboardScreen(
+              userRole: widget.userRole,
+              userName: widget.userName,
+              openChangePasswordOnLoad: true,
             ),
           ),
         );

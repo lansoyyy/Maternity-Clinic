@@ -214,7 +214,6 @@ class _AdminEducationalCmsScreenState extends State<AdminEducationalCmsScreen> {
           _buildMenuItem('APPOINTMENT\nSCHEDULING', false),
           _buildMenuItem('TRANSFER\nREQUESTS', false),
           _buildMenuItem('EDUCATIONAL CMS', true),
-          const Spacer(),
           _buildMenuItem('LOGOUT', false),
         ],
       ),

@@ -34,6 +34,7 @@ class _AdminAppointmentManagementScreenState
   List<Map<String, dynamic>> _prenatalAppointments = [];
   List<Map<String, dynamic>> _postnatalAppointments = [];
   List<Map<String, dynamic>> _transferRequests = [];
+  String _selectedTab = 'prenatal'; // prenatal, postnatal, transfer
 
   @override
   void initState() {
@@ -62,8 +63,8 @@ class _AdminAppointmentManagementScreenState
         final String status =
             (data['status'] ?? 'Pending').toString().toLowerCase();
 
-        // Only manage pending and accepted appointments here
-        if (status != 'pending' && status != 'accepted') continue;
+        // Only manage PENDING appointments here; accepted will be handled in Approved Schedules
+        if (status != 'pending') continue;
 
         final String userId = (data['userId'] ?? '').toString();
         final userData = users[userId];
@@ -154,7 +155,6 @@ class _AdminAppointmentManagementScreenState
         'acceptedBy': widget.userName,
       });
 
-      // Placeholder for future email notification
       await _sendAppointmentAcceptedEmail(appointment);
 
       if (!mounted) return;
@@ -195,6 +195,8 @@ class _AdminAppointmentManagementScreenState
         'cancelledAt': FieldValue.serverTimestamp(),
         'cancelledBy': widget.userName,
       });
+
+      await _sendAppointmentCancelledEmail(appointment);
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -253,8 +255,64 @@ class _AdminAppointmentManagementScreenState
 
   Future<void> _sendAppointmentAcceptedEmail(
       Map<String, dynamic> appointment) async {
-    // TODO: Integrate with email service (e.g., Firebase Functions / SMTP)
-    // This is a placeholder so that the UI flow is ready.
+    try {
+      final String email = appointment['email']?.toString() ?? '';
+      if (email.isEmpty) return;
+
+      final String name = appointment['name']?.toString() ?? 'Patient';
+      final dynamic dateField = appointment['appointmentDate'];
+      String dateText = '';
+      if (dateField is Timestamp) {
+        final d = dateField.toDate();
+        dateText =
+            '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+      }
+      final String timeSlot = appointment['timeSlot']?.toString() ?? '';
+
+      await _firestore.collection('emailQueue').add({
+        'to': email,
+        'subject': 'Your appointment has been accepted',
+        'body':
+            'Dear $name, your appointment on $dateText at $timeSlot has been accepted.\n\nThank you,\nVictory Lying-in Center',
+        'type': 'appointmentAccepted',
+        'appointmentId': appointment['id']?.toString() ?? '',
+        'createdAt': FieldValue.serverTimestamp(),
+        'status': 'pending',
+      });
+    } catch (_) {
+      // Fail silently for email queue
+    }
+  }
+
+  Future<void> _sendAppointmentCancelledEmail(
+      Map<String, dynamic> appointment) async {
+    try {
+      final String email = appointment['email']?.toString() ?? '';
+      if (email.isEmpty) return;
+
+      final String name = appointment['name']?.toString() ?? 'Patient';
+      final dynamic dateField = appointment['appointmentDate'];
+      String dateText = '';
+      if (dateField is Timestamp) {
+        final d = dateField.toDate();
+        dateText =
+            '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+      }
+      final String timeSlot = appointment['timeSlot']?.toString() ?? '';
+
+      await _firestore.collection('emailQueue').add({
+        'to': email,
+        'subject': 'Your appointment has been cancelled',
+        'body':
+            'Dear $name, your appointment on $dateText at $timeSlot has been cancelled.\n\nIf you have any questions, please contact the clinic.',
+        'type': 'appointmentCancelled',
+        'appointmentId': appointment['id']?.toString() ?? '',
+        'createdAt': FieldValue.serverTimestamp(),
+        'status': 'pending',
+      });
+    } catch (_) {
+      // Fail silently for email queue
+    }
   }
 
   void _openPatientDetail(Map<String, dynamic> appointment) {
@@ -350,11 +408,14 @@ class _AdminAppointmentManagementScreenState
                       children: [
                         _buildHeader(),
                         const SizedBox(height: 20),
-                        _buildPrenatalSection(),
-                        const SizedBox(height: 30),
-                        _buildPostnatalSection(),
-                        const SizedBox(height: 30),
-                        _buildTransferSection(),
+                        _buildTabButtons(),
+                        const SizedBox(height: 20),
+                        if (_selectedTab == 'prenatal')
+                          _buildPrenatalSection()
+                        else if (_selectedTab == 'postnatal')
+                          _buildPostnatalSection()
+                        else
+                          _buildTransferSection(),
                       ],
                     ),
                   ),
@@ -391,6 +452,48 @@ class _AdminAppointmentManagementScreenState
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildTabButtons() {
+    return Row(
+      children: [
+        _buildTabButton('Prenatal Appointments', 'prenatal'),
+        const SizedBox(width: 10),
+        _buildTabButton('Postnatal Appointments', 'postnatal'),
+        const SizedBox(width: 10),
+        _buildTabButton('Transfer of Request', 'transfer'),
+      ],
+    );
+  }
+
+  Widget _buildTabButton(String label, String key) {
+    final bool isSelected = _selectedTab == key;
+    return ElevatedButton(
+      onPressed: isSelected
+          ? null
+          : () {
+              setState(() {
+                _selectedTab = key;
+              });
+            },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: isSelected ? primary : Colors.white,
+        foregroundColor: isSelected ? Colors.white : Colors.black87,
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+          side: BorderSide(color: primary, width: 1),
+        ),
+        elevation: isSelected ? 2 : 0,
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 13,
+          fontFamily: 'Bold',
+        ),
       ),
     );
   }
@@ -866,7 +969,11 @@ class _AdminAppointmentManagementScreenState
           _buildMenuItem('APPOINTMENT MANAGEMENT', true),
           _buildMenuItem('APPROVE SCHEDULES', false),
           _buildMenuItem('PATIENT RECORDS', false),
-          const Spacer(),
+          if (widget.userRole == 'admin') _buildMenuItem('HISTORY LOGS', false),
+          if (widget.userRole == 'admin') ...[
+            _buildMenuItem('ADD NEW STAFF/NURSE', false),
+            _buildMenuItem('CHANGE PASSWORD', false),
+          ],
           _buildMenuItem('LOGOUT', false),
         ],
       ),
@@ -932,6 +1039,27 @@ class _AdminAppointmentManagementScreenState
         screen = AdminPatientRecordsScreen(
           userRole: widget.userRole,
           userName: widget.userName,
+        );
+        break;
+      case 'HISTORY LOGS':
+        screen = AdminDashboardScreen(
+          userRole: widget.userRole,
+          userName: widget.userName,
+          openHistoryLogsOnLoad: true,
+        );
+        break;
+      case 'ADD NEW STAFF/NURSE':
+        screen = AdminDashboardScreen(
+          userRole: widget.userRole,
+          userName: widget.userName,
+          openAddStaffOnLoad: true,
+        );
+        break;
+      case 'CHANGE PASSWORD':
+        screen = AdminDashboardScreen(
+          userRole: widget.userRole,
+          userName: widget.userName,
+          openChangePasswordOnLoad: true,
         );
         break;
       default:

@@ -44,6 +44,10 @@ class _PostnatalUpdateProfileScreenState
   String? _deliveryPlace;
   String? _deliveryType;
 
+  final TextEditingController _infantNameController = TextEditingController();
+  final TextEditingController _infantAgeController = TextEditingController();
+  String? _infantGender;
+
   bool _excessiveBleeding = false;
   bool _fever = false;
   bool _pain = false;
@@ -96,6 +100,8 @@ class _PostnatalUpdateProfileScreenState
     _civilStatusController.dispose();
     _emergencyNameController.dispose();
     _emergencyNumberController.dispose();
+    _infantNameController.dispose();
+    _infantAgeController.dispose();
     _otherConcernsController.dispose();
     super.dispose();
   }
@@ -157,6 +163,10 @@ class _PostnatalUpdateProfileScreenState
         _lochiaStatus = data['lochiaStatus']?.toString();
         _riskStatus = data['riskStatus']?.toString();
         _specificComplication = data['specificComplication']?.toString();
+
+        _infantNameController.text = (data['infantName'] ?? '').toString();
+        _infantGender = data['infantGender']?.toString();
+        _infantAgeController.text = (data['infantAge'] ?? '').toString();
 
         _recomputeAge();
       }
@@ -239,6 +249,19 @@ class _PostnatalUpdateProfileScreenState
       return;
     }
 
+    if (_infantNameController.text.trim().isEmpty) {
+      _showError('Please enter infant\'s name');
+      return;
+    }
+    if (_infantGender == null || _infantGender!.trim().isEmpty) {
+      _showError('Please select infant\'s gender');
+      return;
+    }
+    if (_infantAgeController.text.trim().isEmpty) {
+      _showError('Please enter current age of infant');
+      return;
+    }
+
     final user = _auth.currentUser;
     if (user == null) {
       _showError('User is not logged in');
@@ -274,12 +297,9 @@ class _PostnatalUpdateProfileScreenState
         'dateOfDelivery': Timestamp.fromDate(_deliveryDate!),
         'placeOfDelivery': _deliveryPlace,
         'deliveryType': _deliveryType,
-        'postnatalExcessiveBleeding': _excessiveBleeding,
-        'postnatalFever': _fever,
-        'postnatalPain': _pain,
-        'breastfeedingDifficulty': _breastfeedingDifficulty,
-        'woundInfectionSigns': _woundInfection,
-        'otherPostnatalConcerns': _otherConcernsController.text.trim(),
+        'infantName': _infantNameController.text.trim(),
+        'infantGender': _infantGender,
+        'infantAge': _infantAgeController.text.trim(),
         'profileCompleted': true,
       };
 
@@ -384,9 +404,7 @@ class _PostnatalUpdateProfileScreenState
                   const SizedBox(height: 24),
                   _buildDeliveryDetailsSection(),
                   const SizedBox(height: 24),
-                  _buildSymptomsSection(),
-                  const SizedBox(height: 24),
-                  _buildClinicalViewOnlySection(),
+                  _buildInfantInfoSection(),
                   const SizedBox(height: 32),
                   Align(
                     alignment: Alignment.centerRight,
@@ -829,7 +847,7 @@ class _PostnatalUpdateProfileScreenState
     );
   }
 
-  Widget _buildSymptomsSection() {
+  Widget _buildInfantInfoSection() {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -841,72 +859,22 @@ class _PostnatalUpdateProfileScreenState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Mother\'s Current Symptoms / Concerns',
+            'Infant Information',
             style: TextStyle(
               fontSize: 16,
               fontFamily: 'Bold',
               color: Colors.black87,
             ),
           ),
-          const SizedBox(height: 12),
-          CheckboxListTile(
-            title: const Text('Excessive bleeding'),
-            value: _excessiveBleeding,
-            onChanged: _isProfileCompleted
-                ? null
-                : (value) {
-                    setState(() {
-                      _excessiveBleeding = value ?? false;
-                    });
-                  },
-          ),
-          CheckboxListTile(
-            title: const Text('Fever'),
-            value: _fever,
-            onChanged: _isProfileCompleted
-                ? null
-                : (value) {
-                    setState(() {
-                      _fever = value ?? false;
-                    });
-                  },
-          ),
-          CheckboxListTile(
-            title: const Text('Pain'),
-            value: _pain,
-            onChanged: _isProfileCompleted
-                ? null
-                : (value) {
-                    setState(() {
-                      _pain = value ?? false;
-                    });
-                  },
-          ),
-          CheckboxListTile(
-            title: const Text('Breastfeeding difficulty'),
-            value: _breastfeedingDifficulty,
-            onChanged: _isProfileCompleted
-                ? null
-                : (value) {
-                    setState(() {
-                      _breastfeedingDifficulty = value ?? false;
-                    });
-                  },
-          ),
-          CheckboxListTile(
-            title: const Text('Wound infection signs'),
-            value: _woundInfection,
-            onChanged: _isProfileCompleted
-                ? null
-                : (value) {
-                    setState(() {
-                      _woundInfection = value ?? false;
-                    });
-                  },
+          const SizedBox(height: 16),
+          _buildTextField(
+            label: 'Infant Name',
+            controller: _infantNameController,
+            hintText: 'e.g. Baby\'s full name',
           ),
           const SizedBox(height: 12),
           const Text(
-            'Other concerns (optional)',
+            'Infant\'s Gender',
             style: TextStyle(
               fontSize: 13,
               fontFamily: 'Regular',
@@ -914,19 +882,26 @@ class _PostnatalUpdateProfileScreenState
             ),
           ),
           const SizedBox(height: 6),
-          TextField(
-            controller: _otherConcernsController,
-            maxLines: 3,
-            enabled: !_isProfileCompleted,
+          DropdownButtonFormField<String>(
+            value: _infantGender,
+            items: const ['Female', 'Male']
+                .map(
+                  (gender) => DropdownMenuItem(
+                    value: gender,
+                    child: Text(gender),
+                  ),
+                )
+                .toList(),
+            onChanged: _isProfileCompleted
+                ? null
+                : (value) {
+                    setState(() {
+                      _infantGender = value;
+                    });
+                  },
             decoration: InputDecoration(
               filled: true,
               fillColor: Colors.white,
-              hintText: 'Describe any other concerns you have',
-              hintStyle: TextStyle(
-                color: Colors.grey.shade500,
-                fontFamily: 'Regular',
-                fontSize: 13,
-              ),
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               border: OutlineInputBorder(
@@ -942,6 +917,12 @@ class _PostnatalUpdateProfileScreenState
                 borderSide: BorderSide(color: primary, width: 2),
               ),
             ),
+          ),
+          const SizedBox(height: 12),
+          _buildTextField(
+            label: 'Current Age of Infant',
+            controller: _infantAgeController,
+            hintText: 'e.g. 2 weeks, 6 weeks',
           ),
         ],
       ),

@@ -172,21 +172,7 @@ class _BookAppointmentDialogState extends State<BookAppointmentDialog> {
         'createdAt': FieldValue.serverTimestamp(),
       };
 
-      if (widget.patientType == 'PRENATAL') {
-        appointmentData.addAll({
-          'reason': _reasonController.text.trim(),
-          'lmpDate': _lmpDate != null ? Timestamp.fromDate(_lmpDate!) : null,
-          'age': _ageController.text.trim(),
-          'firstPregnancy': _firstPregnancy,
-          'pregnancyCount': _firstPregnancy
-              ? 1
-              : int.tryParse(_pregnancyCountController.text) ?? 1,
-          'highBloodPressure': _highBloodPressure,
-          'diabetes': _diabetes,
-          'weight': _weightController.text.trim(),
-          'bloodPressure': _bloodPressureController.text.trim(),
-        });
-      } else {
+      if (widget.patientType == 'POSTNATAL') {
         appointmentData.addAll({
           'deliveryDate':
               _deliveryDate != null ? Timestamp.fromDate(_deliveryDate!) : null,
@@ -254,20 +240,7 @@ class _BookAppointmentDialogState extends State<BookAppointmentDialog> {
       return false;
     }
 
-    if (widget.patientType == 'PRENATAL') {
-      if (_reasonController.text.trim().isEmpty) {
-        _showError('Please describe reason for your visit');
-        return false;
-      }
-      if (_lmpDate == null) {
-        _showError('Please enter your last menstrual period date');
-        return false;
-      }
-      if (_ageController.text.trim().isEmpty) {
-        _showError('Please enter your age');
-        return false;
-      }
-    } else {
+    if (widget.patientType == 'POSTNATAL') {
       if (_deliveryDate == null) {
         _showError('Please enter date of delivery');
         return false;
@@ -366,10 +339,10 @@ class _BookAppointmentDialogState extends State<BookAppointmentDialog> {
                   children: [
                     _buildCommonFields(),
                     const SizedBox(height: 20),
-                    widget.patientType == 'PRENATAL'
-                        ? _buildPrenatalFields()
-                        : _buildPostnatalFields(),
-                    const SizedBox(height: 20),
+                    if (widget.patientType == 'POSTNATAL') ...[
+                      _buildPostnatalFields(),
+                      const SizedBox(height: 20),
+                    ],
                     _buildDateTimeFields(),
                   ],
                 ),
