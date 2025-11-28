@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:maternity_clinic/screens/admin/admin_dashboard_screen.dart';
 
 import '../utils/colors.dart';
-
 
 class AdminLoginDialog extends StatefulWidget {
   const AdminLoginDialog({super.key});
@@ -12,6 +12,7 @@ class AdminLoginDialog extends StatefulWidget {
 }
 
 class _AdminLoginDialogState extends State<AdminLoginDialog> {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _rememberMe = false;
@@ -96,6 +97,199 @@ class _AdminLoginDialogState extends State<AdminLoginDialog> {
     );
   }
 
+  void _showForgotPasswordDialog() {
+    final TextEditingController usernameController = TextEditingController();
+    final TextEditingController newPasswordController = TextEditingController();
+    final TextEditingController confirmPasswordController =
+        TextEditingController();
+    bool isSaving = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              title: const Text(
+                'Reset Staff/Admin Password',
+                style: TextStyle(fontFamily: 'Bold'),
+              ),
+              content: SizedBox(
+                width: 380,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Username',
+                      style: TextStyle(fontSize: 13, fontFamily: 'Regular'),
+                    ),
+                    const SizedBox(height: 4),
+                    TextField(
+                      controller: usernameController,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'New Password',
+                      style: TextStyle(fontSize: 13, fontFamily: 'Regular'),
+                    ),
+                    const SizedBox(height: 4),
+                    TextField(
+                      controller: newPasswordController,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Confirm New Password',
+                      style: TextStyle(fontSize: 13, fontFamily: 'Regular'),
+                    ),
+                    const SizedBox(height: 4),
+                    TextField(
+                      controller: confirmPasswordController,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isSaving
+                      ? null
+                      : () {
+                          Navigator.of(dialogContext).pop();
+                        },
+                  child: Text(
+                    'Cancel',
+                    style: TextStyle(
+                      color: Colors.grey.shade700,
+                      fontFamily: 'Regular',
+                    ),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: isSaving
+                      ? null
+                      : () async {
+                          final username =
+                              usernameController.text.trim().toLowerCase();
+                          final newPassword = newPasswordController.text.trim();
+                          final confirmPassword =
+                              confirmPasswordController.text.trim();
+
+                          if (username.isEmpty ||
+                              newPassword.isEmpty ||
+                              confirmPassword.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Please fill in all fields'),
+                                behavior: SnackBarBehavior.floating,
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            return;
+                          }
+
+                          if (newPassword != confirmPassword) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                    'New password and confirmation do not match'),
+                                behavior: SnackBarBehavior.floating,
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            return;
+                          }
+
+                          setStateDialog(() {
+                            isSaving = true;
+                          });
+
+                          try {
+                            final docRef = _firestore
+                                .collection('staffAccounts')
+                                .doc(username);
+                            final snap = await docRef.get();
+                            if (!snap.exists) {
+                              setStateDialog(() {
+                                isSaving = false;
+                              });
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Username not found'),
+                                  behavior: SnackBarBehavior.floating,
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                              return;
+                            }
+
+                            await docRef.update({
+                              'password': newPassword,
+                              'updatedAt': FieldValue.serverTimestamp(),
+                            });
+
+                            if (!mounted) return;
+                            Navigator.of(dialogContext).pop();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Password updated. Please login with your new password.',
+                                  style: TextStyle(fontFamily: 'Regular'),
+                                ),
+                                behavior: SnackBarBehavior.floating,
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          } catch (e) {
+                            setStateDialog(() {
+                              isSaving = false;
+                            });
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                    'Failed to update password. Try again.'),
+                                behavior: SnackBarBehavior.floating,
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primary,
+                  ),
+                  child: isSaving
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text(
+                          'Save',
+                          style: TextStyle(fontFamily: 'Bold'),
+                        ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -131,7 +325,7 @@ class _AdminLoginDialogState extends State<AdminLoginDialog> {
                 ),
               ),
               const SizedBox(height: 10),
-          
+
               // Icon
               Container(
                 width: 80,
@@ -151,7 +345,7 @@ class _AdminLoginDialogState extends State<AdminLoginDialog> {
                 ),
               ),
               const SizedBox(height: 25),
-          
+
               // Title
               Text(
                 'Admin Login',
@@ -164,7 +358,7 @@ class _AdminLoginDialogState extends State<AdminLoginDialog> {
                 ),
               ),
               const SizedBox(height: 10),
-          
+
               // Description
               Text(
                 'Access the administrative dashboard',
@@ -177,7 +371,7 @@ class _AdminLoginDialogState extends State<AdminLoginDialog> {
                 ),
               ),
               const SizedBox(height: 30),
-          
+
               // Username Field
               TextField(
                 controller: _usernameController,
@@ -219,8 +413,25 @@ class _AdminLoginDialogState extends State<AdminLoginDialog> {
                   ),
                 ),
               ),
+              const SizedBox(height: 10),
+
+              // Forgot Password link (Firestore-based)
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: _isLoading ? null : _showForgotPasswordDialog,
+                  child: Text(
+                    'Forgot Password?',
+                    style: TextStyle(
+                      color: primary,
+                      fontFamily: 'Medium',
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ),
               const SizedBox(height: 20),
-          
+
               // Password Field
               TextField(
                 controller: _passwordController,
@@ -245,7 +456,9 @@ class _AdminLoginDialogState extends State<AdminLoginDialog> {
                   ),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                      _obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
                       color: Colors.grey.shade600,
                     ),
                     onPressed: () {
@@ -275,7 +488,7 @@ class _AdminLoginDialogState extends State<AdminLoginDialog> {
                 ),
               ),
               const SizedBox(height: 15),
-          
+
               // Remember Me Checkbox
               Row(
                 children: [
@@ -307,7 +520,7 @@ class _AdminLoginDialogState extends State<AdminLoginDialog> {
                 ],
               ),
               const SizedBox(height: 25),
-          
+
               // Login Button
               ElevatedButton(
                 onPressed: _isLoading ? null : _handleLogin,
@@ -339,7 +552,7 @@ class _AdminLoginDialogState extends State<AdminLoginDialog> {
                       ),
               ),
               const SizedBox(height: 15),
-          
+
               // Staff Account Info
               Container(
                 padding: const EdgeInsets.all(12),
@@ -388,7 +601,7 @@ class _AdminLoginDialogState extends State<AdminLoginDialog> {
                 ),
               ),
               const SizedBox(height: 15),
-          
+
               // Back to Patient Login
               TextButton(
                 onPressed: () {

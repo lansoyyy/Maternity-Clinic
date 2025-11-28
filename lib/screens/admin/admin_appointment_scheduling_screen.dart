@@ -88,13 +88,12 @@ class _AdminAppointmentSchedulingScreenState
           appointment['patientId'] = userData['userId'] ?? 'N/A';
           appointment['name'] = userData['name'] ?? 'Unknown';
           appointment['maternityStatus'] = userData['patientType'] ?? 'Unknown';
+          appointment['email'] = userData['email'] ?? '';
         } else {
           appointment['patientId'] = 'N/A';
           appointment['name'] = 'Unknown';
           appointment['maternityStatus'] = 'Unknown';
         }
-
-        appointments.add(appointment);
 
         // Count by status
         String status = appointment['status'].toString().toLowerCase();
@@ -105,6 +104,13 @@ class _AdminAppointmentSchedulingScreenState
         } else if (status == 'cancelled') {
           cancelled++;
         }
+
+        // Do not include cancelled appointments in the schedules list
+        if (status == 'cancelled') {
+          continue;
+        }
+
+        appointments.add(appointment);
       }
 
       if (mounted) {
@@ -624,7 +630,7 @@ class _AdminAppointmentSchedulingScreenState
                         controller: adviceController,
                         maxLines: 3,
                         decoration: const InputDecoration(
-                          labelText: 'Prescription / Recommendations',
+                          labelText: 'Personalized Recommendation',
                           border: OutlineInputBorder(),
                         ),
                       ),
@@ -1365,7 +1371,7 @@ class _AdminAppointmentSchedulingScreenState
                         controller: adviceController,
                         maxLines: 3,
                         decoration: const InputDecoration(
-                          labelText: 'Prescription / Recommendations',
+                          labelText: 'Personalized Recommendation',
                           border: OutlineInputBorder(),
                         ),
                       ),
@@ -1738,14 +1744,7 @@ class _AdminAppointmentSchedulingScreenState
     // Show dialog to select new date and time
     DateTime? selectedDate;
     String? selectedTime;
-
-    // Available time slots matching the patient booking system
-    List<String> availableTimeSlots = [
-      '8:00 AM',
-      '10:00 AM',
-      '12:00 PM',
-      '2:00 PM'
-    ];
+    List<String> availableTimeSlots = [];
 
     showDialog(
       context: context,
@@ -1786,18 +1785,34 @@ class _AdminAppointmentSchedulingScreenState
                     const SizedBox(height: 8),
                     GestureDetector(
                       onTap: () async {
+                        final DateTime today = DateTime.now();
+                        final DateTime initial =
+                            selectedDate ?? today.add(const Duration(days: 1));
+
                         DateTime? picked = await showDatePicker(
                           context: context,
-                          initialDate:
-                              DateTime.now().add(const Duration(days: 1)),
-                          firstDate:
-                              DateTime.now().add(const Duration(days: 1)),
-                          lastDate:
-                              DateTime.now().add(const Duration(days: 365)),
+                          initialDate: initial,
+                          firstDate: today,
+                          lastDate: today.add(const Duration(days: 365)),
                         );
                         if (picked != null) {
+                          if (!_isAllowedRescheduleDate(picked)) {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                      'Appointments are only available on Tuesday, Wednesday, Friday (4:00 PM - 6:00 PM) and Saturday (2:00 PM - 6:00 PM).'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                            return;
+                          }
                           setState(() {
                             selectedDate = picked;
+                            selectedTime = null;
+                            availableTimeSlots =
+                                _allowedSlotsForReschedule(picked);
                           });
                         }
                       },
@@ -1830,38 +1845,49 @@ class _AdminAppointmentSchedulingScreenState
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: availableTimeSlots.map((time) {
-                        bool isSelected = selectedTime == time;
-                        return GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              selectedTime = time;
-                            });
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 8),
-                            decoration: BoxDecoration(
-                              color:
-                                  isSelected ? primary : Colors.grey.shade200,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              time,
-                              style: TextStyle(
-                                fontFamily: 'Regular',
-                                fontSize: 12,
+                    if (selectedDate == null)
+                      const Text(
+                        'Please select a date first.',
+                        style: TextStyle(
+                          fontFamily: 'Regular',
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      )
+                    else
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: availableTimeSlots.map((time) {
+                          bool isSelected = selectedTime == time;
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                selectedTime = time;
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
                                 color:
-                                    isSelected ? Colors.white : Colors.black87,
+                                    isSelected ? primary : Colors.grey.shade200,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                time,
+                                style: TextStyle(
+                                  fontFamily: 'Regular',
+                                  fontSize: 12,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : Colors.black87,
+                                ),
                               ),
                             ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
+                          );
+                        }).toList(),
+                      ),
                   ],
                 ),
               ),
@@ -1878,8 +1904,15 @@ class _AdminAppointmentSchedulingScreenState
                   onPressed: selectedDate != null && selectedTime != null
                       ? () async {
                           Navigator.pop(context);
-                          await _updateAppointment(appointmentId, patientName,
-                              selectedDate!, selectedTime!);
+                          final String email =
+                              (currentAppointment['email'] ?? '').toString();
+                          await _updateAppointment(
+                            appointmentId,
+                            patientName,
+                            selectedDate!,
+                            selectedTime!,
+                            email: email,
+                          );
                         }
                       : null,
                   style: ElevatedButton.styleFrom(
@@ -1902,8 +1935,41 @@ class _AdminAppointmentSchedulingScreenState
   }
 
   Future<void> _updateAppointment(String appointmentId, String patientName,
-      DateTime newDate, String newTime) async {
+      DateTime newDate, String newTime,
+      {String? email}) async {
     try {
+      // Prevent overbooking: max 3 appointments per time slot per day
+      final DateTime startOfDay =
+          DateTime(newDate.year, newDate.month, newDate.day);
+      final DateTime endOfDay = startOfDay.add(const Duration(days: 1));
+
+      final snapshot = await _firestore
+          .collection('appointments')
+          .where('appointmentDate',
+              isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
+          .where('appointmentDate', isLessThan: Timestamp.fromDate(endOfDay))
+          .where('timeSlot', isEqualTo: newTime)
+          .get();
+
+      int existingCount = 0;
+      for (var doc in snapshot.docs) {
+        if (doc.id == appointmentId) continue;
+        existingCount++;
+      }
+
+      if (existingCount >= 3) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                  'This time slot is no longer available. Please select another time.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
       await _firestore.collection('appointments').doc(appointmentId).update({
         'appointmentDate': Timestamp.fromDate(newDate),
         'timeSlot': newTime,
@@ -1911,6 +1977,24 @@ class _AdminAppointmentSchedulingScreenState
         'status': 'Rescheduled',
         'rescheduleReason': 'Admin rescheduled appointment',
       });
+
+      // Queue email notification for reschedule
+      if ((email ?? '').isNotEmpty) {
+        try {
+          await _firestore.collection('emailQueue').add({
+            'to': email,
+            'subject': 'Your appointment has been rescheduled',
+            'body':
+                'Dear $patientName, your appointment has been rescheduled to ${_formatDate(newDate)}, $newTime.\n\nThank you,\nVictory Lying-in Center',
+            'type': 'appointmentRescheduled',
+            'appointmentId': appointmentId,
+            'createdAt': FieldValue.serverTimestamp(),
+            'status': 'pending',
+          });
+        } catch (_) {
+          // ignore email queue errors
+        }
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1941,6 +2025,29 @@ class _AdminAppointmentSchedulingScreenState
         );
       }
     }
+  }
+
+  bool _isAllowedRescheduleDate(DateTime date) {
+    final int weekday = date.weekday;
+    return weekday == DateTime.tuesday ||
+        weekday == DateTime.wednesday ||
+        weekday == DateTime.friday ||
+        weekday == DateTime.saturday;
+  }
+
+  List<String> _allowedSlotsForReschedule(DateTime date) {
+    final int weekday = date.weekday;
+    if (weekday == DateTime.saturday) {
+      // Saturday: 2:00 PM - 6:00 PM
+      return ['2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM', '6:00 PM'];
+    }
+    if (weekday == DateTime.tuesday ||
+        weekday == DateTime.wednesday ||
+        weekday == DateTime.friday) {
+      // Tue/Wed/Fri: 4:00 PM - 6:00 PM
+      return ['4:00 PM', '5:00 PM', '6:00 PM'];
+    }
+    return const [];
   }
 
   @override
@@ -2302,62 +2409,64 @@ class _AdminAppointmentSchedulingScreenState
   Widget _buildAppointmentsTable() {
     const double columnWidth = 120.0;
 
-    return Column(
-      children: [
-        // Table Header
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade200,
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(10),
-              topRight: Radius.circular(10),
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          // Table Header
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade200,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(10),
+                topRight: Radius.circular(10),
+              ),
+            ),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: columnWidth * 0.8,
+                  child: _buildHeaderCell('NO.'),
+                ),
+                SizedBox(
+                  width: columnWidth * 1.2,
+                  child: _buildHeaderCell('NAME'),
+                ),
+                SizedBox(
+                  width: columnWidth * 1.5,
+                  child: _buildHeaderCell('STATUS (with timestamps)'),
+                ),
+                SizedBox(
+                  width: columnWidth * 1.3,
+                  child: _buildHeaderCell('APPOINTMENT'),
+                ),
+                SizedBox(
+                  width: columnWidth * 1.2,
+                  child: _buildHeaderCell('MATERNITY STATUS'),
+                ),
+                SizedBox(
+                  width: columnWidth * 2.5,
+                  child: _buildHeaderCell('ACTIONS'),
+                ),
+              ],
             ),
           ),
-          child: Row(
-            children: [
-              SizedBox(
-                width: columnWidth * 0.8,
-                child: _buildHeaderCell('NO.'),
-              ),
-              SizedBox(
-                width: columnWidth * 1.2,
-                child: _buildHeaderCell('NAME'),
-              ),
-              SizedBox(
-                width: columnWidth * 1.5,
-                child: _buildHeaderCell('STATUS (with timestamps)'),
-              ),
-              SizedBox(
-                width: columnWidth * 1.3,
-                child: _buildHeaderCell('APPOINTMENT'),
-              ),
-              SizedBox(
-                width: columnWidth * 1.2,
-                child: _buildHeaderCell('MATERNITY STATUS'),
-              ),
-              SizedBox(
-                width: columnWidth * 2.5,
-                child: _buildHeaderCell('ACTIONS'),
-              ),
-            ],
-          ),
-        ),
 
-        // Table Rows
-        ..._appointments.map((appointment) {
-          return _buildTableRow(
-            appointment['id'] ?? '', // This is the actual appointment ID
-            (_appointments.indexOf(appointment) + 1)
-                .toString(), // This is the row number
-            appointment['name'] ?? 'Unknown',
-            appointment['status'] ?? 'Pending',
-            appointment['appointment'] ?? 'Not specified',
-            appointment['maternityStatus'] ?? 'Unknown',
-            appointment, // Pass full appointment data for timestamps
-          );
-        }).toList(),
-      ],
+          // Table Rows
+          ..._appointments.map((appointment) {
+            return _buildTableRow(
+              appointment['id'] ?? '', // This is the actual appointment ID
+              (_appointments.indexOf(appointment) + 1)
+                  .toString(), // This is the row number
+              appointment['name'] ?? 'Unknown',
+              appointment['status'] ?? 'Pending',
+              appointment['appointment'] ?? 'Not specified',
+              appointment['maternityStatus'] ?? 'Unknown',
+              appointment, // Pass full appointment data for timestamps and email
+            );
+          }).toList(),
+        ],
+      ),
     );
   }
 
@@ -2515,11 +2624,8 @@ class _AdminAppointmentSchedulingScreenState
                   ),
                 if (status == 'Accepted' || status == 'Rescheduled')
                   TextButton(
-                    onPressed: () =>
-                        _rescheduleAppointment(appointmentId, name, {
-                      'appointment': appointment,
-                      'status': status,
-                    }),
+                    onPressed: () => _rescheduleAppointment(
+                        appointmentId, name, appointmentData),
                     child: const Text(
                       'Reschedule',
                       style: TextStyle(
@@ -2529,7 +2635,7 @@ class _AdminAppointmentSchedulingScreenState
                       ),
                     ),
                   ),
-                if (status != 'Cancelled')
+                if (status != 'Cancelled' && status != 'Completed')
                   TextButton(
                     onPressed: () => _cancelAppointment(appointmentId, name),
                     child: const Text(

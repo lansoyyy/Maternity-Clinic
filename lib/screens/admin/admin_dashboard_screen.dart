@@ -59,6 +59,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   // Daily patient statistics (by appointment date)
   Map<DateTime, int> _dailyPatientCounts = {};
 
+  // History logs (admin only)
+  List<Map<String, dynamic>> _historyLogs = [];
+
   bool _isLoading = true;
 
   // Check if current user is admin
@@ -269,6 +272,25 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         }
       }
 
+      // Fetch history logs (if any)
+      List<Map<String, dynamic>> historyLogs = [];
+      try {
+        final historySnapshot = await _firestore
+            .collection('historyLogs')
+            .orderBy('timestamp', descending: true)
+            .limit(100)
+            .get();
+        for (var doc in historySnapshot.docs) {
+          final data = doc.data();
+          historyLogs.add({
+            'id': doc.id,
+            ...data,
+          });
+        }
+      } catch (_) {
+        historyLogs = [];
+      }
+
       // Compute high risk patients (prenatal + postnatal)
       for (var doc in prenatalSnapshot.docs) {
         final data = doc.data();
@@ -302,6 +324,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           _dailyPatientCounts = dailyCounts;
           _todaysAppointments = todaysAppointments;
           _highRiskPatients = highRiskCount;
+          _historyLogs = historyLogs;
           _isLoading = false;
         });
       }
@@ -490,12 +513,210 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         _buildHistoryCountingChart(),
                         const SizedBox(height: 30),
 
+                        // Admin - History Logs
+                        if (_isAdmin) ...[
+                          _buildHistoryLogsSection(),
+                          const SizedBox(height: 30),
+                        ],
+
                         // Nurse Dashboard - Transfer Requests
                         if (_isNurse) ...[
                           _buildNurseTransferRequestsSection(),
                         ],
                       ],
                     ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHistoryLogsSection() {
+    return Container(
+      padding: const EdgeInsets.all(25),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade200,
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'HISTORY LOGS',
+            style: TextStyle(
+              fontSize: 18,
+              fontFamily: 'Bold',
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: _historyLogs.isEmpty
+                ? Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Center(
+                      child: Text(
+                        'No history logs yet',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontFamily: 'Regular',
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ),
+                  )
+                : Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade200,
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(10),
+                            topRight: Radius.circular(10),
+                          ),
+                        ),
+                        child: Row(
+                          children: const [
+                            Expanded(
+                              flex: 2,
+                              child: Text(
+                                'TimeStamp',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontFamily: 'Bold',
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              flex: 1,
+                              child: Text(
+                                'Role',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontFamily: 'Bold',
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              flex: 5,
+                              child: Text(
+                                'Actions',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontFamily: 'Bold',
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Divider(height: 1),
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxHeight: 320),
+                        child: Scrollbar(
+                          thumbVisibility: true,
+                          child: ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: _historyLogs.length,
+                            itemBuilder: (context, index) {
+                              final log = _historyLogs[index];
+                              DateTime? ts;
+                              final rawTs = log['timestamp'];
+                              if (rawTs is Timestamp) {
+                                ts = rawTs.toDate();
+                              }
+                              String tsText = 'N/A';
+                              if (ts != null) {
+                                tsText =
+                                    '${ts.year.toString().padLeft(4, '0')}-${ts.month.toString().padLeft(2, '0')}-${ts.day.toString().padLeft(2, '0')} ${ts.hour.toString().padLeft(2, '0')}:${ts.minute.toString().padLeft(2, '0')}';
+                              }
+
+                              final String role =
+                                  (log['role'] ?? log['userRole'] ?? '')
+                                      .toString()
+                                      .toUpperCase();
+                              final String action = (log['action'] ??
+                                      log['description'] ??
+                                      log['details'] ??
+                                      '')
+                                  .toString();
+
+                              return Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  border: Border(
+                                    bottom: BorderSide(
+                                      color: Colors.grey.shade300,
+                                    ),
+                                  ),
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      flex: 2,
+                                      child: Text(
+                                        tsText,
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontFamily: 'Regular',
+                                          color: Colors.grey.shade800,
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 1,
+                                      child: Text(
+                                        role.isNotEmpty ? role : '-',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontFamily: 'Bold',
+                                          color: Colors.grey.shade800,
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 5,
+                                      child: Text(
+                                        action.isNotEmpty
+                                            ? action
+                                            : 'No details provided',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontFamily: 'Regular',
+                                          color: Colors.grey.shade800,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
           ),
         ],
