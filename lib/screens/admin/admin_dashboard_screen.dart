@@ -48,6 +48,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   int _todaysAppointments = 0;
   int _highRiskPatients = 0;
 
+  // Cached datasets for PDF exports
+  List<Map<String, dynamic>> _prenatalPatients = [];
+  List<Map<String, dynamic>> _postnatalPatients = [];
+  List<Map<String, dynamic>> _appointmentsAll = [];
+  Map<String, Map<String, dynamic>> _latestPrenatalAppointments = {};
+  Map<String, Map<String, dynamic>> _latestPostnatalAppointments = {};
+
   // Age group statistics
   Map<String, int> _ageGroupCounts = {
     '12-19': 0,
@@ -109,6 +116,21 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       final appointmentsSnapshot =
           await _firestore.collection('appointments').get();
 
+      // Cache basic datasets for later PDF exports
+      final List<Map<String, dynamic>> prenatalPatients = [];
+      final List<Map<String, dynamic>> postnatalPatients = [];
+      final List<Map<String, dynamic>> allAppointments = [];
+
+      for (var doc in prenatalSnapshot.docs) {
+        final data = doc.data();
+        prenatalPatients.add({'id': doc.id, ...data});
+      }
+
+      for (var doc in postnatalSnapshot.docs) {
+        final data = doc.data();
+        postnatalPatients.add({'id': doc.id, ...data});
+      }
+
       final DateTime today = DateTime.now();
 
       // Daily patient counts (by appointment date, excluding cancelled)
@@ -132,6 +154,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
       for (var doc in appointmentsSnapshot.docs) {
         final data = doc.data();
+        data['id'] = doc.id;
+        allAppointments.add(data);
         String status = data['status']?.toString().toLowerCase() ?? '';
         String patientType =
             data['patientType']?.toString().toUpperCase() ?? '';
@@ -320,6 +344,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           _postnatalAppointments = postnatalAppts;
           _prenatalYearlyCount = prenatalYearly;
           _postnatalYearlyCount = postnatalYearly;
+          _prenatalPatients = prenatalPatients;
+          _postnatalPatients = postnatalPatients;
+          _appointmentsAll = allAppointments;
+          _latestPrenatalAppointments = prenatalLatestAppointments;
+          _latestPostnatalAppointments = postnatalLatestAppointments;
           _ageGroupCounts = ageGroups;
           _dailyPatientCounts = dailyCounts;
           _todaysAppointments = todaysAppointments;
@@ -430,10 +459,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                       'APPOINTMENT\nSCHEDULING');
                                 },
                                 onPdf: () {
-                                  _exportSimpleStatPdf(
-                                    'Pending Requests',
-                                    _pendingAppointments.toString(),
-                                  );
+                                  _exportPendingRequestsPdf();
                                 },
                               ),
                             ),
@@ -449,10 +475,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                       'APPOINTMENT\nSCHEDULING');
                                 },
                                 onPdf: () {
-                                  _exportSimpleStatPdf(
-                                    "Today's Appointments",
-                                    _todaysAppointments.toString(),
-                                  );
+                                  _exportTodaysAppointmentsPdf();
                                 },
                               ),
                             ),
@@ -464,10 +487,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                 Icons.warning_amber_rounded,
                                 Colors.red,
                                 onPdf: () {
-                                  _exportSimpleStatPdf(
-                                    'High Risk Patients',
-                                    _highRiskPatients.toString(),
-                                  );
+                                  _exportHighRiskPatientsPdf();
                                 },
                               ),
                             ),
@@ -479,11 +499,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                 Icons.people_rounded,
                                 const Color(0xFF5DCED9),
                                 onPdf: () {
-                                  _exportSimpleStatPdf(
-                                    'Total Active Patients',
-                                    (_prenatalCount + _postnatalCount)
-                                        .toString(),
-                                  );
+                                  _exportTotalActivePatientsPdf();
                                 },
                               ),
                             ),
@@ -557,6 +573,40 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               color: Colors.black87,
             ),
           ),
+          const SizedBox(height: 8),
+          Text(
+            'This section helps you track who did what and when inside the system.',
+            style: TextStyle(
+              fontSize: 12,
+              fontFamily: 'Regular',
+              color: Colors.grey.shade700,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '- Date & Time: Shows the exact moment when an action happened, so you can follow the sequence of events and see when changes were made.',
+            style: TextStyle(
+              fontSize: 11,
+              fontFamily: 'Regular',
+              color: Colors.grey.shade700,
+            ),
+          ),
+          Text(
+            '- User: Identifies who performed the action (admin, nurse, or patient).',
+            style: TextStyle(
+              fontSize: 11,
+              fontFamily: 'Regular',
+              color: Colors.grey.shade700,
+            ),
+          ),
+          Text(
+            '- Action Performed: Explains what was done, such as login, update, create, approve, or delete.',
+            style: TextStyle(
+              fontSize: 11,
+              fontFamily: 'Regular',
+              color: Colors.grey.shade700,
+            ),
+          ),
           const SizedBox(height: 16),
           Container(
             decoration: BoxDecoration(
@@ -595,7 +645,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             Expanded(
                               flex: 2,
                               child: Text(
-                                'TimeStamp',
+                                'Date',
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontFamily: 'Bold',
@@ -604,9 +654,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               ),
                             ),
                             Expanded(
-                              flex: 1,
+                              flex: 2,
                               child: Text(
-                                'Role',
+                                'Time',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontFamily: 'Bold',
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              flex: 2,
+                              child: Text(
+                                'User',
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontFamily: 'Bold',
@@ -617,7 +678,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             Expanded(
                               flex: 5,
                               child: Text(
-                                'Actions',
+                                'Action Performed',
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontFamily: 'Bold',
@@ -643,16 +704,35 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               if (rawTs is Timestamp) {
                                 ts = rawTs.toDate();
                               }
-                              String tsText = 'N/A';
+                              String dateText = 'N/A';
+                              String timeText = 'N/A';
                               if (ts != null) {
-                                tsText =
-                                    '${ts.year.toString().padLeft(4, '0')}-${ts.month.toString().padLeft(2, '0')}-${ts.day.toString().padLeft(2, '0')} ${ts.hour.toString().padLeft(2, '0')}:${ts.minute.toString().padLeft(2, '0')}';
+                                dateText =
+                                    '${ts.year.toString().padLeft(4, '0')}-${ts.month.toString().padLeft(2, '0')}-${ts.day.toString().padLeft(2, '0')}';
+                                timeText =
+                                    '${ts.hour.toString().padLeft(2, '0')}:${ts.minute.toString().padLeft(2, '0')}';
                               }
 
-                              final String role =
+                              final String roleRaw =
                                   (log['role'] ?? log['userRole'] ?? '')
-                                      .toString()
-                                      .toUpperCase();
+                                      .toString();
+                              final String userName = (log['userName'] ??
+                                      log['user'] ??
+                                      log['name'] ??
+                                      '')
+                                  .toString();
+
+                              String userLabel;
+                              if (userName.isNotEmpty && roleRaw.isNotEmpty) {
+                                userLabel =
+                                    '$userName (${roleRaw.toUpperCase()})';
+                              } else if (userName.isNotEmpty) {
+                                userLabel = userName;
+                              } else if (roleRaw.isNotEmpty) {
+                                userLabel = roleRaw.toUpperCase();
+                              } else {
+                                userLabel = '-';
+                              }
                               final String action = (log['action'] ??
                                       log['description'] ??
                                       log['details'] ??
@@ -677,7 +757,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                     Expanded(
                                       flex: 2,
                                       child: Text(
-                                        tsText,
+                                        dateText,
                                         style: TextStyle(
                                           fontSize: 11,
                                           fontFamily: 'Regular',
@@ -686,9 +766,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                       ),
                                     ),
                                     Expanded(
-                                      flex: 1,
+                                      flex: 2,
                                       child: Text(
-                                        role.isNotEmpty ? role : '-',
+                                        timeText,
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontFamily: 'Regular',
+                                          color: Colors.grey.shade800,
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 2,
+                                      child: Text(
+                                        userLabel,
                                         style: TextStyle(
                                           fontSize: 11,
                                           fontFamily: 'Bold',
@@ -741,7 +832,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         ),
         child: const Center(
           child: Text(
-            'No daily patient data yet',
+            'No Cater Daily data yet',
             style: TextStyle(fontSize: 14, color: Colors.grey),
           ),
         ),
@@ -779,13 +870,24 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'DAILY PATIENT',
-            style: TextStyle(
-              fontSize: 16,
-              fontFamily: 'Bold',
-              color: Colors.black87,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'CATER DAILY',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontFamily: 'Bold',
+                  color: Colors.black87,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.picture_as_pdf, size: 20),
+                color: Colors.redAccent,
+                tooltip: 'View & Print PDF',
+                onPressed: _exportCaterDailyPdf,
+              ),
+            ],
           ),
           const SizedBox(height: 20),
           SizedBox(
@@ -895,16 +997,723 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 pw.SizedBox(height: 16),
                 pw.Text(
                   'Value: $value',
-                  style: const pw.TextStyle(fontSize: 16),
+                  style: pw.TextStyle(fontSize: 16),
                 ),
                 pw.SizedBox(height: 12),
                 pw.Text(
                   'Generated: ${DateTime.now()}',
-                  style: const pw.TextStyle(fontSize: 10),
+                  style: pw.TextStyle(fontSize: 10),
                 ),
               ],
             ),
           );
+        },
+      ),
+    );
+
+    await Printing.layoutPdf(
+      onLayout: (format) async => doc.save(),
+    );
+  }
+
+  pw.Widget _buildPdfTable(List<String> headers, List<List<String>> rows) {
+    return pw.Table(
+      border: pw.TableBorder.all(width: 0.5),
+      defaultVerticalAlignment: pw.TableCellVerticalAlignment.middle,
+      children: [
+        pw.TableRow(
+          children: headers
+              .map(
+                (h) => pw.Padding(
+                  padding: const pw.EdgeInsets.all(4),
+                  child: pw.Text(
+                    h,
+                    style: pw.TextStyle(
+                      fontSize: 10,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
+                ),
+              )
+              .toList(),
+        ),
+        ...rows.map(
+          (row) => pw.TableRow(
+            children: row
+                .map(
+                  (cell) => pw.Padding(
+                    padding: const pw.EdgeInsets.all(4),
+                    child: pw.Text(
+                      cell,
+                      style: pw.TextStyle(fontSize: 9),
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _exportPendingRequestsPdf() async {
+    final doc = pw.Document();
+
+    final pending = _appointmentsAll
+        .where((a) => (a['status'] ?? '').toString().toLowerCase() == 'pending')
+        .toList();
+
+    final prenatal = pending
+        .where((a) =>
+            (a['patientType'] ?? '').toString().toUpperCase() == 'PRENATAL')
+        .toList();
+    final postnatal = pending
+        .where((a) =>
+            (a['patientType'] ?? '').toString().toUpperCase() == 'POSTNATAL')
+        .toList();
+
+    int compareCreatedAt(Map<String, dynamic> a, Map<String, dynamic> b) {
+      final ca = a['createdAt'];
+      final cb = b['createdAt'];
+      if (ca is Timestamp && cb is Timestamp) {
+        return cb.compareTo(ca);
+      }
+      return 0;
+    }
+
+    prenatal.sort(compareCreatedAt);
+    postnatal.sort(compareCreatedAt);
+
+    doc.addPage(
+      pw.MultiPage(
+        build: (context) {
+          return [
+            pw.Text(
+              'Pending Requests',
+              style: pw.TextStyle(
+                fontSize: 20,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+            pw.SizedBox(height: 12),
+            pw.Text(
+              'Prenatal Pending Requests',
+              style: pw.TextStyle(
+                fontSize: 14,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+            pw.SizedBox(height: 6),
+            if (prenatal.isEmpty)
+              pw.Text('No prenatal pending requests.')
+            else
+              _buildPdfTable(
+                ['Name', 'Appointment Type', 'Appointment Request Date'],
+                prenatal.map((a) {
+                  String name = a['fullName']?.toString() ?? 'N/A';
+                  String type = a['appointmentType']?.toString() ?? 'N/A';
+                  String dateText = 'N/A';
+                  final ts = a['createdAt'];
+                  if (ts is Timestamp) {
+                    final d = ts.toDate();
+                    dateText =
+                        '${d.month.toString().padLeft(2, '0')}/${d.day.toString().padLeft(2, '0')}/${d.year}';
+                  }
+                  return [name, type, dateText];
+                }).toList(),
+              ),
+            pw.SizedBox(height: 16),
+            pw.Text(
+              'Postnatal Pending Requests',
+              style: pw.TextStyle(
+                fontSize: 14,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+            pw.SizedBox(height: 6),
+            if (postnatal.isEmpty)
+              pw.Text('No postnatal pending requests.')
+            else
+              _buildPdfTable(
+                ['Name', 'Appointment Type', 'Appointment Request Date'],
+                postnatal.map((a) {
+                  String name = a['fullName']?.toString() ?? 'N/A';
+                  String type = a['appointmentType']?.toString() ?? 'N/A';
+                  String dateText = 'N/A';
+                  final ts = a['createdAt'];
+                  if (ts is Timestamp) {
+                    final d = ts.toDate();
+                    dateText =
+                        '${d.month.toString().padLeft(2, '0')}/${d.day.toString().padLeft(2, '0')}/${d.year}';
+                  }
+                  return [name, type, dateText];
+                }).toList(),
+              ),
+          ];
+        },
+      ),
+    );
+
+    await Printing.layoutPdf(
+      onLayout: (format) async => doc.save(),
+    );
+  }
+
+  Future<void> _exportTodaysAppointmentsPdf() async {
+    final doc = pw.Document();
+    final DateTime today = DateTime.now();
+
+    final todays = _appointmentsAll.where((a) {
+      if (a['appointmentDate'] is! Timestamp) return false;
+      final ts = a['appointmentDate'] as Timestamp;
+      final d = ts.toDate();
+      final status = (a['status'] ?? '').toString().toLowerCase();
+      if (status == 'cancelled') return false;
+      return d.year == today.year &&
+          d.month == today.month &&
+          d.day == today.day;
+    }).toList()
+      ..sort((a, b) {
+        final na = a['fullName']?.toString() ?? '';
+        final nb = b['fullName']?.toString() ?? '';
+        return na.compareTo(nb);
+      });
+
+    doc.addPage(
+      pw.MultiPage(
+        build: (context) {
+          return [
+            pw.Text(
+              "Today's Appointments",
+              style: pw.TextStyle(
+                fontSize: 20,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+            pw.SizedBox(height: 12),
+            if (todays.isEmpty)
+              pw.Text('No appointments scheduled for today.')
+            else
+              _buildPdfTable(
+                [
+                  'Name',
+                  'Maternity Status',
+                  'Appointment Type',
+                  'Appointment Date'
+                ],
+                todays.map((a) {
+                  final name = a['fullName']?.toString() ?? 'N/A';
+                  final pt = (a['patientType'] ?? '').toString().toUpperCase();
+                  final maternity = pt == 'PRENATAL'
+                      ? 'Prenatal'
+                      : pt == 'POSTNATAL'
+                          ? 'Postnatal'
+                          : 'N/A';
+                  final type = a['appointmentType']?.toString() ?? 'N/A';
+                  String dateText = 'N/A';
+                  final ts = a['appointmentDate'];
+                  if (ts is Timestamp) {
+                    final d = ts.toDate();
+                    dateText =
+                        '${d.month.toString().padLeft(2, '0')}/${d.day.toString().padLeft(2, '0')}/${d.year}';
+                  }
+                  return [name, maternity, type, dateText];
+                }).toList(),
+              ),
+          ];
+        },
+      ),
+    );
+
+    await Printing.layoutPdf(
+      onLayout: (format) async => doc.save(),
+    );
+  }
+
+  Future<void> _exportHighRiskPatientsPdf() async {
+    final doc = pw.Document();
+
+    final List<List<String>> prenatalRows = [];
+    for (final patient in _prenatalPatients) {
+      final String id = patient['id']?.toString() ?? '';
+      final appt = _latestPrenatalAppointments[id];
+      if (!_isPrenatalHighRisk(patient, appt)) continue;
+
+      final name = patient['name']?.toString() ?? 'N/A';
+      String dateText = 'N/A';
+      String bpText = 'N/A';
+      String fhrText = 'N/A';
+      String fundalText = 'N/A';
+      String riskText = patient['riskStatus']?.toString().isNotEmpty == true
+          ? patient['riskStatus'].toString()
+          : 'HIGH RISK';
+
+      if (appt != null) {
+        DateTime? dateTime;
+        if (appt['appointmentDate'] is Timestamp) {
+          dateTime = (appt['appointmentDate'] as Timestamp).toDate();
+        } else if (appt['createdAt'] is Timestamp) {
+          dateTime = (appt['createdAt'] as Timestamp).toDate();
+        }
+        if (dateTime != null) {
+          dateText =
+              '${dateTime.month.toString().padLeft(2, '0')}/${dateTime.day.toString().padLeft(2, '0')}/${dateTime.year}';
+        }
+
+        final bpValue = appt['checkupBloodPressure'];
+        if (bpValue != null && bpValue.toString().trim().isNotEmpty) {
+          bpText = bpValue.toString();
+        } else {
+          final sys = appt['checkupBP_Systolic'];
+          final dia = appt['checkupBP_Diastolic'];
+          if (sys != null && dia != null) {
+            bpText = '${sys.toString()}/${dia.toString()}';
+          }
+        }
+        final fhr = appt['checkupFetalHeartRateBpm'];
+        if (fhr != null) {
+          fhrText = fhr.toString();
+        }
+        final fundal = appt['checkupFundalHeightCm'];
+        if (fundal != null) {
+          fundalText = fundal.toString();
+        }
+        if (appt['visitRiskStatus'] != null &&
+            appt['visitRiskStatus'].toString().trim().isNotEmpty) {
+          riskText = appt['visitRiskStatus'].toString();
+        }
+      }
+
+      prenatalRows.add([name, dateText, bpText, fhrText, fundalText, riskText]);
+    }
+
+    final List<List<String>> postnatalRows = [];
+    for (final patient in _postnatalPatients) {
+      final String id = patient['id']?.toString() ?? '';
+      final appt = _latestPostnatalAppointments[id];
+      if (!_isPostnatalHighRisk(patient, appt)) continue;
+
+      final name = patient['name']?.toString() ?? 'N/A';
+      String dateText = 'N/A';
+      String bpText = 'N/A';
+      String riskText = patient['riskStatus']?.toString().isNotEmpty == true
+          ? patient['riskStatus'].toString()
+          : 'HIGH RISK';
+
+      if (appt != null) {
+        DateTime? dateTime;
+        if (appt['appointmentDate'] is Timestamp) {
+          dateTime = (appt['appointmentDate'] as Timestamp).toDate();
+        } else if (appt['createdAt'] is Timestamp) {
+          dateTime = (appt['createdAt'] as Timestamp).toDate();
+        }
+        if (dateTime != null) {
+          dateText =
+              '${dateTime.month.toString().padLeft(2, '0')}/${dateTime.day.toString().padLeft(2, '0')}/${dateTime.year}';
+        }
+
+        final bpValue =
+            appt['checkupBloodPressure'] ?? appt['currentBloodPressure'];
+        if (bpValue != null && bpValue.toString().trim().isNotEmpty) {
+          bpText = bpValue.toString();
+        }
+        if (appt['visitRiskStatus'] != null &&
+            appt['visitRiskStatus'].toString().trim().isNotEmpty) {
+          riskText = appt['visitRiskStatus'].toString();
+        }
+      }
+
+      postnatalRows.add([name, dateText, bpText, riskText]);
+    }
+
+    doc.addPage(
+      pw.MultiPage(
+        build: (context) {
+          return [
+            pw.Text(
+              'High Risk Patients',
+              style: pw.TextStyle(
+                fontSize: 20,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+            pw.SizedBox(height: 12),
+            pw.Text(
+              'Prenatal',
+              style: pw.TextStyle(
+                fontSize: 14,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+            pw.SizedBox(height: 6),
+            if (prenatalRows.isEmpty)
+              pw.Text('No prenatal high risk patients.')
+            else
+              _buildPdfTable(
+                [
+                  'Name',
+                  'Date',
+                  'Blood Pressure (mmHg)',
+                  'Fetal Heart Rate (bpm)',
+                  'Fundal Height (cm)',
+                  'Risk Classification'
+                ],
+                prenatalRows,
+              ),
+            pw.SizedBox(height: 16),
+            pw.Text(
+              'Postnatal',
+              style: pw.TextStyle(
+                fontSize: 14,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+            pw.SizedBox(height: 6),
+            if (postnatalRows.isEmpty)
+              pw.Text('No postnatal high risk patients.')
+            else
+              _buildPdfTable(
+                [
+                  'Name',
+                  'Date',
+                  'Blood Pressure (mmHg)',
+                  'Risk Classification'
+                ],
+                postnatalRows,
+              ),
+          ];
+        },
+      ),
+    );
+
+    await Printing.layoutPdf(
+      onLayout: (format) async => doc.save(),
+    );
+  }
+
+  Future<void> _exportTotalActivePatientsPdf() async {
+    final doc = pw.Document();
+
+    final prenatalActive = _prenatalPatients;
+    final postnatalActive = _postnatalPatients;
+
+    List<List<String>> buildRows(List<Map<String, dynamic>> patients) {
+      return patients.map((p) {
+        final name = p['name']?.toString() ?? 'N/A';
+        final email = p['email']?.toString() ?? 'N/A';
+        final contact = p['contactNumber']?.toString() ?? 'N/A';
+        String dobText = 'N/A';
+        final dobTs = p['dob'];
+        if (dobTs is Timestamp) {
+          final d = dobTs.toDate();
+          dobText =
+              '${d.month.toString().padLeft(2, '0')}/${d.day.toString().padLeft(2, '0')}/${d.year}';
+        }
+        return [name, email, contact, dobText];
+      }).toList();
+    }
+
+    doc.addPage(
+      pw.MultiPage(
+        build: (context) {
+          return [
+            pw.Text(
+              'Total Active Patients',
+              style: pw.TextStyle(
+                fontSize: 20,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+            pw.SizedBox(height: 12),
+            pw.Text(
+              'Prenatal',
+              style: pw.TextStyle(
+                fontSize: 14,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+            pw.SizedBox(height: 6),
+            if (prenatalActive.isEmpty)
+              pw.Text('No prenatal patients found.')
+            else
+              _buildPdfTable(
+                ['Name', 'Email', 'Contact No.', 'Date of Birth'],
+                buildRows(prenatalActive),
+              ),
+            pw.SizedBox(height: 16),
+            pw.Text(
+              'Postnatal',
+              style: pw.TextStyle(
+                fontSize: 14,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+            pw.SizedBox(height: 6),
+            if (postnatalActive.isEmpty)
+              pw.Text('No postnatal patients found.')
+            else
+              _buildPdfTable(
+                ['Name', 'Email', 'Contact No.', 'Date of Birth'],
+                buildRows(postnatalActive),
+              ),
+          ];
+        },
+      ),
+    );
+
+    await Printing.layoutPdf(
+      onLayout: (format) async => doc.save(),
+    );
+  }
+
+  Future<void> _exportPrenatalPostnatalPatientsPdf() async {
+    final doc = pw.Document();
+
+    List<List<String>> buildRows(List<Map<String, dynamic>> patients) {
+      return patients.map((p) {
+        final name = p['name']?.toString() ?? 'N/A';
+        final email = p['email']?.toString() ?? 'N/A';
+        final contact = p['contactNumber']?.toString() ?? 'N/A';
+        String dobText = 'N/A';
+        final dobTs = p['dob'];
+        if (dobTs is Timestamp) {
+          final d = dobTs.toDate();
+          dobText =
+              '${d.month.toString().padLeft(2, '0')}/${d.day.toString().padLeft(2, '0')}/${d.year}';
+        }
+        return [name, email, contact, dobText];
+      }).toList();
+    }
+
+    doc.addPage(
+      pw.MultiPage(
+        build: (context) {
+          return [
+            pw.Text(
+              'Prenatal and Postnatal Patients',
+              style: pw.TextStyle(
+                fontSize: 20,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+            pw.SizedBox(height: 12),
+            pw.Text(
+              'Prenatal',
+              style: pw.TextStyle(
+                fontSize: 14,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+            pw.SizedBox(height: 6),
+            if (_prenatalPatients.isEmpty)
+              pw.Text('No prenatal patients found.')
+            else
+              _buildPdfTable(
+                ['Name', 'Email', 'Contact No.', 'Date of Birth'],
+                buildRows(_prenatalPatients),
+              ),
+            pw.SizedBox(height: 16),
+            pw.Text(
+              'Postnatal',
+              style: pw.TextStyle(
+                fontSize: 14,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+            pw.SizedBox(height: 6),
+            if (_postnatalPatients.isEmpty)
+              pw.Text('No postnatal patients found.')
+            else
+              _buildPdfTable(
+                ['Name', 'Email', 'Contact No.', 'Date of Birth'],
+                buildRows(_postnatalPatients),
+              ),
+          ];
+        },
+      ),
+    );
+
+    await Printing.layoutPdf(
+      onLayout: (format) async => doc.save(),
+    );
+  }
+
+  Future<void> _exportAgeGroupDistributionPdf() async {
+    final doc = pw.Document();
+
+    final List<Map<String, dynamic>> allPatients = [
+      ..._prenatalPatients.map((p) => {...p, 'patientType': 'Prenatal'}),
+      ..._postnatalPatients.map((p) => {...p, 'patientType': 'Postnatal'}),
+    ];
+
+    allPatients.removeWhere((p) => p['age'] == null);
+
+    allPatients.sort((a, b) {
+      final int aa = (a['age'] is int)
+          ? a['age'] as int
+          : int.tryParse(a['age']?.toString() ?? '0') ?? 0;
+      final int bb = (b['age'] is int)
+          ? b['age'] as int
+          : int.tryParse(b['age']?.toString() ?? '0') ?? 0;
+      return aa.compareTo(bb);
+    });
+
+    final rows = allPatients.map((p) {
+      final ageVal = (p['age'] is int)
+          ? p['age'] as int
+          : int.tryParse(p['age']?.toString() ?? '0') ?? 0;
+      final name = p['name']?.toString() ?? 'N/A';
+      final email = p['email']?.toString() ?? 'N/A';
+      final contact = p['contactNumber']?.toString() ?? 'N/A';
+      final status = p['patientType']?.toString() ?? 'N/A';
+      return [
+        ageVal.toString(),
+        name,
+        email,
+        contact,
+        status,
+      ];
+    }).toList();
+
+    doc.addPage(
+      pw.MultiPage(
+        build: (context) {
+          return [
+            pw.Text(
+              'Age Group Distribution (Ascending)',
+              style: pw.TextStyle(
+                fontSize: 20,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+            pw.SizedBox(height: 12),
+            if (rows.isEmpty)
+              pw.Text('No patient age data available.')
+            else
+              _buildPdfTable(
+                ['Age', 'Name', 'Email', 'Contact', 'Maternal Status'],
+                rows,
+              ),
+          ];
+        },
+      ),
+    );
+
+    await Printing.layoutPdf(
+      onLayout: (format) async => doc.save(),
+    );
+  }
+
+  Future<void> _exportCaterDailyPdf() async {
+    final doc = pw.Document();
+
+    final entries = _dailyPatientCounts.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+
+    final rows = <List<String>>[];
+    for (int i = 0; i < entries.length; i++) {
+      final e = entries[i];
+      final d = e.key;
+      final count = e.value;
+      final dateText =
+          '${d.month.toString().padLeft(2, '0')}/${d.day.toString().padLeft(2, '0')}/${d.year}';
+      rows.add([(i + 1).toString(), dateText, count.toString()]);
+    }
+
+    doc.addPage(
+      pw.MultiPage(
+        build: (context) {
+          return [
+            pw.Text(
+              'Cater Daily',
+              style: pw.TextStyle(
+                fontSize: 20,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+            pw.SizedBox(height: 12),
+            if (rows.isEmpty)
+              pw.Text('No daily data available.')
+            else
+              _buildPdfTable(
+                ['No.', 'Date', 'Count'],
+                rows,
+              ),
+          ];
+        },
+      ),
+    );
+
+    await Printing.layoutPdf(
+      onLayout: (format) async => doc.save(),
+    );
+  }
+
+  Future<void> _exportPatientHistoryTrendsPdf() async {
+    final doc = pw.Document();
+    final int currentYear = DateTime.now().year;
+
+    final List<Map<String, dynamic>> rowsSource = [];
+
+    for (final p in _prenatalPatients) {
+      final ts = p['createdAt'];
+      if (ts is Timestamp) {
+        final d = ts.toDate();
+        if (d.year == currentYear) {
+          rowsSource.add({
+            'name': p['name']?.toString() ?? 'N/A',
+            'status': 'Prenatal',
+          });
+        }
+      }
+    }
+
+    for (final p in _postnatalPatients) {
+      final ts = p['createdAt'];
+      if (ts is Timestamp) {
+        final d = ts.toDate();
+        if (d.year == currentYear) {
+          rowsSource.add({
+            'name': p['name']?.toString() ?? 'N/A',
+            'status': 'Postnatal',
+          });
+        }
+      }
+    }
+
+    rowsSource.sort((a, b) =>
+        (a['name'] ?? '').toString().compareTo((b['name'] ?? '').toString()));
+
+    final rows = <List<String>>[];
+    for (int i = 0; i < rowsSource.length; i++) {
+      final r = rowsSource[i];
+      rows.add([
+        (i + 1).toString(),
+        r['name']?.toString() ?? 'N/A',
+        r['status']?.toString() ?? 'N/A',
+      ]);
+    }
+
+    doc.addPage(
+      pw.MultiPage(
+        build: (context) {
+          return [
+            pw.Text(
+              'Patient History Trends (${currentYear.toString()})',
+              style: pw.TextStyle(
+                fontSize: 20,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+            pw.SizedBox(height: 12),
+            if (rows.isEmpty)
+              pw.Text('No patient history data for the current year.')
+            else
+              _buildPdfTable(
+                ['No.', 'Name', 'Maternity Status'],
+                rows,
+              ),
+          ];
         },
       ),
     );
@@ -1765,6 +2574,26 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       ),
       child: Column(
         children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'PRENATAL AND POSTNATAL',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontFamily: 'Bold',
+                  color: Colors.black87,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.picture_as_pdf, size: 20),
+                color: Colors.redAccent,
+                tooltip: 'View & Print PDF',
+                onPressed: _exportPrenatalPostnatalPatientsPdf,
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
           SizedBox(
             height: total > 0 ? 200 : 0,
             child: total > 0
@@ -1803,22 +2632,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     ),
                   )
                 : null,
-          ),
-          const SizedBox(height: 15),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade200,
-              borderRadius: BorderRadius.circular(5),
-            ),
-            child: const Text(
-              'PRENATAL AND POSTNATAL',
-              style: TextStyle(
-                fontSize: 12,
-                fontFamily: 'Bold',
-                color: Colors.black87,
-              ),
-            ),
           ),
         ],
       ),
@@ -1915,13 +2728,24 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       ),
       child: Column(
         children: [
-          const Text(
-            'AGE GROUP DISTRIBUTION',
-            style: TextStyle(
-              fontSize: 16,
-              fontFamily: 'Bold',
-              color: Colors.black87,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'AGE GROUP DISTRIBUTION',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontFamily: 'Bold',
+                  color: Colors.black87,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.picture_as_pdf, size: 20),
+                color: Colors.redAccent,
+                tooltip: 'View & Print PDF',
+                onPressed: _exportAgeGroupDistributionPdf,
+              ),
+            ],
           ),
           const SizedBox(height: 20),
           SizedBox(
@@ -2109,13 +2933,24 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       ),
       child: Column(
         children: [
-          const Text(
-            'PATIENT HISTORY TRENDS',
-            style: TextStyle(
-              fontSize: 18,
-              fontFamily: 'Bold',
-              color: Colors.black87,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'PATIENT HISTORY TRENDS',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontFamily: 'Bold',
+                  color: Colors.black87,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.picture_as_pdf, size: 20),
+                color: Colors.redAccent,
+                tooltip: 'View & Print PDF',
+                onPressed: _exportPatientHistoryTrendsPdf,
+              ),
+            ],
           ),
           const SizedBox(height: 20),
           if (_prenatalYearlyCount.isNotEmpty ||

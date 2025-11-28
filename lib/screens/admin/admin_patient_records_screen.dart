@@ -629,6 +629,8 @@ class _AdminPatientRecordsScreenState extends State<AdminPatientRecordsScreen> {
     DateTime? deliveryDate;
     final TextEditingController infantNameController = TextEditingController();
     String? infantGender;
+    final TextEditingController infantBirthWeightController =
+        TextEditingController();
     final TextEditingController infantAgeController = TextEditingController();
 
     showDialog(
@@ -754,6 +756,20 @@ class _AdminPatientRecordsScreenState extends State<AdminPatientRecordsScreen> {
                     ),
                     const SizedBox(height: 12),
                     const Text(
+                      'Birth Weight (kg)',
+                      style: TextStyle(fontSize: 13, fontFamily: 'Regular'),
+                    ),
+                    const SizedBox(height: 4),
+                    TextField(
+                      controller: infantBirthWeightController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
                       "Infant's Age (months)",
                       style: TextStyle(fontSize: 13, fontFamily: 'Regular'),
                     ),
@@ -787,6 +803,7 @@ class _AdminPatientRecordsScreenState extends State<AdminPatientRecordsScreen> {
                     if (deliveryDate == null ||
                         infantNameController.text.trim().isEmpty ||
                         (infantGender ?? '').isEmpty ||
+                        infantBirthWeightController.text.trim().isEmpty ||
                         infantAgeController.text.trim().isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -804,6 +821,7 @@ class _AdminPatientRecordsScreenState extends State<AdminPatientRecordsScreen> {
                         'deliveryDate': Timestamp.fromDate(deliveryDate!),
                         'infantName': infantNameController.text.trim(),
                         'infantGender': infantGender,
+                        'birthWeight': infantBirthWeightController.text.trim(),
                         'infantAge': infantAgeController.text.trim(),
                         'maternalTransition': true,
                       });

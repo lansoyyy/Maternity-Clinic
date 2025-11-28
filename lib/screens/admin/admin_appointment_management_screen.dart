@@ -36,10 +36,50 @@ class _AdminAppointmentManagementScreenState
   List<Map<String, dynamic>> _transferRequests = [];
   String _selectedTab = 'prenatal'; // prenatal, postnatal, transfer
 
+  final TextEditingController _prenatalSearchController =
+      TextEditingController();
+  final TextEditingController _postnatalSearchController =
+      TextEditingController();
+  final TextEditingController _transferSearchController =
+      TextEditingController();
+
+  String _prenatalSearchQuery = '';
+  String _postnatalSearchQuery = '';
+  String _transferSearchQuery = '';
+
   @override
   void initState() {
     super.initState();
     _fetchData();
+
+    _prenatalSearchController.addListener(() {
+      setState(() {
+        _prenatalSearchQuery =
+            _prenatalSearchController.text.trim().toLowerCase();
+      });
+    });
+
+    _postnatalSearchController.addListener(() {
+      setState(() {
+        _postnatalSearchQuery =
+            _postnatalSearchController.text.trim().toLowerCase();
+      });
+    });
+
+    _transferSearchController.addListener(() {
+      setState(() {
+        _transferSearchQuery =
+            _transferSearchController.text.trim().toLowerCase();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _prenatalSearchController.dispose();
+    _postnatalSearchController.dispose();
+    _transferSearchController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchData() async {
@@ -122,6 +162,10 @@ class _AdminAppointmentManagementScreenState
       List<Map<String, dynamic>> transfers = [];
       for (var doc in transferSnapshot.docs) {
         final data = doc.data() as Map<String, dynamic>;
+        final status = (data['status'] ?? 'Pending').toString();
+        if (status == 'Cancelled' || status == 'Rejected') {
+          continue;
+        }
         data['id'] = doc.id;
         transfers.add(data);
       }
@@ -141,6 +185,40 @@ class _AdminAppointmentManagementScreenState
         });
       }
     }
+  }
+
+  List<Map<String, dynamic>> get _filteredPrenatalAppointments {
+    if (_prenatalSearchQuery.isEmpty) {
+      return _prenatalAppointments;
+    }
+    return _prenatalAppointments.where((a) {
+      final name = (a['name'] ?? '').toString().toLowerCase();
+      return name.contains(_prenatalSearchQuery);
+    }).toList();
+  }
+
+  List<Map<String, dynamic>> get _filteredPostnatalAppointments {
+    if (_postnatalSearchQuery.isEmpty) {
+      return _postnatalAppointments;
+    }
+    return _postnatalAppointments.where((a) {
+      final name = (a['name'] ?? '').toString().toLowerCase();
+      return name.contains(_postnatalSearchQuery);
+    }).toList();
+  }
+
+  List<Map<String, dynamic>> get _filteredTransferRequests {
+    if (_transferSearchQuery.isEmpty) {
+      return _transferRequests;
+    }
+    return _transferRequests.where((r) {
+      final userName = (r['userName'] ?? '').toString().toLowerCase();
+      final fullName = (r['fullName'] ?? '').toString().toLowerCase();
+      final transferTo = (r['transferTo'] ?? '').toString().toLowerCase();
+      return userName.contains(_transferSearchQuery) ||
+          fullName.contains(_transferSearchQuery) ||
+          transferTo.contains(_transferSearchQuery);
+    }).toList();
   }
 
   Future<void> _acceptAppointment(Map<String, dynamic> appointment) async {
@@ -463,7 +541,7 @@ class _AdminAppointmentManagementScreenState
         const SizedBox(width: 10),
         _buildTabButton('Postnatal Appointments', 'postnatal'),
         const SizedBox(width: 10),
-        _buildTabButton('Transfer of Request', 'transfer'),
+        _buildTabButton('Transfer of Record Request', 'transfer'),
       ],
     );
   }
@@ -501,20 +579,23 @@ class _AdminAppointmentManagementScreenState
   Widget _buildPrenatalSection() {
     return _buildAppointmentSection(
       title: 'Prenatal Appointments',
-      appointments: _prenatalAppointments,
+      appointments: _filteredPrenatalAppointments,
+      searchController: _prenatalSearchController,
     );
   }
 
   Widget _buildPostnatalSection() {
     return _buildAppointmentSection(
       title: 'Postnatal Appointments',
-      appointments: _postnatalAppointments,
+      appointments: _filteredPostnatalAppointments,
+      searchController: _postnatalSearchController,
     );
   }
 
   Widget _buildAppointmentSection({
     required String title,
     required List<Map<String, dynamic>> appointments,
+    TextEditingController? searchController,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -543,6 +624,48 @@ class _AdminAppointmentManagementScreenState
               ),
             ),
           ),
+          if (searchController != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  SizedBox(
+                    width: 260,
+                    child: TextField(
+                      controller: searchController,
+                      decoration: InputDecoration(
+                        hintText: 'Search Name',
+                        hintStyle: TextStyle(
+                          fontSize: 13,
+                          fontFamily: 'Regular',
+                          color: Colors.grey.shade500,
+                        ),
+                        prefixIcon: const Icon(
+                          Icons.search,
+                          size: 18,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 10),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: primary, width: 1.5),
+                        ),
+                        isDense: true,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           if (appointments.isEmpty)
             Padding(
               padding: const EdgeInsets.all(24),
@@ -722,7 +845,7 @@ class _AdminAppointmentManagementScreenState
               ),
             ),
             child: const Text(
-              'Transfer of Request Record',
+              'Transfer of Record Request',
               style: TextStyle(
                 fontSize: 16,
                 fontFamily: 'Bold',
@@ -730,7 +853,48 @@ class _AdminAppointmentManagementScreenState
               ),
             ),
           ),
-          if (_transferRequests.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                SizedBox(
+                  width: 260,
+                  child: TextField(
+                    controller: _transferSearchController,
+                    decoration: InputDecoration(
+                      hintText: 'Search Name',
+                      hintStyle: TextStyle(
+                        fontSize: 13,
+                        fontFamily: 'Regular',
+                        color: Colors.grey.shade500,
+                      ),
+                      prefixIcon: const Icon(
+                        Icons.search,
+                        size: 18,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: primary, width: 1.5),
+                      ),
+                      isDense: true,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (_filteredTransferRequests.isEmpty)
             Padding(
               padding: const EdgeInsets.all(24),
               child: Center(
@@ -773,7 +937,7 @@ class _AdminAppointmentManagementScreenState
               ),
             ),
             const Divider(height: 1),
-            ..._transferRequests.asMap().entries.map((entry) {
+            ..._filteredTransferRequests.asMap().entries.map((entry) {
               final index = entry.key;
               final req = entry.value;
               return _buildTransferRow(index + 1, req);
@@ -875,6 +1039,12 @@ class _AdminAppointmentManagementScreenState
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                IconButton(
+                  icon: const Icon(Icons.description, size: 20),
+                  onPressed: () => _showTransferRequestDetails(request),
+                  tooltip: 'View Request Form',
+                  color: Colors.blue,
+                ),
                 PopupMenuButton<String>(
                   onSelected: (value) {
                     if (value == 'Processing' ||
@@ -919,6 +1089,165 @@ class _AdminAppointmentManagementScreenState
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showTransferRequestDetails(Map<String, dynamic> request) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        child: Container(
+          width: 800,
+          padding: const EdgeInsets.all(30),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    const Text(
+                      'Transfer Request Details',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontFamily: 'Bold',
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+                const Divider(height: 30),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildDetailItem(
+                              'Patient Name', request['userName'] as String?),
+                          _buildDetailItem(
+                              'Full Name', request['fullName'] as String?),
+                          _buildDetailItem('Date of Birth',
+                              request['dateOfBirth'] as String?),
+                          _buildDetailItem(
+                              'Address', request['address'] as String?),
+                          _buildDetailItem('Patient Type',
+                              request['patientType'] as String?),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 30),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildDetailItem(
+                              'Transfer To', request['transferTo'] as String?),
+                          _buildDetailItem('New Doctor/Clinic',
+                              request['newDoctor'] as String?),
+                          _buildDetailItem('Clinic Address',
+                              request['clinicAddress'] as String?),
+                          _buildDetailItem('Contact Info',
+                              request['contactInfo'] as String?),
+                          _buildDetailItem(
+                              'Reason', request['reason'] as String?),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Records Requested:',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontFamily: 'Bold',
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    if (request['recordsRequested']?['laboratoryResults'] ==
+                        true)
+                      _buildRecordChip('Laboratory Results'),
+                    if (request['recordsRequested']?['diagnosticReports'] ==
+                        true)
+                      _buildRecordChip('Diagnostic Reports'),
+                    if (request['recordsRequested']?['vaccinationRecords'] ==
+                        true)
+                      _buildRecordChip('Vaccination Records'),
+                    if (request['recordsRequested']?['clinicalNotes'] == true)
+                      _buildRecordChip('Clinical Notes'),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                _buildDetailItem(
+                    'Transfer Method', request['transferMethod'] as String?),
+                _buildDetailItem(
+                    'Printed Name', request['printedName'] as String?),
+                _buildDetailItem(
+                    'Signature Date', request['signatureDate'] as String?),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailItem(String label, String? value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 15),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontFamily: 'Bold',
+              color: Colors.grey.shade600,
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            value ?? 'N/A',
+            style: const TextStyle(
+              fontSize: 14,
+              fontFamily: 'Regular',
+              color: Colors.black87,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecordChip(String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade100,
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 12,
+          fontFamily: 'Regular',
+          color: Colors.blue.shade700,
+        ),
       ),
     );
   }

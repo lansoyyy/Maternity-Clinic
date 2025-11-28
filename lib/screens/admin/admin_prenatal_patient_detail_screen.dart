@@ -105,6 +105,367 @@ class _AdminPrenatalPatientDetailScreenState
     }
   }
 
+  Future<void> _openEditPersonalDetailsDialog() async {
+    final String? userId = widget.patientData['patientId'];
+    if (userId == null || userId.isEmpty) return;
+
+    final data = _userData ?? {};
+
+    final TextEditingController nameController = TextEditingController(
+      text: (data['name'] ?? widget.patientData['name'] ?? '').toString(),
+    );
+    final TextEditingController emailController = TextEditingController(
+      text: (data['email'] ?? widget.patientData['email'] ?? '').toString(),
+    );
+    final TextEditingController contactController = TextEditingController(
+      text: (data['contactNumber'] ?? '').toString(),
+    );
+
+    final TextEditingController houseNoController = TextEditingController(
+      text: (data['addressHouseNo'] ?? '').toString(),
+    );
+    final TextEditingController streetController = TextEditingController(
+      text: (data['addressStreet'] ?? '').toString(),
+    );
+    final TextEditingController barangayController = TextEditingController(
+      text: (data['addressBarangay'] ?? '').toString(),
+    );
+    final TextEditingController cityController = TextEditingController(
+      text: (data['addressCity'] ?? '').toString(),
+    );
+
+    final TextEditingController emergencyNameController = TextEditingController(
+      text: (data['emergencyContactName'] ?? '').toString(),
+    );
+    final TextEditingController emergencyContactController =
+        TextEditingController(
+      text: (data['emergencyContactNumber'] ?? '').toString(),
+    );
+
+    DateTime? editDob = _dob;
+    String? civilStatus = (data['civilStatus'] ?? '').toString().isNotEmpty
+        ? data['civilStatus'].toString()
+        : null;
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              title: const Text(
+                'Edit Personal Details',
+                style: TextStyle(fontFamily: 'Bold'),
+              ),
+              content: SizedBox(
+                width: 520,
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Basic Information',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontFamily: 'Bold',
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: nameController,
+                        decoration: const InputDecoration(
+                          labelText: 'Full Name',
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: emailController,
+                        decoration: const InputDecoration(
+                          labelText: 'Email Address',
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: contactController,
+                        decoration: const InputDecoration(
+                          labelText: 'Contact Number',
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Date of Birth',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontFamily: 'Regular',
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      GestureDetector(
+                        onTap: () async {
+                          final now = DateTime.now();
+                          final initial = editDob ??
+                              DateTime(now.year - 25, now.month, now.day);
+                          final picked = await showDatePicker(
+                            context: context,
+                            initialDate: initial,
+                            firstDate: DateTime(now.year - 100),
+                            lastDate: now,
+                          );
+                          if (picked != null) {
+                            setStateDialog(() {
+                              editDob = picked;
+                            });
+                          }
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.grey.shade400),
+                          ),
+                          child: Text(
+                            editDob == null
+                                ? 'Select date of birth'
+                                : '${editDob!.month.toString().padLeft(2, '0')}/${editDob!.day.toString().padLeft(2, '0')}/${editDob!.year}',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontFamily: 'Regular',
+                              color: editDob == null
+                                  ? Colors.grey.shade600
+                                  : Colors.black87,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Complete Address',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontFamily: 'Bold',
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: houseNoController,
+                        decoration: const InputDecoration(
+                          labelText: 'House No.',
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: streetController,
+                        decoration: const InputDecoration(
+                          labelText: 'Street',
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: barangayController,
+                        decoration: const InputDecoration(
+                          labelText: 'Barangay',
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: cityController,
+                        decoration: const InputDecoration(
+                          labelText: 'City',
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Civil Status',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontFamily: 'Regular',
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      DropdownButtonFormField<String>(
+                        value: civilStatus,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                        ),
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'Single',
+                            child: Text('Single'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Married',
+                            child: Text('Married'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Widowed',
+                            child: Text('Widowed'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Separated',
+                            child: Text('Separated'),
+                          ),
+                        ],
+                        onChanged: (value) {
+                          setStateDialog(() {
+                            civilStatus = value;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Emergency Contact',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontFamily: 'Bold',
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: emergencyNameController,
+                        decoration: const InputDecoration(
+                          labelText: 'Name',
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: emergencyContactController,
+                        decoration: const InputDecoration(
+                          labelText: 'Contact Number',
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop();
+                  },
+                  child: Text(
+                    'Cancel',
+                    style: TextStyle(
+                      color: Colors.grey.shade700,
+                      fontFamily: 'Regular',
+                    ),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (nameController.text.trim().isEmpty ||
+                        emailController.text.trim().isEmpty) {
+                      ScaffoldMessenger.of(this.context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Please provide at least name and email',
+                            style: TextStyle(fontFamily: 'Regular'),
+                          ),
+                          backgroundColor: Colors.red,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                      return;
+                    }
+
+                    try {
+                      final Map<String, dynamic> update = {
+                        'name': nameController.text.trim(),
+                        'email': emailController.text.trim(),
+                        'contactNumber': contactController.text.trim(),
+                        'addressHouseNo': houseNoController.text.trim(),
+                        'addressStreet': streetController.text.trim(),
+                        'addressBarangay': barangayController.text.trim(),
+                        'addressCity': cityController.text.trim(),
+                        'emergencyContactName':
+                            emergencyNameController.text.trim(),
+                        'emergencyContactNumber':
+                            emergencyContactController.text.trim(),
+                      };
+
+                      if (civilStatus != null &&
+                          civilStatus!.trim().isNotEmpty) {
+                        update['civilStatus'] = civilStatus;
+                      }
+                      if (editDob != null) {
+                        update['dob'] = Timestamp.fromDate(editDob!);
+                      }
+
+                      await _firestore
+                          .collection('users')
+                          .doc(userId)
+                          .update(update);
+
+                      if (!mounted) return;
+                      Navigator.of(dialogContext).pop();
+                      ScaffoldMessenger.of(this.context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Personal details updated successfully',
+                            style: TextStyle(fontFamily: 'Regular'),
+                          ),
+                          backgroundColor: Colors.green,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                      await _fetchPatientData();
+                    } catch (e) {
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(this.context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Failed to update personal details',
+                            style: TextStyle(fontFamily: 'Regular'),
+                          ),
+                          backgroundColor: Colors.red,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primary,
+                  ),
+                  child: const Text(
+                    'Save',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontFamily: 'Bold',
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -160,6 +521,20 @@ class _AdminPrenatalPatientDetailScreenState
                         const SizedBox(height: 20),
 
                         if (_activeView == 'personal') ...[
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              TextButton.icon(
+                                onPressed: _openEditPersonalDetailsDialog,
+                                icon: const Icon(Icons.edit, size: 18),
+                                label: const Text(
+                                  'Edit',
+                                  style: TextStyle(fontFamily: 'Medium'),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
                           _buildBasicInformationSection(),
                           const SizedBox(height: 20),
                           _buildRequiredProfileSection(),
