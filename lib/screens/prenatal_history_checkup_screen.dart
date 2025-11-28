@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../utils/colors.dart';
+import '../widgets/forgot_password_dialog.dart';
 import 'prenatal_dashboard_screen.dart';
 import 'notification_appointment_screen.dart';
 import 'transfer_record_request_screen.dart';
@@ -245,12 +246,14 @@ class _PrenatalHistoryCheckupScreenState
           ),
           const SizedBox(height: 20),
 
-          // Menu Items
+          // Menu Items (kept consistent with main dashboard)
+          _buildMenuItem('PERSONAL DETAILS', false),
           _buildMenuItem('EDUCATIONAL\nLEARNERS', false),
           _buildMenuItem('HISTORY OF\nCHECK UP', true),
-          _buildMenuItem('NOTIFICATION\nAPPOINTMENT', false),
+          _buildMenuItem('REQUEST &\nNOTIFICATION APPOINTMENT', false),
           _buildMenuItem('TRANSFER OF\nRECORD REQUEST', false),
 
+          _buildMenuItem('CHANGE PASSWORD', false),
           _buildMenuItem('LOGOUT', false),
         ],
       ),
@@ -264,6 +267,24 @@ class _PrenatalHistoryCheckupScreenState
         onTap: () {
           if (title == 'LOGOUT') {
             _showLogoutConfirmationDialog();
+            return;
+          }
+          if (title == 'CHANGE PASSWORD') {
+            showDialog(
+              context: context,
+              builder: (context) => const ForgotPasswordDialog(),
+            );
+            return;
+          }
+          if (title == 'PERSONAL DETAILS') {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const PrenatalDashboardScreen(
+                  openPersonalDetailsOnLoad: true,
+                ),
+              ),
+            );
             return;
           }
           if (!isActive) {
@@ -309,7 +330,7 @@ class _PrenatalHistoryCheckupScreenState
       case 'HISTORY OF\nCHECK UP':
         // Already on this screen
         break;
-      case 'NOTIFICATION\nAPPOINTMENT':
+      case 'REQUEST &\nNOTIFICATION APPOINTMENT':
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -443,10 +464,18 @@ class _PrenatalHistoryCheckupScreenState
       }
     }
 
-    // Schedule (Date, Time)
+    // Next visit date (used for recommendation display)
     String scheduleDate = 'N/A';
-    String scheduleTime = 'N/A';
-    if (appointment['appointmentDate'] is Timestamp) {
+    DateTime? nextVisit;
+    if (appointment['nextVisitDate'] is Timestamp) {
+      try {
+        nextVisit = (appointment['nextVisitDate'] as Timestamp).toDate();
+      } catch (_) {}
+    }
+
+    if (nextVisit != null) {
+      scheduleDate = '${nextVisit.day}/${nextVisit.month}/${nextVisit.year}';
+    } else if (appointment['appointmentDate'] is Timestamp) {
       try {
         final DateTime schedDate =
             (appointment['appointmentDate'] as Timestamp).toDate();
@@ -455,9 +484,7 @@ class _PrenatalHistoryCheckupScreenState
     } else if (appointment['day'] != null) {
       scheduleDate = appointment['day'].toString();
     }
-    if (appointment['timeSlot'] != null) {
-      scheduleTime = appointment['timeSlot'].toString();
-    }
+    // timeSlot is no longer shown in the summary card
 
     // Findings and notes (prescription / recommendation)
     final String findingsText;
@@ -569,7 +596,7 @@ class _PrenatalHistoryCheckupScreenState
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Column 1: Schedule
+              // Column 1: Next Visit Recommendation
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -579,7 +606,7 @@ class _PrenatalHistoryCheckupScreenState
                         Icon(Icons.calendar_today, size: 16, color: primary),
                         const SizedBox(width: 6),
                         const Text(
-                          'Schedule',
+                          'Next Visit Recommendation',
                           style: TextStyle(
                             fontSize: 13,
                             fontFamily: 'Bold',
@@ -590,7 +617,6 @@ class _PrenatalHistoryCheckupScreenState
                     ),
                     const SizedBox(height: 8),
                     _buildInfoRow('Date:', scheduleDate),
-                    _buildInfoRow('Time:', scheduleTime),
                     if (appointment['rescheduledAt'] != null)
                       _buildInfoRow('Rescheduled on:',
                           _formatDate(appointment['rescheduledAt'])),
@@ -677,6 +703,28 @@ class _PrenatalHistoryCheckupScreenState
                         height: 1.4,
                       ),
                     ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Remarks Laboratory Result',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontFamily: 'Bold',
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      appointment['labRemarks']?.toString().trim().isNotEmpty ==
+                              true
+                          ? appointment['labRemarks'].toString()
+                          : 'No laboratory remarks recorded',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontFamily: 'Regular',
+                        color: Colors.grey.shade700,
+                        height: 1.4,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -743,6 +791,7 @@ class _PrenatalHistoryCheckupScreenState
               children: [
                 _buildTableHeaderCell('Visit No.', flex: 1),
                 _buildTableHeaderCell('Date', flex: 2),
+                _buildTableHeaderCell('Age of Gestation (weeks)', flex: 2),
                 _buildTableHeaderCell('Weight (kg)', flex: 2),
                 _buildTableHeaderCell('Blood Pressure (mmHg)', flex: 3),
                 _buildTableHeaderCell('Fetal Heart Rate (bpm)', flex: 3),
@@ -821,6 +870,20 @@ class _PrenatalHistoryCheckupScreenState
       date = '${dateTime.day}/${dateTime.month}/${dateTime.year}';
     }
 
+    // Age of Gestation (weeks)
+    String gaText = 'N/A';
+    if (_userData != null && _userData!['lmpDate'] is Timestamp) {
+      try {
+        final DateTime lmp = (_userData!['lmpDate'] as Timestamp).toDate();
+        DateTime referenceDate = dateTime ?? DateTime.now();
+        final int days = referenceDate.difference(lmp).inDays;
+        if (days >= 0) {
+          final double weeks = days / 7.0;
+          gaText = weeks.toStringAsFixed(1);
+        }
+      } catch (_) {}
+    }
+
     String weightText = 'N/A';
     final weightValue = appointment['checkupWeightKg'];
     if (weightValue != null) {
@@ -893,6 +956,7 @@ class _PrenatalHistoryCheckupScreenState
         children: [
           _buildTableCell(visitNo, flex: 1),
           _buildTableCell(date, flex: 2),
+          _buildTableCell(gaText, flex: 2),
           _buildTableCell(weightText, flex: 2),
           _buildTableCell(bpText, flex: 3),
           _buildTableCell(fhrText, flex: 3),

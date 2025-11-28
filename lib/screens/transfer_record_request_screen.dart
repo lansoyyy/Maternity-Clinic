@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../utils/colors.dart';
+import '../widgets/forgot_password_dialog.dart';
 import 'prenatal_dashboard_screen.dart';
 import 'postnatal_dashboard_screen.dart';
 import 'prenatal_history_checkup_screen.dart';
@@ -740,12 +741,14 @@ class _TransferRecordRequestScreenState
           ),
           const SizedBox(height: 20),
 
-          // Menu Items
+          // Menu Items (kept consistent with main dashboard)
+          _buildMenuItem('PERSONAL DETAILS', false),
           _buildMenuItem('EDUCATIONAL\nLEARNERS', false),
           _buildMenuItem('HISTORY OF\nCHECK UP', false),
-          _buildMenuItem('NOTIFICATION\nAPPOINTMENT', false),
+          _buildMenuItem('REQUEST &\nNOTIFICATION APPOINTMENT', false),
           _buildMenuItem('TRANSFER OF\nRECORD REQUEST', true),
 
+          _buildMenuItem('CHANGE PASSWORD', false),
           _buildMenuItem('LOGOUT', false),
         ],
       ),
@@ -759,6 +762,35 @@ class _TransferRecordRequestScreenState
         onTap: () {
           if (title == 'LOGOUT') {
             _showLogoutConfirmationDialog();
+            return;
+          }
+          if (title == 'CHANGE PASSWORD') {
+            showDialog(
+              context: context,
+              builder: (context) => const ForgotPasswordDialog(),
+            );
+            return;
+          }
+          if (title == 'PERSONAL DETAILS') {
+            if (widget.patientType == 'PRENATAL') {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const PrenatalDashboardScreen(
+                    openPersonalDetailsOnLoad: true,
+                  ),
+                ),
+              );
+            } else {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const PostnatalDashboardScreen(
+                    openPersonalDetailsOnLoad: true,
+                  ),
+                ),
+              );
+            }
             return;
           }
           if (!isActive) {
@@ -824,7 +856,7 @@ class _TransferRecordRequestScreenState
           );
         }
         break;
-      case 'NOTIFICATION\nAPPOINTMENT':
+      case 'REQUEST &\nNOTIFICATION APPOINTMENT':
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -844,7 +876,7 @@ class _TransferRecordRequestScreenState
       children: [
         _buildTextField('Full Name:', _fullNameController),
         const SizedBox(height: 15),
-        _buildTextField('Date of Birth:', _dateOfBirthController),
+        _buildDateOfBirthField(),
         const SizedBox(height: 15),
         _buildTextField('Address:', _addressController),
         const SizedBox(height: 25),
@@ -898,7 +930,6 @@ class _TransferRecordRequestScreenState
         ),
         const SizedBox(height: 10),
         _buildRadioOption('Pick-up by Patient/Authorized Representative'),
-        _buildRadioOption('Send through Email'),
         const SizedBox(height: 30),
 
         const Text(
@@ -909,7 +940,7 @@ class _TransferRecordRequestScreenState
         const SizedBox(height: 10),
         _buildTextField('Printed Name:', _printedNameController),
         const SizedBox(height: 15),
-        _buildTextField('Date:', _signatureDateController),
+        _buildSignatureDateField(),
         const SizedBox(height: 40),
 
         // Submit Button
@@ -940,6 +971,144 @@ class _TransferRecordRequestScreenState
                       color: Colors.white,
                     ),
                   ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDateOfBirthField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Date of Birth:',
+          style: TextStyle(
+            fontSize: 13,
+            fontFamily: 'Regular',
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 5),
+        GestureDetector(
+          onTap: () async {
+            final now = DateTime.now();
+            DateTime initial = DateTime(now.year - 25, now.month, now.day);
+            final existing = _dateOfBirthController.text.trim();
+            final parsedExisting =
+                existing.isNotEmpty ? DateTime.tryParse(existing) : null;
+            if (parsedExisting != null && parsedExisting.isBefore(now)) {
+              initial = parsedExisting;
+            }
+
+            final picked = await showDatePicker(
+              context: context,
+              initialDate: initial,
+              firstDate: DateTime(now.year - 100),
+              lastDate: now,
+            );
+            if (picked != null) {
+              setState(() {
+                _dateOfBirthController.text =
+                    '${picked.month}/${picked.day}/${picked.year}';
+              });
+            }
+          },
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.transparent),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.calendar_today, size: 18, color: primary),
+                const SizedBox(width: 8),
+                Text(
+                  _dateOfBirthController.text.isNotEmpty
+                      ? _dateOfBirthController.text
+                      : 'Select Date of Birth',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontFamily: 'Regular',
+                    color: _dateOfBirthController.text.isNotEmpty
+                        ? Colors.black87
+                        : Colors.grey.shade600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSignatureDateField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Date:',
+          style: TextStyle(
+            fontSize: 13,
+            fontFamily: 'Regular',
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 5),
+        GestureDetector(
+          onTap: () async {
+            final now = DateTime.now();
+            DateTime initial = now;
+            final existing = _signatureDateController.text.trim();
+            final parsedExisting =
+                existing.isNotEmpty ? DateTime.tryParse(existing) : null;
+            if (parsedExisting != null && !parsedExisting.isBefore(now)) {
+              initial = parsedExisting;
+            }
+
+            final picked = await showDatePicker(
+              context: context,
+              initialDate: initial,
+              firstDate: DateTime(now.year, now.month, now.day),
+              lastDate: now.add(const Duration(days: 365)),
+            );
+            if (picked != null) {
+              setState(() {
+                _signatureDateController.text =
+                    '${picked.month}/${picked.day}/${picked.year}';
+              });
+            }
+          },
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.transparent),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.calendar_today, size: 18, color: primary),
+                const SizedBox(width: 8),
+                Text(
+                  _signatureDateController.text.isNotEmpty
+                      ? _signatureDateController.text
+                      : 'Select Date',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontFamily: 'Regular',
+                    color: _signatureDateController.text.isNotEmpty
+                        ? Colors.black87
+                        : Colors.grey.shade600,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ],

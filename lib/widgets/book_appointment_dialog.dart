@@ -54,11 +54,17 @@ class _BookAppointmentDialogState extends State<BookAppointmentDialog> {
   bool _fewDiapers = false;
 
   // Union of all possible time slots; actual availability depends on selected day
+  // and appointment type (e.g., prenatal Ultrasound has special rules).
   final List<String> _timeSlots = [
+    '10:00 AM',
+    '11:00 AM',
+    '12:00 PM',
     '2:00 PM',
     '3:00 PM',
     '4:00 PM',
+    '4:30 PM',
     '5:00 PM',
+    '5:30 PM',
     '6:00 PM',
   ];
 
@@ -240,33 +246,6 @@ class _BookAppointmentDialogState extends State<BookAppointmentDialog> {
       return false;
     }
 
-    if (widget.patientType == 'POSTNATAL') {
-      if (_deliveryDate == null) {
-        _showError('Please enter date of delivery');
-        return false;
-      }
-      if (_deliveryType == null) {
-        _showError('Please select type of delivery');
-        return false;
-      }
-      if (_infantNameController.text.trim().isEmpty) {
-        _showError('Please enter infant\'s name');
-        return false;
-      }
-      if (_infantGender == null) {
-        _showError('Please select infant\'s gender');
-        return false;
-      }
-      if (_infantAgeController.text.trim().isEmpty) {
-        _showError('Please enter infant\'s age');
-        return false;
-      }
-      if (_feedingMethod == null) {
-        _showError('Please select infant feeding method');
-        return false;
-      }
-    }
-
     return true;
   }
 
@@ -339,8 +318,11 @@ class _BookAppointmentDialogState extends State<BookAppointmentDialog> {
                   children: [
                     _buildCommonFields(),
                     const SizedBox(height: 20),
-                    if (widget.patientType == 'POSTNATAL') ...[
-                      _buildPostnatalFields(),
+                    // For POSTNATAL patients, we keep the form minimal as requested
+                    // (Full Name, Appointment Type, Date, Time Slots), so we do not
+                    // render _buildPostnatalFields() here.
+                    if (widget.patientType == 'PRENATAL') ...[
+                      _buildPrenatalFields(),
                       const SizedBox(height: 20),
                     ],
                     _buildDateTimeFields(),
@@ -1132,10 +1114,13 @@ class _BookAppointmentDialogState extends State<BookAppointmentDialog> {
             if (picked != null) {
               if (!_isAllowedDate(picked)) {
                 if (mounted) {
+                  final String message = _isPrenatalUltrasound()
+                      ? 'For ULTRASOUND (PRENATAL), appointments are only available on Wednesday (4:30 PM - 6:00 PM) and Saturday (10:00 AM - 12:00 PM).'
+                      : 'Appointments are only available on Tuesday, Wednesday, Friday (4:00 PM - 6:00 PM) and Saturday (2:00 PM - 6:00 PM).';
+
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                          'Appointments are only available on Tuesday, Wednesday, Friday (4:00 PM - 6:00 PM) and Saturday (2:00 PM - 6:00 PM).'),
+                    SnackBar(
+                      content: Text(message),
                       backgroundColor: Colors.red,
                     ),
                   );
@@ -1185,7 +1170,10 @@ class _BookAppointmentDialogState extends State<BookAppointmentDialog> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Available days: Tuesday, Wednesday, Friday (4:00 PM - 6:00 PM) and Saturday (2:00 PM - 6:00 PM).',
+          widget.patientType == 'PRENATAL' &&
+                  _selectedAppointmentType == 'Ultrasound'
+              ? 'For ULTRASOUND (PRENATAL): Available days: Wednesday (4:30 PM - 6:00 PM) and Saturday (10:00 AM - 12:00 PM).'
+              : 'Available days: Tuesday, Wednesday, Friday (4:00 PM - 6:00 PM) and Saturday (2:00 PM - 6:00 PM).',
           style: TextStyle(
             fontSize: 12,
             fontFamily: 'Regular',
@@ -1272,8 +1260,19 @@ class _BookAppointmentDialogState extends State<BookAppointmentDialog> {
     );
   }
 
+  bool _isPrenatalUltrasound() {
+    return widget.patientType == 'PRENATAL' &&
+        _selectedAppointmentType == 'Ultrasound';
+  }
+
   bool _isAllowedDate(DateTime date) {
     final int weekday = date.weekday;
+    if (_isPrenatalUltrasound()) {
+      // Ultrasound (PRENATAL): only Wednesday and Saturday
+      return weekday == DateTime.wednesday || weekday == DateTime.saturday;
+    }
+
+    // Default: Tue, Wed, Fri, Sat
     return weekday == DateTime.tuesday ||
         weekday == DateTime.wednesday ||
         weekday == DateTime.friday ||
@@ -1282,6 +1281,18 @@ class _BookAppointmentDialogState extends State<BookAppointmentDialog> {
 
   List<String> _allowedSlotsForDate(DateTime date) {
     final int weekday = date.weekday;
+    if (_isPrenatalUltrasound()) {
+      if (weekday == DateTime.wednesday) {
+        // Prenatal ultrasound: Wednesday 4:30 PM - 6:00 PM
+        return ['4:30 PM', '5:00 PM', '5:30 PM', '6:00 PM'];
+      }
+      if (weekday == DateTime.saturday) {
+        // Prenatal ultrasound: Saturday 10:00 AM - 12:00 PM
+        return ['10:00 AM', '11:00 AM', '12:00 PM'];
+      }
+      return const [];
+    }
+
     if (weekday == DateTime.saturday) {
       // Saturday: 2:00 PM - 6:00 PM
       return ['2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM', '6:00 PM'];

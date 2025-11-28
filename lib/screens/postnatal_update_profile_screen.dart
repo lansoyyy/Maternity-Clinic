@@ -46,6 +46,8 @@ class _PostnatalUpdateProfileScreenState
 
   final TextEditingController _infantNameController = TextEditingController();
   final TextEditingController _infantAgeController = TextEditingController();
+  final TextEditingController _infantBirthWeightController =
+      TextEditingController();
   String? _infantGender;
 
   bool _excessiveBleeding = false;
@@ -102,6 +104,7 @@ class _PostnatalUpdateProfileScreenState
     _emergencyNumberController.dispose();
     _infantNameController.dispose();
     _infantAgeController.dispose();
+    _infantBirthWeightController.dispose();
     _otherConcernsController.dispose();
     super.dispose();
   }
@@ -167,6 +170,8 @@ class _PostnatalUpdateProfileScreenState
         _infantNameController.text = (data['infantName'] ?? '').toString();
         _infantGender = data['infantGender']?.toString();
         _infantAgeController.text = (data['infantAge'] ?? '').toString();
+        _infantBirthWeightController.text =
+            (data['infantBirthWeight'] ?? '').toString();
 
         _recomputeAge();
       }
@@ -300,6 +305,7 @@ class _PostnatalUpdateProfileScreenState
         'infantName': _infantNameController.text.trim(),
         'infantGender': _infantGender,
         'infantAge': _infantAgeController.text.trim(),
+        'infantBirthWeight': _infantBirthWeightController.text.trim(),
         'profileCompleted': true,
       };
 
@@ -923,6 +929,13 @@ class _PostnatalUpdateProfileScreenState
             label: 'Current Age of Infant',
             controller: _infantAgeController,
             hintText: 'e.g. 2 weeks, 6 weeks',
+          ),
+          const SizedBox(height: 12),
+          _buildTextField(
+            label: 'Birth Weight (kg)',
+            controller: _infantBirthWeightController,
+            keyboardType: TextInputType.number,
+            hintText: 'e.g. 3.2',
           ),
         ],
       ),

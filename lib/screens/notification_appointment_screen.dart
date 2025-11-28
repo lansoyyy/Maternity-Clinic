@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../utils/colors.dart';
+import '../widgets/forgot_password_dialog.dart';
 import 'prenatal_dashboard_screen.dart';
 import 'postnatal_dashboard_screen.dart';
 import 'prenatal_history_checkup_screen.dart';
@@ -182,6 +183,12 @@ class _NotificationAppointmentScreenState
   bool _isUpcomingAppointment(Map<String, dynamic> appointment) {
     final status = (appointment['status'] ?? 'Pending').toString();
     if (status == 'Completed' || status == 'Cancelled' || status == 'No-show') {
+      return false;
+    }
+
+    // For POSTNATAL patients, do not show 'Pending' appointments as upcoming
+    // so they only appear in the history tab.
+    if (widget.patientType == 'POSTNATAL' && status == 'Pending') {
       return false;
     }
 
@@ -526,12 +533,14 @@ class _NotificationAppointmentScreenState
           ),
           const SizedBox(height: 20),
 
-          // Menu Items
+          // Menu Items (kept consistent with main dashboard)
+          _buildMenuItem('PERSONAL DETAILS', false),
           _buildMenuItem('EDUCATIONAL\nLEARNERS', false),
           _buildMenuItem('HISTORY OF\nCHECK UP', false),
-          _buildMenuItem('NOTIFICATION\nAPPOINTMENT', true),
+          _buildMenuItem('REQUEST &\nNOTIFICATION APPOINTMENT', true),
           _buildMenuItem('TRANSFER OF\nRECORD REQUEST', false),
 
+          _buildMenuItem('CHANGE PASSWORD', false),
           _buildMenuItem('LOGOUT', false),
         ],
       ),
@@ -545,6 +554,35 @@ class _NotificationAppointmentScreenState
         onTap: () {
           if (title == 'LOGOUT') {
             _showLogoutConfirmationDialog();
+            return;
+          }
+          if (title == 'CHANGE PASSWORD') {
+            showDialog(
+              context: context,
+              builder: (context) => const ForgotPasswordDialog(),
+            );
+            return;
+          }
+          if (title == 'PERSONAL DETAILS') {
+            if (widget.patientType == 'PRENATAL') {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const PrenatalDashboardScreen(
+                    openPersonalDetailsOnLoad: true,
+                  ),
+                ),
+              );
+            } else {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const PostnatalDashboardScreen(
+                    openPersonalDetailsOnLoad: true,
+                  ),
+                ),
+              );
+            }
             return;
           }
           if (!isActive) {
@@ -610,7 +648,7 @@ class _NotificationAppointmentScreenState
           );
         }
         break;
-      case 'NOTIFICATION\nAPPOINTMENT':
+      case 'REQUEST &\nNOTIFICATION APPOINTMENT':
         // Already on this screen
         break;
       case 'TRANSFER OF\nRECORD REQUEST':
