@@ -169,6 +169,29 @@ class _AboutUsScreenState extends State<AboutUsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Center(
+          child: Column(
+            children: [
+              Image.asset(
+                'assets/images/figure.png',
+                height: 220,
+                fit: BoxFit.contain,
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'WELCOME TO VICTORY LYING-IN CENTER',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 22,
+                  fontFamily: 'Bold',
+                  color: Colors.black87,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(height: 30),
+            ],
+          ),
+        ),
         const Text(
           'OUR MISSION',
           style: TextStyle(
@@ -210,6 +233,7 @@ class _AboutUsScreenState extends State<AboutUsScreen> {
         Wrap(
           spacing: 30,
           runSpacing: 20,
+          alignment: WrapAlignment.center,
           children: const [
             _StaffProfileCard(
               name: 'OB - Maureen R. Higoy MD',

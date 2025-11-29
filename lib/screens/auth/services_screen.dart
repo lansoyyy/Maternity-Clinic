@@ -435,6 +435,8 @@ class _ServicesScreenState extends State<ServicesScreen> {
   }
 
   Widget _buildServicesAndPackages() {
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -448,13 +450,42 @@ class _ServicesScreenState extends State<ServicesScreen> {
           ),
         ),
         const SizedBox(height: 30),
+        if (screenWidth > 900) ...[
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                flex: 3,
+                child: _buildServicesOffered(),
+              ),
+              const SizedBox(width: 30),
+              Expanded(
+                flex: 5,
+                child: Column(
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: _buildMaternityPackageCard()),
+                        const SizedBox(width: 20),
+                        Expanded(child: _buildNewbornPackageCard()),
+                      ],
+                    ),
+                    const SizedBox(height: 30),
+                    _buildNsdPackageCard(),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ] else ...[
+          // Services Offered Section
+          _buildServicesOffered(),
+          const SizedBox(height: 40),
 
-        // Services Offered Section
-        _buildServicesOffered(),
-        const SizedBox(height: 40),
-
-        // Packages Section
-        _buildPackages(),
+          // Packages Section
+          _buildPackages(),
+        ],
       ],
     );
   }
@@ -553,76 +584,88 @@ class _ServicesScreenState extends State<ServicesScreen> {
     return Column(
       children: [
         // Maternity Care Package
-        _buildPackageCard(
-          '🤰 Maternity Care Package (MCP)',
-          [
-            'Without PhilHealth (Amount to be Paid)',
-            'HCI Fees',
-            'Facility / Room Charge',
-            'Delivery Room Fee',
-            'Drugs and Medications',
-            'Supplies – Php 13,550',
-            'Professional Fee – Php 12,000',
-            'Total: Php 25,550',
-          ],
-          [
-            'PhilHealth Benefits',
-            'Php 6,240',
-            'Php 4,160',
-            'Total: Php 10,400',
-          ],
-          [
-            'With PhilHealth (Amount to be Paid)',
-            'Php 7,310',
-            'Php 7,840',
-            'Total: Php 15,100',
-          ],
-        ),
+        _buildMaternityPackageCard(),
         const SizedBox(height: 30),
 
         // Newborn Care Package
-        _buildPackageCard(
-          '👶 Newborn Care Package (NCP)',
-          [
-            'Without PhilHealth (Amount to be Paid)',
-            'HCI Fees',
-            'Essential Newborn Care',
-            'BCG Vaccine',
-            'Hepa B Vaccine',
-            'Newborn Screening',
-            'Hearing Test',
-            'Professional Fee',
-            'Total: Php 6,685',
-          ],
-          [
-            'PhilHealth Benefits',
-            'Total: Php 3,835',
-          ],
-          [
-            'With PhilHealth (Amount to be Paid)',
-            'Total: Php 2,850',
-          ],
-        ),
+        _buildNewbornPackageCard(),
         const SizedBox(height: 30),
 
         // NSD Package
-        _buildPackageCard(
-          '🤱 NSD Package (Mother and Baby)',
-          [
-            'Without PhilHealth (Amount to be Paid)',
-            'Total: Php 32,235',
-          ],
-          [
-            'PhilHealth Benefits',
-            'Total: Php 14,235',
-          ],
-          [
-            'With PhilHealth (Amount to be Paid)',
-            'Total: Php 18,000',
-          ],
-          'Inclusion:\nMother:\n1 set of NSD delivery medication and supplies\nFacility / Room Charge\nDelivery Room Fee\nProfessional Fee\n\nBaby:\nEssential Newborn Care\nBCG\nHepa B Vaccine\nVitamin K\nOphthalmic Ointment\nNewborn Screening\nHearing Test\nWell Baby Clearance\n\nAdditional charges apply for excess medication and supplies.',
-        ),
+        _buildNsdPackageCard(),
       ],
+    );
+  }
+
+  Widget _buildMaternityPackageCard() {
+    return _buildPackageCard(
+      '🤰 Maternity Care Package (MCP)',
+      [
+        'Without PhilHealth (Amount to be Paid)',
+        'HCI Fees',
+        'Facility / Room Charge',
+        'Delivery Room Fee',
+        'Drugs and Medications',
+        'Supplies – Php 13,550',
+        'Professional Fee – Php 12,000',
+        'Total: Php 25,550',
+      ],
+      [
+        'PhilHealth Benefits',
+        'Php 6,240',
+        'Php 4,160',
+        'Total: Php 10,400',
+      ],
+      [
+        'With PhilHealth (Amount to be Paid)',
+        'Php 7,310',
+        'Php 7,840',
+        'Total: Php 15,100',
+      ],
+    );
+  }
+
+  Widget _buildNewbornPackageCard() {
+    return _buildPackageCard(
+      '👶 Newborn Care Package (NCP)',
+      [
+        'Without PhilHealth (Amount to be Paid)',
+        'HCI Fees',
+        'Essential Newborn Care',
+        'BCG Vaccine',
+        'Hepa B Vaccine',
+        'Newborn Screening',
+        'Hearing Test',
+        'Professional Fee',
+        'Total: Php 6,685',
+      ],
+      [
+        'PhilHealth Benefits',
+        'Total: Php 3,835',
+      ],
+      [
+        'With PhilHealth (Amount to be Paid)',
+        'Total: Php 2,850',
+      ],
+    );
+  }
+
+  Widget _buildNsdPackageCard() {
+    return _buildPackageCard(
+      '🤱 NSD Package (Mother and Baby)',
+      [
+        'Without PhilHealth (Amount to be Paid)',
+        'Total: Php 32,235',
+      ],
+      [
+        'PhilHealth Benefits',
+        'Total: Php 14,235',
+      ],
+      [
+        'With PhilHealth (Amount to be Paid)',
+        'Total: Php 18,000',
+      ],
+      'Inclusion:\nMother:\n1 set of NSD delivery medication and supplies\nFacility / Room Charge\nDelivery Room Fee\nProfessional Fee\n\nBaby:\nEssential Newborn Care\nBCG\nHepa B Vaccine\nVitamin K\nOphthalmic Ointment\nNewborn Screening\nHearing Test\nWell Baby Clearance\n\nAdditional charges apply for excess medication and supplies.',
     );
   }
 

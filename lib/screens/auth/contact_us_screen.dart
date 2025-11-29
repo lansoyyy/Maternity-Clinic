@@ -27,6 +27,16 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
     super.dispose();
   }
 
+  Future<void> _launchTelephone(String phone) async {
+    final Uri phoneUri = Uri(
+      scheme: 'tel',
+      path: phone,
+    );
+    if (!await launchUrl(phoneUri)) {
+      _showErrorDialog('Could not launch phone dialer');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -45,23 +55,11 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
                 horizontal: screenWidth * 0.08,
                 vertical: 60,
               ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Left Section - Contact Form
-                  Expanded(
-                    flex: 1,
-                    child: _buildContactForm(),
-                  ),
-
-                  const SizedBox(width: 80),
-
-                  // Right Section - Address & Location
-                  Expanded(
-                    flex: 1,
-                    child: _buildAddressSection(),
-                  ),
-                ],
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 600),
+                  child: _buildAddressSection(),
+                ),
               ),
             ),
           ],
@@ -367,75 +365,94 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
                 value: 'Victory Lying-In Center',
                 onTap: () => _launchFacebook(),
               ),
+              const SizedBox(height: 20),
+
+              // Telephone
+              _buildContactItem(
+                icon: Icons.phone,
+                label: 'Telephone',
+                value: '0956 879 1685',
+                onTap: () => _launchTelephone('09568791685'),
+              ),
             ],
           ),
         ),
         const SizedBox(height: 30),
 
         // Map Section
-        // const Text(
-        //   'ADDRESS & LOCATION',
-        //   style: TextStyle(
-        //     fontSize: 32,
-        //     fontFamily: 'Bold',
-        //     color: Colors.black,
-        //     letterSpacing: 0.5,
-        //   ),
-        // ),
-        // const SizedBox(height: 30),
+        const Text(
+          'ADDRESS & LOCATION',
+          style: TextStyle(
+            fontSize: 32,
+            fontFamily: 'Bold',
+            color: Colors.black,
+            letterSpacing: 0.5,
+          ),
+        ),
+        const SizedBox(height: 10),
+        const Text(
+          '2104-2114 Dimasalang St, Santa Cruz, Manila, 1008 Metro Manila',
+          style: TextStyle(
+            fontSize: 16,
+            fontFamily: 'Regular',
+            color: Colors.black87,
+            height: 1.4,
+          ),
+        ),
+        const SizedBox(height: 30),
 
-        // // Map Image
-        // Container(
-        //   width: double.infinity,
-        //   height: 400,
-        //   decoration: BoxDecoration(
-        //     borderRadius: BorderRadius.circular(20),
-        //     boxShadow: [
-        //       BoxShadow(
-        //         color: Colors.grey.shade300,
-        //         blurRadius: 20,
-        //         offset: const Offset(0, 10),
-        //       ),
-        //     ],
-        //   ),
-        //   child: ClipRRect(
-        //     borderRadius: BorderRadius.circular(20),
-        //     child: Image.asset(
-        //       'assets/images/map.png',
-        //       fit: BoxFit.cover,
-        //       errorBuilder: (context, error, stackTrace) {
-        //         // Fallback if map image doesn't exist
-        //         return Container(
-        //           decoration: BoxDecoration(
-        //             color: Colors.grey.shade200,
-        //             borderRadius: BorderRadius.circular(20),
-        //           ),
-        //           child: Center(
-        //             child: Column(
-        //               mainAxisAlignment: MainAxisAlignment.center,
-        //               children: [
-        //                 Icon(
-        //                   Icons.map,
-        //                   size: 80,
-        //                   color: Colors.grey.shade400,
-        //                 ),
-        //                 const SizedBox(height: 10),
-        //                 Text(
-        //                   'Map Location',
-        //                   style: TextStyle(
-        //                     color: Colors.grey.shade600,
-        //                     fontFamily: 'Medium',
-        //                     fontSize: 18,
-        //                   ),
-        //                 ),
-        //               ],
-        //             ),
-        //           ),
-        //         );
-        //       },
-        //     ),
-        //   ),
-        // ),
+        // Map Image
+        Container(
+          width: double.infinity,
+          height: 400,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.shade300,
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: Image.asset(
+              'assets/images/map.png',
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                // Fallback if map image doesn't exist
+                return Container(
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.map,
+                          size: 80,
+                          color: Colors.grey.shade400,
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          'Map Location',
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontFamily: 'Medium',
+                            fontSize: 18,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
       ],
     );
   }
