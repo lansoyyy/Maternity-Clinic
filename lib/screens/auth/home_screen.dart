@@ -180,6 +180,21 @@ class _HomeScreenState extends State<HomeScreen> {
         password: _passwordController.text.trim(),
       );
 
+      final user = userCredential.user;
+      await user?.reload();
+
+      if (user == null || !user.emailVerified) {
+        setState(() {
+          _isLoading = false;
+        });
+
+        await _auth.signOut();
+        _showErrorDialog(
+          'Your email is not verified yet. Please check your inbox and verify your email before signing in.',
+        );
+        return;
+      }
+
       // Get user data from Firestore
       DocumentSnapshot userDoc = await _firestore
           .collection('users')

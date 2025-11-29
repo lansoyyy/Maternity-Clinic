@@ -224,6 +224,12 @@ class _SignupScreenState extends State<SignupScreen> {
         'profileCompleted': false,
       });
 
+      try {
+        await userCredential.user!.sendEmailVerification();
+      } catch (_) {
+        // ignore email verification errors, user can request again later
+      }
+
       setState(() {
         _isLoading = false;
       });
@@ -233,7 +239,7 @@ class _SignupScreenState extends State<SignupScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text(
-              'Account created successfully! Please sign in.',
+              'Account created successfully! Please verify your email, then sign in.',
               style: TextStyle(fontFamily: 'Regular'),
             ),
             backgroundColor: Colors.green,
@@ -294,7 +300,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
   Widget _buildDesktopLayout(double screenWidth, double screenHeight) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         // Left Section - Services
         Expanded(
@@ -342,13 +348,13 @@ class _SignupScreenState extends State<SignupScreen> {
     return Column(
       children: [
         _buildRegisterCard(),
-        const SizedBox(height: 40),
+        const SizedBox(height: 20),
         Image.asset(
           'assets/images/figure.png',
           height: screenHeight * 0.3,
           fit: BoxFit.contain,
         ),
-        const SizedBox(height: 40),
+        const SizedBox(height: 20),
         _buildServiceItem('assets/images/ob-gyne.png', 'OB - GYNE'),
         const SizedBox(height: 20),
         _buildServiceItem('assets/images/ultra sound.png', 'ULTRA SOUND'),

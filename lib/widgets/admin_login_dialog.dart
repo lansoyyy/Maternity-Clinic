@@ -415,23 +415,6 @@ class _AdminLoginDialogState extends State<AdminLoginDialog> {
               ),
               const SizedBox(height: 10),
 
-              // Forgot Password link (Firestore-based)
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: _isLoading ? null : _showForgotPasswordDialog,
-                  child: Text(
-                    'Forgot Password?',
-                    style: TextStyle(
-                      color: primary,
-                      fontFamily: 'Medium',
-                      fontSize: 13,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-
               // Password Field
               TextField(
                 controller: _passwordController,
@@ -484,6 +467,23 @@ class _AdminLoginDialogState extends State<AdminLoginDialog> {
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                     borderSide: BorderSide(color: primary, width: 2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // Forgot Password link (Firestore-based)
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: _isLoading ? null : _showForgotPasswordDialog,
+                  child: Text(
+                    'Forgot Password?',
+                    style: TextStyle(
+                      color: primary,
+                      fontFamily: 'Medium',
+                      fontSize: 13,
+                    ),
                   ),
                 ),
               ),
