@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../utils/colors.dart';
+import '../../utils/responsive_utils.dart';
 import 'contact_us_screen.dart';
 import 'about_us_screen.dart';
 import 'services_screen.dart';
@@ -68,9 +69,14 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Widget _buildHeader() {
+    final isMobile = context.isMobile;
+    
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 16 : 40, 
+        vertical: isMobile ? 16 : 20
+      ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [primary, secondary],
@@ -82,31 +88,98 @@ class _SignupScreenState extends State<SignupScreen> {
           bottomRight: Radius.circular(20),
         ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Logo
-          const Text(
-            'VICTORY LYING IN',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontFamily: 'Bold',
-              letterSpacing: 1.2,
+      child: isMobile
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'VICTORY LYING IN',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontFamily: 'Bold',
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.menu, color: Colors.white),
+                      onPressed: () => _showMobileMenu(context),
+                    ),
+                  ],
+                ),
+              ],
+            )
+          : Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'VICTORY LYING IN',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontFamily: 'Bold',
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                Wrap(
+                  spacing: 40,
+                  children: [
+                    _buildNavItem('HOME', true),
+                    _buildNavItem('ABOUT US', false),
+                    _buildNavItem('SERVICES', false),
+                    _buildNavItem('CONTACT US', false),
+                  ],
+                ),
+              ],
             ),
-          ),
+    );
+  }
 
-          // Navigation Menu
-          Wrap(
-            spacing: 40,
+  void _showMobileMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: primary,
+      builder: (context) => SafeArea(
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              _buildNavItem('HOME', true),
-              _buildNavItem('ABOUT US', false),
-              _buildNavItem('SERVICES', false),
-              _buildNavItem('CONTACT US', false),
+              ListTile(
+                leading: const Icon(Icons.home, color: Colors.white),
+                title: const Text('HOME', style: TextStyle(color: Colors.white, fontFamily: 'Bold')),
+                onTap: () => Navigator.pop(context),
+              ),
+              ListTile(
+                leading: const Icon(Icons.info, color: Colors.white70),
+                title: const Text('ABOUT US', style: TextStyle(color: Colors.white70, fontFamily: 'Medium')),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const AboutUsScreen()));
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.medical_services, color: Colors.white70),
+                title: const Text('SERVICES', style: TextStyle(color: Colors.white70, fontFamily: 'Medium')),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const ServicesScreen()));
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.contact_mail, color: Colors.white70),
+                title: const Text('CONTACT US', style: TextStyle(color: Colors.white70, fontFamily: 'Medium')),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const ContactUsScreen()));
+                },
+              ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }

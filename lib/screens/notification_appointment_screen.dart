@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../utils/colors.dart';
+import '../utils/responsive_utils.dart';
 import '../widgets/forgot_password_dialog.dart';
 import 'prenatal_dashboard_screen.dart';
 import 'postnatal_dashboard_screen.dart';
@@ -333,40 +334,60 @@ class _NotificationAppointmentScreenState
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = context.isMobile;
+    
     return Scaffold(
       backgroundColor: Colors.white,
+      appBar: isMobile ? AppBar(
+        backgroundColor: primary,
+        title: const Text(
+          'APPOINTMENTS',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontFamily: 'Bold',
+          ),
+        ),
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu, color: Colors.white),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
+      ) : null,
+      drawer: isMobile ? Drawer(
+        child: _buildSidebar(),
+      ) : null,
       body: Row(
         children: [
-          // Sidebar
-          _buildSidebar(),
-
-          // Main Content
+          if (!isMobile) _buildSidebar(),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(40),
+              padding: EdgeInsets.all(isMobile ? 16 : 40),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Title
-                  Text(
-                    'Book & Notification Appointment',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontFamily: 'Bold',
-                      color: Colors.black,
-                      letterSpacing: 0.5,
+                  if (!isMobile) ...[
+                    Text(
+                      'Book & Notification Appointment',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontFamily: 'Bold',
+                        color: Colors.black,
+                        letterSpacing: 0.5,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Request a checkup and manage your appointments',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontFamily: 'Regular',
-                      color: Colors.grey.shade600,
+                    const SizedBox(height: 10),
+                    Text(
+                      'Request a checkup and manage your appointments',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontFamily: 'Regular',
+                        color: Colors.grey.shade600,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
+                    const SizedBox(height: 20),
+                  ],
                   Row(
                     children: [
                       ElevatedButton.icon(
@@ -396,8 +417,7 @@ class _NotificationAppointmentScreenState
                       ),
                     ],
                   ),
-                  const SizedBox(height: 24),
-
+                  SizedBox(height: isMobile ? 16 : 24),
                   Row(
                     children: [
                       _buildTabButton('PENDING & UPCOMING', 0),
@@ -405,17 +425,13 @@ class _NotificationAppointmentScreenState
                       _buildTabButton('APPOINTMENT HISTORY', 1),
                     ],
                   ),
-                  const SizedBox(height: 16),
-
-                  // Loading State
+                  SizedBox(height: isMobile ? 12 : 16),
                   if (_isLoading)
                     const Center(
                       child: CircularProgressIndicator(
                         color: Color(0xFFE91E63),
                       ),
                     )
-
-                  // Appointments List
                   else ...[
                     Builder(
                       builder: (context) {
@@ -427,7 +443,6 @@ class _NotificationAppointmentScreenState
                             .toList();
                         final currentList =
                             _selectedTabIndex == 0 ? upcoming : history;
-
                         if (currentList.isEmpty) {
                           return Center(
                             child: Column(
@@ -435,7 +450,7 @@ class _NotificationAppointmentScreenState
                               children: [
                                 Icon(
                                   Icons.calendar_today_outlined,
-                                  size: 80,
+                                  size: isMobile ? 60 : 80,
                                   color: Colors.grey.shade400,
                                 ),
                                 const SizedBox(height: 20),
@@ -444,10 +459,11 @@ class _NotificationAppointmentScreenState
                                       ? 'No Pending or Upcoming Appointments'
                                       : 'No Appointment History',
                                   style: TextStyle(
-                                    fontSize: 20,
+                                    fontSize: isMobile ? 16 : 20,
                                     fontFamily: 'Bold',
                                     color: Colors.grey.shade600,
                                   ),
+                                  textAlign: TextAlign.center,
                                 ),
                                 const SizedBox(height: 10),
                                 Text(
@@ -465,7 +481,6 @@ class _NotificationAppointmentScreenState
                             ),
                           );
                         }
-
                         return Column(
                           children: currentList
                               .map((appointment) => Padding(

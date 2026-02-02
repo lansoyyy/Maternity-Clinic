@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../utils/colors.dart';
 import '../../utils/history_logger.dart';
+import '../../utils/responsive_utils.dart';
 import 'admin_dashboard_screen.dart';
 import 'admin_staff_management_screen.dart';
 import 'admin_patient_records_screen.dart';
@@ -140,15 +141,37 @@ class _AdminTransferRequestsScreenState
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = context.isMobile;
+    
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
+      appBar: isMobile ? AppBar(
+        backgroundColor: primary,
+        title: Text(
+          'TRANSFER REQUESTS',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: context.responsiveFontSize(18),
+            fontFamily: 'Bold',
+          ),
+        ),
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu, color: Colors.white),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
+      ) : null,
+      drawer: isMobile ? Drawer(
+        child: _buildSidebar(),
+      ) : null,
       body: Row(
         children: [
-          _buildSidebar(),
+          if (!isMobile) _buildSidebar(),
           Expanded(
             child: Column(
               children: [
-                _buildHeader(),
+                if (!isMobile) _buildHeader(),
                 Expanded(
                   child: _isLoading
                       ? Center(child: CircularProgressIndicator(color: primary))

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../utils/colors.dart';
+import '../utils/responsive_utils.dart';
 import '../widgets/forgot_password_dialog.dart';
 import 'prenatal_dashboard_screen.dart';
 import 'postnatal_dashboard_screen.dart';
@@ -298,62 +299,86 @@ class _TransferRecordRequestScreenState
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = context.isMobile;
+    
     return Scaffold(
       backgroundColor: Colors.white,
+      appBar: isMobile ? AppBar(
+        backgroundColor: primary,
+        title: const Text(
+          'TRANSFER REQUEST',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontFamily: 'Bold',
+          ),
+        ),
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu, color: Colors.white),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
+      ) : null,
+      drawer: isMobile ? Drawer(
+        child: _buildSidebar(),
+      ) : null,
       body: Row(
         children: [
-          // Sidebar
-          _buildSidebar(),
-
-          // Main Content
+          if (!isMobile) _buildSidebar(),
           Expanded(
             child: _isLoading
                 ? Center(child: CircularProgressIndicator(color: primary))
                 : _hasExistingRequest
                     ? _buildExistingRequestView()
                     : SingleChildScrollView(
-                        padding: const EdgeInsets.all(40),
+                        padding: EdgeInsets.all(isMobile ? 16 : 40),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Title
-                            Center(
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 40, vertical: 15),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.shade300,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: const Text(
-                                  'TRANSFER OF RECORD REQUEST',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontFamily: 'Bold',
-                                    color: Colors.black,
-                                    letterSpacing: 0.5,
+                            if (!isMobile) ...[
+                              Center(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 40, vertical: 15),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade300,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: const Text(
+                                    'TRANSFER OF RECORD REQUEST',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontFamily: 'Bold',
+                                      color: Colors.black,
+                                      letterSpacing: 0.5,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(height: 40),
-
-                            // Form Content
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Left Column
-                                Expanded(
-                                  child: _buildLeftColumn(),
+                              const SizedBox(height: 40),
+                            ],
+                            isMobile
+                              ? Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    _buildLeftColumn(),
+                                    const SizedBox(height: 20),
+                                    _buildRightColumn(),
+                                  ],
+                                )
+                              : Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      child: _buildLeftColumn(),
+                                    ),
+                                    const SizedBox(width: 60),
+                                    Expanded(
+                                      child: _buildRightColumn(),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(width: 60),
-
-                                // Right Column
-                                Expanded(
-                                  child: _buildRightColumn(),
-                                ),
-                              ],
-                            ),
                           ],
                         ),
                       ),

@@ -10,6 +10,7 @@ import 'admin_postnatal_patient_detail_screen.dart';
 import 'admin_staff_management_screen.dart';
 import '../auth/home_screen.dart';
 import '../../utils/colors.dart';
+import '../../utils/responsive_utils.dart';
 import '../../utils/history_logger.dart';
 
 class AdminAppointmentManagementScreen extends StatefulWidget {
@@ -565,23 +566,45 @@ class _AdminAppointmentManagementScreenState
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = context.isMobile;
+    
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
+      appBar: isMobile ? AppBar(
+        backgroundColor: primary,
+        title: Text(
+          'APPOINTMENT MANAGEMENT',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: context.responsiveFontSize(18),
+            fontFamily: 'Bold',
+          ),
+        ),
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu, color: Colors.white),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
+      ) : null,
+      drawer: isMobile ? Drawer(
+        child: _buildSidebar(),
+      ) : null,
       body: Row(
         children: [
-          _buildSidebar(),
+          if (!isMobile) _buildSidebar(),
           Expanded(
             child: _isLoading
                 ? Center(child: CircularProgressIndicator(color: primary))
                 : SingleChildScrollView(
-                    padding: const EdgeInsets.all(30),
+                    padding: EdgeInsets.all(isMobile ? 16 : 30),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildHeader(),
-                        const SizedBox(height: 20),
+                        if (!isMobile) _buildHeader(),
+                        if (!isMobile) const SizedBox(height: 20),
                         _buildTabButtons(),
-                        const SizedBox(height: 20),
+                        SizedBox(height: isMobile ? 16 : 20),
                         if (_selectedTab == 'prenatal')
                           _buildPrenatalSection()
                         else if (_selectedTab == 'postnatal')

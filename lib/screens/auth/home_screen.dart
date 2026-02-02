@@ -11,6 +11,7 @@ import '../prenatal_dashboard_screen.dart';
 import '../postnatal_dashboard_screen.dart';
 import '../../widgets/forgot_password_dialog.dart';
 import '../../widgets/admin_login_dialog.dart';
+import '../../utils/responsive_utils.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -68,9 +69,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHeader() {
+    final isMobile = context.isMobile;
+    
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 16 : 40, 
+        vertical: isMobile ? 16 : 20
+      ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [primary, secondary],
@@ -82,31 +88,98 @@ class _HomeScreenState extends State<HomeScreen> {
           bottomRight: Radius.circular(20),
         ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Logo
-          const Text(
-            'VICTORY LYING IN',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontFamily: 'Bold',
-              letterSpacing: 1.2,
+      child: isMobile
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'VICTORY LYING IN',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontFamily: 'Bold',
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.menu, color: Colors.white),
+                      onPressed: () => _showMobileMenu(context),
+                    ),
+                  ],
+                ),
+              ],
+            )
+          : Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'VICTORY LYING IN',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontFamily: 'Bold',
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                Wrap(
+                  spacing: 40,
+                  children: [
+                    _buildNavItem('HOME', true),
+                    _buildNavItem('ABOUT US', false),
+                    _buildNavItem('SERVICES', false),
+                    _buildNavItem('CONTACT US', false),
+                  ],
+                ),
+              ],
             ),
-          ),
+    );
+  }
 
-          // Navigation Menu
-          Wrap(
-            spacing: 40,
+  void _showMobileMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: primary,
+      builder: (context) => SafeArea(
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              _buildNavItem('HOME', true),
-              _buildNavItem('ABOUT US', false),
-              _buildNavItem('SERVICES', false),
-              _buildNavItem('CONTACT US', false),
+              ListTile(
+                leading: const Icon(Icons.home, color: Colors.white),
+                title: const Text('HOME', style: TextStyle(color: Colors.white, fontFamily: 'Bold')),
+                onTap: () => Navigator.pop(context),
+              ),
+              ListTile(
+                leading: const Icon(Icons.info, color: Colors.white70),
+                title: const Text('ABOUT US', style: TextStyle(color: Colors.white70, fontFamily: 'Medium')),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const AboutUsScreen()));
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.medical_services, color: Colors.white70),
+                title: const Text('SERVICES', style: TextStyle(color: Colors.white70, fontFamily: 'Medium')),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const ServicesScreen()));
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.contact_mail, color: Colors.white70),
+                title: const Text('CONTACT US', style: TextStyle(color: Colors.white70, fontFamily: 'Medium')),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const ContactUsScreen()));
+                },
+              ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -551,26 +624,28 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildServiceItem(String iconPath, String title) {
+    final isMobile = context.isMobile;
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 80,
-          height: 80,
+          width: isMobile ? 60 : 80,
+          height: isMobile ? 60 : 80,
           decoration: BoxDecoration(
             color: orangePallete,
             shape: BoxShape.circle,
           ),
-          padding: const EdgeInsets.all(18),
+          padding: EdgeInsets.all(isMobile ? 14 : 18),
           child: Image.asset(
             iconPath,
             fit: BoxFit.contain,
           ),
         ),
-        const SizedBox(width: 20),
+        SizedBox(width: isMobile ? 12 : 20),
         Text(
           title,
-          style: const TextStyle(
-            fontSize: 28,
+          style: TextStyle(
+            fontSize: isMobile ? 20 : 28,
             fontFamily: 'Bold',
             color: Colors.black,
             letterSpacing: 0.5,
@@ -869,9 +944,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildFooter() {
+    final isMobile = context.isMobile;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 30),
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 20 : 40, 
+        vertical: isMobile ? 20 : 30
+      ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [primary, secondary],
@@ -883,12 +962,12 @@ class _HomeScreenState extends State<HomeScreen> {
           topRight: Radius.circular(20),
         ),
       ),
-      child: const Text(
+      child: Text(
         'We care about your health\nand well - being',
         textAlign: TextAlign.center,
         style: TextStyle(
           color: Colors.white,
-          fontSize: 32,
+          fontSize: isMobile ? 24 : 32,
           fontFamily: 'Bold',
           height: 1.3,
           letterSpacing: 0.5,

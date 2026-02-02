@@ -8,6 +8,7 @@ import 'admin_patient_records_screen.dart';
 import 'admin_dashboard_screen.dart';
 import 'admin_appointment_management_screen.dart';
 import 'admin_staff_management_screen.dart';
+import '../../utils/responsive_utils.dart';
 import '../auth/home_screen.dart';
 
 class AdminAppointmentSchedulingScreen extends StatefulWidget {
@@ -2252,39 +2253,56 @@ class _AdminAppointmentSchedulingScreenState
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = context.isMobile;
+    
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
+      appBar: isMobile ? AppBar(
+        backgroundColor: primary,
+        title: Text(
+          'APPROVE SCHEDULES',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: context.responsiveFontSize(18),
+            fontFamily: 'Bold',
+          ),
+        ),
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu, color: Colors.white),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
+      ) : null,
+      drawer: isMobile ? Drawer(
+        child: _buildSidebar(),
+      ) : null,
       body: Row(
         children: [
-          // Sidebar
-          _buildSidebar(),
-
-          // Main Content
+          if (!isMobile) _buildSidebar(),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.all(30),
+              padding: EdgeInsets.all(isMobile ? 16 : 30),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header
-                  Row(
-                    children: const [
-                      Icon(Icons.event_available,
-                          size: 28, color: Colors.black87),
-                      SizedBox(width: 12),
-                      Text(
-                        'Approve Schedules',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontFamily: 'Bold',
-                          color: Colors.black87,
+                  if (!isMobile)
+                    Row(
+                      children: const [
+                        Icon(Icons.event_available,
+                            size: 28, color: Colors.black87),
+                        SizedBox(width: 12),
+                        Text(
+                          'Approve Schedules',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontFamily: 'Bold',
+                            color: Colors.black87,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Appointments Table
+                      ],
+                    ),
+                  if (!isMobile) const SizedBox(height: 20),
                   Expanded(
                     child: Container(
                       decoration: BoxDecoration(

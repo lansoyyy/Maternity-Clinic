@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../utils/colors.dart';
+import '../utils/responsive_utils.dart';
 import '../widgets/forgot_password_dialog.dart';
 import 'prenatal_history_checkup_screen.dart';
 import 'notification_appointment_screen.dart';
@@ -76,17 +77,40 @@ class _PrenatalDashboardScreenState extends State<PrenatalDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = context.isMobile;
+
     return Scaffold(
       backgroundColor: Colors.white,
+      appBar: isMobile
+          ? AppBar(
+              backgroundColor: primary,
+              title: const Text(
+                'PRENATAL DASHBOARD',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontFamily: 'Bold',
+                ),
+              ),
+              leading: Builder(
+                builder: (context) => IconButton(
+                  icon: const Icon(Icons.menu, color: Colors.white),
+                  onPressed: () => Scaffold.of(context).openDrawer(),
+                ),
+              ),
+            )
+          : null,
+      drawer: isMobile
+          ? Drawer(
+              child: _buildSidebar(),
+            )
+          : null,
       body: Row(
         children: [
-          // Sidebar
-          _buildSidebar(),
-
-          // Main Content
+          if (!isMobile) _buildSidebar(),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(40),
+              padding: EdgeInsets.all(isMobile ? 16 : 40),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

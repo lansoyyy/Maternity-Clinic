@@ -10,6 +10,7 @@ import 'package:maternity_clinic/screens/admin/admin_patient_records_screen.dart
 import 'package:maternity_clinic/screens/admin/admin_staff_management_screen.dart';
 import 'package:maternity_clinic/screens/admin/admin_transfer_requests_screen.dart';
 import '../../utils/colors.dart';
+import '../../utils/responsive_utils.dart';
 import '../auth/home_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
@@ -378,12 +379,34 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = context.isMobile;
+    
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
+      appBar: isMobile ? AppBar(
+        backgroundColor: primary,
+        title: Text(
+          'ADMIN DASHBOARD',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: context.responsiveFontSize(18),
+            fontFamily: 'Bold',
+          ),
+        ),
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu, color: Colors.white),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
+      ) : null,
+      drawer: isMobile ? Drawer(
+        child: _buildSidebar(),
+      ) : null,
       body: Row(
         children: [
-          // Sidebar
-          _buildSidebar(),
+          // Sidebar - hidden on mobile
+          if (!isMobile) _buildSidebar(),
 
           // Main Content
           Expanded(
@@ -391,14 +414,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 ? Center(child: CircularProgressIndicator(color: primary))
                 : SingleChildScrollView(
                     controller: _scrollController,
-                    padding: const EdgeInsets.all(30),
+                    padding: EdgeInsets.all(isMobile ? 16 : 30),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Dashboard Header
                         Container(
-                          margin: const EdgeInsets.only(bottom: 30),
-                          padding: const EdgeInsets.all(25),
+                          margin: EdgeInsets.only(bottom: isMobile ? 16 : 30),
+                          padding: EdgeInsets.all(isMobile ? 16 : 25),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: [
@@ -417,49 +440,90 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               ),
                             ],
                           ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.dashboard_rounded,
-                                color: Colors.white,
-                                size: 40,
-                              ),
-                              const SizedBox(width: 20),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'ADMIN DASHBOARD',
-                                      style: TextStyle(
+                          child: isMobile 
+                            ? Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.dashboard_rounded,
                                         color: Colors.white,
-                                        fontSize: 28,
-                                        fontFamily: 'Bold',
-                                        letterSpacing: 1,
+                                        size: context.responsiveFontSize(28),
                                       ),
-                                    ),
-                                    const SizedBox(height: 5),
-                                    Text(
-                                      'Welcome back, ${widget.userName}',
-                                      style: const TextStyle(
-                                        color: Colors.white70,
-                                        fontSize: 16,
-                                        fontFamily: 'Medium',
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Text(
+                                          'ADMIN DASHBOARD',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: context.responsiveFontSize(20),
+                                            fontFamily: 'Bold',
+                                            letterSpacing: 1,
+                                          ),
+                                        ),
                                       ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Welcome back, ${widget.userName}',
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: context.responsiveFontSize(14),
+                                      fontFamily: 'Medium',
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                ],
+                              )
+                            : Row(
+                                children: [
+                                  Icon(
+                                    Icons.dashboard_rounded,
+                                    color: Colors.white,
+                                    size: 40,
+                                  ),
+                                  const SizedBox(width: 20),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          'ADMIN DASHBOARD',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 28,
+                                            fontFamily: 'Bold',
+                                            letterSpacing: 1,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 5),
+                                        Text(
+                                          'Welcome back, ${widget.userName}',
+                                          style: const TextStyle(
+                                            color: Colors.white70,
+                                            fontSize: 16,
+                                            fontFamily: 'Medium',
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
                         ),
 
                         // Home Quick Stats Cards
-                        Row(
+                        Wrap(
+                          spacing: isMobile ? 12 : 20,
+                          runSpacing: isMobile ? 12 : 20,
                           children: [
-                            Expanded(
+                            SizedBox(
+                              width: isMobile 
+                                ? (context.screenWidth - 48) / 2 
+                                : (context.screenWidth - 268 - (isMobile ? 48 : 80)) / 4,
                               child: _buildStatCard(
-                                'Pending Requests',
+                                'Pending',
                                 '$_pendingAppointments',
                                 Icons.pending_actions_rounded,
                                 Colors.orange,
@@ -472,10 +536,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                 },
                               ),
                             ),
-                            const SizedBox(width: 20),
-                            Expanded(
+                            SizedBox(
+                              width: isMobile 
+                                ? (context.screenWidth - 48) / 2 
+                                : (context.screenWidth - 268 - (isMobile ? 48 : 80)) / 4,
                               child: _buildStatCard(
-                                "Today's Appointments",
+                                "Today's",
                                 '$_todaysAppointments',
                                 Icons.today_rounded,
                                 Colors.blue,
@@ -488,10 +554,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                 },
                               ),
                             ),
-                            const SizedBox(width: 20),
-                            Expanded(
+                            SizedBox(
+                              width: isMobile 
+                                ? (context.screenWidth - 48) / 2 
+                                : (context.screenWidth - 268 - (isMobile ? 48 : 80)) / 4,
                               child: _buildStatCard(
-                                'High Risk Patients',
+                                'High Risk',
                                 '$_highRiskPatients',
                                 Icons.warning_amber_rounded,
                                 Colors.red,
@@ -500,10 +568,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                 },
                               ),
                             ),
-                            const SizedBox(width: 20),
-                            Expanded(
+                            SizedBox(
+                              width: isMobile 
+                                ? (context.screenWidth - 48) / 2 
+                                : (context.screenWidth - 268 - (isMobile ? 48 : 80)) / 4,
                               child: _buildStatCard(
-                                'Total Active Patients',
+                                'Total',
                                 '${_prenatalCount + _postnatalCount}',
                                 Icons.people_rounded,
                                 const Color(0xFF5DCED9),
@@ -514,25 +584,35 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 30),
+                        SizedBox(height: isMobile ? 20 : 30),
 
                         // Top Row - Charts (Admin and Nurse)
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildPrenatalPostnatalChart(),
+                        isMobile 
+                          ? Column(
+                              children: [
+                                _buildPrenatalPostnatalChart(),
+                                const SizedBox(height: 16),
+                                _buildAgeGroupChart(),
+                                const SizedBox(height: 16),
+                                _buildDailyPatientChart(),
+                              ],
+                            )
+                          : Row(
+                              children: [
+                                Expanded(
+                                  child: _buildPrenatalPostnatalChart(),
+                                ),
+                                const SizedBox(width: 20),
+                                Expanded(
+                                  child: _buildAgeGroupChart(),
+                                ),
+                                const SizedBox(width: 20),
+                                Expanded(
+                                  child: _buildDailyPatientChart(),
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 20),
-                            Expanded(
-                              child: _buildAgeGroupChart(),
-                            ),
-                            const SizedBox(width: 20),
-                            Expanded(
-                              child: _buildDailyPatientChart(),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 30),
+                        SizedBox(height: isMobile ? 20 : 30),
 
                         // Bottom - Line Chart
                         _buildHistoryCountingChart(),

@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../utils/colors.dart';
 import '../../utils/history_logger.dart';
+import '../../utils/responsive_utils.dart';
 import 'admin_dashboard_screen.dart';
 import 'admin_appointment_scheduling_screen.dart';
 import 'admin_appointment_management_screen.dart';
@@ -393,78 +394,157 @@ class _AdminStaffManagementScreenState extends State<AdminStaffManagementScreen>
       );
     }
 
+    final isMobile = context.isMobile;
+
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
+      appBar: isMobile ? AppBar(
+        backgroundColor: primary,
+        title: Text(
+          'STAFF MANAGEMENT',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: context.responsiveFontSize(18),
+            fontFamily: 'Bold',
+          ),
+        ),
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu, color: Colors.white),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
+      ) : null,
+      drawer: isMobile ? Drawer(
+        child: _buildSidebar(),
+      ) : null,
       body: Row(
         children: [
-          _buildSidebar(),
+          if (!isMobile) _buildSidebar(),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(30),
+              padding: EdgeInsets.all(isMobile ? 16 : 30),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildHeader(),
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      SizedBox(
-                        width: 300,
-                        child: TextField(
-                          controller: _searchController,
-                          decoration: InputDecoration(
-                            hintText: 'Search staff',
-                            hintStyle: TextStyle(
-                              fontSize: 13,
-                              fontFamily: 'Regular',
-                              color: Colors.grey.shade500,
+                  if (!isMobile) _buildHeader(),
+                  if (!isMobile) const SizedBox(height: 20),
+                  isMobile 
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          TextField(
+                            controller: _searchController,
+                            decoration: InputDecoration(
+                              hintText: 'Search staff',
+                              hintStyle: TextStyle(
+                                fontSize: 13,
+                                fontFamily: 'Regular',
+                                color: Colors.grey.shade500,
+                              ),
+                              prefixIcon: const Icon(Icons.search, size: 18),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(color: Colors.grey.shade300),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(color: Colors.grey.shade300),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(color: primary, width: 1.5),
+                              ),
+                              isDense: true,
                             ),
-                            prefixIcon: const Icon(Icons.search, size: 18),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 10,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: Colors.grey.shade300),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: Colors.grey.shade300),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: primary, width: 1.5),
-                            ),
-                            isDense: true,
                           ),
-                        ),
+                          const SizedBox(height: 12),
+                          ElevatedButton.icon(
+                            onPressed: _showAddStaffDialog,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: primary,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            icon: const Icon(Icons.person_add, color: Colors.white),
+                            label: const Text(
+                              'Add Staff',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontFamily: 'Bold',
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    : Row(
+                        children: [
+                          SizedBox(
+                            width: 300,
+                            child: TextField(
+                              controller: _searchController,
+                              decoration: InputDecoration(
+                                hintText: 'Search staff',
+                                hintStyle: TextStyle(
+                                  fontSize: 13,
+                                  fontFamily: 'Regular',
+                                  color: Colors.grey.shade500,
+                                ),
+                                prefixIcon: const Icon(Icons.search, size: 18),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 10,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: BorderSide(color: Colors.grey.shade300),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: BorderSide(color: Colors.grey.shade300),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: BorderSide(color: primary, width: 1.5),
+                                ),
+                                isDense: true,
+                              ),
+                            ),
+                          ),
+                          const Spacer(),
+                          ElevatedButton.icon(
+                            onPressed: _showAddStaffDialog,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: primary,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            icon: const Icon(Icons.person_add, color: Colors.white),
+                            label: const Text(
+                              'Add Staff',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontFamily: 'Bold',
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      const Spacer(),
-                      ElevatedButton.icon(
-                        onPressed: _showAddStaffDialog,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primary,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        icon: const Icon(Icons.person_add, color: Colors.white),
-                        label: const Text(
-                          'Add Staff',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontFamily: 'Bold',
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
+                  SizedBox(height: isMobile ? 16 : 20),
                   _buildStaffTable(),
                 ],
               ),

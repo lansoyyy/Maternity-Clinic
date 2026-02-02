@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../utils/colors.dart';
+import '../../utils/responsive_utils.dart';
 
 class AdminPrenatalPatientDetailScreen extends StatefulWidget {
   final Map<String, String> patientData;
@@ -468,19 +469,38 @@ class _AdminPrenatalPatientDetailScreenState
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = context.isMobile;
+    
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
+      appBar: isMobile ? AppBar(
+        backgroundColor: primary,
+        title: const Text(
+          'PATIENT DETAILS',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontFamily: 'Bold',
+          ),
+        ),
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu, color: Colors.white),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
+      ) : null,
+      drawer: isMobile ? Drawer(
+        child: _buildSidebar(),
+      ) : null,
       body: Row(
         children: [
-          // Sidebar
-          _buildSidebar(),
-
-          // Main Content
+          if (!isMobile) _buildSidebar(),
           Expanded(
             child: _isLoading
                 ? Center(child: CircularProgressIndicator(color: primary))
                 : SingleChildScrollView(
-                    padding: const EdgeInsets.all(30),
+                    padding: EdgeInsets.all(isMobile ? 16 : 30),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [

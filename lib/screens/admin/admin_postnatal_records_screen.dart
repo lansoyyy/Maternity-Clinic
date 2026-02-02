@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:maternity_clinic/screens/admin/admin_postnatal_patient_detail_screen.dart';
 import 'package:maternity_clinic/screens/transfer_record_request_screen.dart';
 import 'package:maternity_clinic/utils/colors.dart';
+import 'package:maternity_clinic/utils/responsive_utils.dart';
 
 import 'admin_prenatal_records_screen.dart';
 import 'admin_appointment_management_screen.dart';
@@ -575,17 +576,36 @@ class _AdminPostnatalRecordsScreenState
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = context.isMobile;
+    
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
+      appBar: isMobile ? AppBar(
+        backgroundColor: primary,
+        title: const Text(
+          'POSTNATAL RECORDS',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontFamily: 'Bold',
+          ),
+        ),
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu, color: Colors.white),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
+      ) : null,
+      drawer: isMobile ? Drawer(
+        child: _buildSidebar(),
+      ) : null,
       body: Row(
         children: [
-          // Sidebar
-          _buildSidebar(),
-
-          // Main Content
+          if (!isMobile) _buildSidebar(),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.all(30),
+              padding: EdgeInsets.all(isMobile ? 16 : 30),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

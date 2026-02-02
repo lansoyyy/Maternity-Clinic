@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../utils/colors.dart';
+import '../utils/responsive_utils.dart';
 
 class PostnatalUpdateProfileScreen extends StatefulWidget {
   const PostnatalUpdateProfileScreen({super.key});
@@ -359,16 +360,26 @@ class _PostnatalUpdateProfileScreenState
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = context.isMobile;
+    
     return Scaffold(
       appBar: AppBar(
         backgroundColor: primary,
+        title: const Text(
+          'UPDATE PROFILE',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontFamily: 'Bold',
+          ),
+        ),
       ),
       body: _isLoading
           ? Center(
               child: CircularProgressIndicator(color: primary),
             )
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(32),
+              padding: EdgeInsets.all(isMobile ? 16 : 32),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -405,15 +416,15 @@ class _PostnatalUpdateProfileScreenState
                     ),
                   ),
                   _buildBasicInfoSection(),
-                  const SizedBox(height: 24),
+                  SizedBox(height: isMobile ? 16 : 24),
                   _buildRequiredProfileSection(),
-                  const SizedBox(height: 24),
+                  SizedBox(height: isMobile ? 16 : 24),
                   _buildDeliveryDetailsSection(),
-                  const SizedBox(height: 24),
+                  SizedBox(height: isMobile ? 16 : 24),
                   _buildInfantInfoSection(),
-                  const SizedBox(height: 32),
+                  SizedBox(height: isMobile ? 24 : 32),
                   Align(
-                    alignment: Alignment.centerRight,
+                    alignment: isMobile ? Alignment.center : Alignment.centerRight,
                     child: ElevatedButton(
                       onPressed: _isSaving || _isProfileCompleted
                           ? null

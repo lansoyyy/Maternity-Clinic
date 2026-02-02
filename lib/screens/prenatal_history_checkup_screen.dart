@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../utils/colors.dart';
+import '../utils/responsive_utils.dart';
 import '../widgets/forgot_password_dialog.dart';
 import 'prenatal_dashboard_screen.dart';
 import 'notification_appointment_screen.dart';
@@ -120,56 +121,72 @@ class _PrenatalHistoryCheckupScreenState
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = context.isMobile;
+    
     return Scaffold(
       backgroundColor: Colors.white,
+      appBar: isMobile ? AppBar(
+        backgroundColor: primary,
+        title: const Text(
+          'CHECKUP HISTORY',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontFamily: 'Bold',
+          ),
+        ),
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu, color: Colors.white),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
+      ) : null,
+      drawer: isMobile ? Drawer(
+        child: _buildSidebar(),
+      ) : null,
       body: Row(
         children: [
-          // Sidebar
-          _buildSidebar(),
-
-          // Main Content
+          if (!isMobile) _buildSidebar(),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(40),
+              padding: EdgeInsets.all(isMobile ? 16 : 40),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Page Title
-                  const Text(
-                    'Prenatal Checkup History',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontFamily: 'Bold',
-                      color: Colors.black,
-                      letterSpacing: 0.5,
+                  if (!isMobile) ...[
+                    Text(
+                      'Prenatal Checkup History',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontFamily: 'Bold',
+                        color: Colors.black,
+                        letterSpacing: 0.5,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'View your completed prenatal appointments and checkup records',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontFamily: 'Regular',
-                      color: Colors.grey.shade600,
+                    const SizedBox(height: 10),
+                    Text(
+                      'View your completed prenatal appointments and checkup records',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontFamily: 'Regular',
+                        color: Colors.grey.shade600,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 30),
-
-                  // Patient Information Card
+                    const SizedBox(height: 30),
+                  ],
                   _buildPatientInfoCard(),
-                  const SizedBox(height: 30),
-
-                  // All Completed Appointments Summary
+                  SizedBox(height: isMobile ? 20 : 30),
                   if (_completedAppointments.isNotEmpty) ...[
-                    const Text(
+                    Text(
                       'Completed Appointments Summary',
                       style: TextStyle(
-                        fontSize: 20,
+                        fontSize: isMobile ? 18 : 20,
                         fontFamily: 'Bold',
                         color: Colors.black,
                       ),
                     ),
-                    const SizedBox(height: 15),
+                    SizedBox(height: isMobile ? 12 : 15),
                     ..._completedAppointments.asMap().entries.map((entry) {
                       int index = entry.key;
                       Map<String, dynamic> appointment = entry.value;
@@ -179,19 +196,17 @@ class _PrenatalHistoryCheckupScreenState
                             appointment, index + 1),
                       );
                     }).toList(),
-                    const SizedBox(height: 30),
+                    SizedBox(height: isMobile ? 20 : 30),
                   ],
-
-                  // Checkup History Table
-                  const Text(
+                  Text(
                     'Appointment History',
                     style: TextStyle(
-                      fontSize: 20,
+                      fontSize: isMobile ? 18 : 20,
                       fontFamily: 'Bold',
                       color: Colors.black,
                     ),
                   ),
-                  const SizedBox(height: 15),
+                  SizedBox(height: isMobile ? 12 : 15),
                   _buildCheckupHistoryTable(),
                 ],
               ),
