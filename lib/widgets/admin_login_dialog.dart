@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:maternity_clinic/screens/admin/admin_dashboard_screen.dart';
 
 import '../utils/colors.dart';
+import '../utils/history_logger.dart';
 
 class AdminLoginDialog extends StatefulWidget {
   const AdminLoginDialog({super.key});
@@ -33,8 +34,8 @@ class _AdminLoginDialogState extends State<AdminLoginDialog> {
     super.dispose();
   }
 
-  void _handleLogin() {
-    final username = _usernameController.text.trim();
+  Future<void> _handleLogin() async {
+    final username = _usernameController.text.trim().toLowerCase();
     final password = _passwordController.text.trim();
 
     if (username.isEmpty || password.isEmpty) {
@@ -46,30 +47,73 @@ class _AdminLoginDialogState extends State<AdminLoginDialog> {
       _isLoading = true;
     });
 
-    // Simulate authentication delay
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (_userCredentials.containsKey(username) &&
-          _userCredentials[username]?['password'] == password) {
-        // Authentication successful
-        final userData = _userCredentials[username]!;
-        Navigator.pop(context); // Close dialog
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => AdminDashboardScreen(
-              userRole: userData['role']!,
-              userName: userData['name']!,
-            ),
-          ),
-        );
+    try {
+      String? role;
+      String? name;
+
+      final doc =
+          await _firestore.collection('staffAccounts').doc(username).get();
+      if (doc.exists) {
+        final data = doc.data() as Map<String, dynamic>;
+        final storedPassword = (data['password'] ?? '').toString();
+        if (storedPassword == password) {
+          role = (data['role'] ?? '').toString();
+          name = (data['name'] ?? '').toString();
+        } else {
+          setState(() {
+            _isLoading = false;
+          });
+          _showErrorDialog('Invalid username or password');
+          return;
+        }
       } else {
-        // Authentication failed
+        final fallback = _userCredentials[username];
+        if (fallback != null && fallback['password'] == password) {
+          role = fallback['role'];
+          name = fallback['name'];
+        }
+      }
+
+      if (role == null || name == null || role.isEmpty || name.isEmpty) {
         setState(() {
           _isLoading = false;
         });
         _showErrorDialog('Invalid username or password');
+        return;
       }
-    });
+
+      final String roleValue = role;
+      final String nameValue = name;
+
+      await HistoryLogger.log(
+        role: roleValue,
+        userName: nameValue,
+        action: 'Logged in',
+        metadata: {
+          'username': username,
+        },
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
+      Navigator.pop(context);
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => AdminDashboardScreen(
+            userRole: roleValue,
+            userName: nameValue,
+          ),
+        ),
+      );
+    } catch (_) {
+      setState(() {
+        _isLoading = false;
+      });
+      _showErrorDialog('An unexpected error occurred. Please try again.');
+    }
   }
 
   void _showErrorDialog(String message) {

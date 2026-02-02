@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../utils/colors.dart';
+import '../../utils/history_logger.dart';
 import 'admin_dashboard_screen.dart';
+import 'admin_staff_management_screen.dart';
 import 'admin_patient_records_screen.dart';
 import 'admin_appointment_scheduling_screen.dart';
 import 'admin_appointment_management_screen.dart';
@@ -86,6 +88,17 @@ class _AdminTransferRequestsScreenState
         'status': newStatus,
         'updatedAt': FieldValue.serverTimestamp(),
       });
+
+      await HistoryLogger.log(
+        role: widget.userRole,
+        userName: widget.userName,
+        action:
+            '${widget.userName} (${widget.userRole.toUpperCase()}) updated a transfer request to $newStatus',
+        metadata: {
+          'requestId': requestId,
+          'newStatus': newStatus,
+        },
+      );
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -308,10 +321,9 @@ class _AdminTransferRequestsScreenState
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => AdminDashboardScreen(
+            builder: (context) => AdminStaffManagementScreen(
               userRole: widget.userRole,
               userName: widget.userName,
-              openAddStaffOnLoad: true,
             ),
           ),
         );

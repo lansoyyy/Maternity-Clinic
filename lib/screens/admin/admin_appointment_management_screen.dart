@@ -7,8 +7,10 @@ import 'admin_appointment_scheduling_screen.dart';
 import 'admin_patient_records_screen.dart';
 import 'admin_prenatal_patient_detail_screen.dart';
 import 'admin_postnatal_patient_detail_screen.dart';
+import 'admin_staff_management_screen.dart';
 import '../auth/home_screen.dart';
 import '../../utils/colors.dart';
+import '../../utils/history_logger.dart';
 
 class AdminAppointmentManagementScreen extends StatefulWidget {
   final String userRole;
@@ -227,11 +229,46 @@ class _AdminAppointmentManagementScreenState
     if (id.isEmpty) return;
 
     try {
+      String whenText = '';
+      final dynamic dateField = appointment['appointmentDate'];
+      final String timeSlot = (appointment['timeSlot'] ?? '').toString();
+      if (dateField is Timestamp) {
+        final d = dateField.toDate();
+        const days = [
+          'Monday',
+          'Tuesday',
+          'Wednesday',
+          'Thursday',
+          'Friday',
+          'Saturday',
+          'Sunday',
+        ];
+        final String dayName =
+            (d.weekday >= 1 && d.weekday <= 7) ? days[d.weekday - 1] : '';
+        final String dateText =
+            '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+        whenText = dayName.isNotEmpty
+            ? ' on $dayName ($dateText)${timeSlot.isNotEmpty ? ' at $timeSlot' : ''}'
+            : ' on $dateText${timeSlot.isNotEmpty ? ' at $timeSlot' : ''}';
+      }
+
       await _firestore.collection('appointments').doc(id).update({
         'status': 'Accepted',
         'acceptedAt': FieldValue.serverTimestamp(),
         'acceptedBy': widget.userName,
       });
+
+      await HistoryLogger.log(
+        role: widget.userRole,
+        userName: widget.userName,
+        action:
+            '${widget.userName} (${widget.userRole.toUpperCase()}) accepted $name\'s appointment$whenText',
+        metadata: {
+          'appointmentId': id,
+          'patientName': name,
+          'newStatus': 'Accepted',
+        },
+      );
 
       await _sendAppointmentAcceptedEmail(appointment);
 
@@ -268,11 +305,46 @@ class _AdminAppointmentManagementScreenState
     if (id.isEmpty) return;
 
     try {
+      String whenText = '';
+      final dynamic dateField = appointment['appointmentDate'];
+      final String timeSlot = (appointment['timeSlot'] ?? '').toString();
+      if (dateField is Timestamp) {
+        final d = dateField.toDate();
+        const days = [
+          'Monday',
+          'Tuesday',
+          'Wednesday',
+          'Thursday',
+          'Friday',
+          'Saturday',
+          'Sunday',
+        ];
+        final String dayName =
+            (d.weekday >= 1 && d.weekday <= 7) ? days[d.weekday - 1] : '';
+        final String dateText =
+            '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+        whenText = dayName.isNotEmpty
+            ? ' on $dayName ($dateText)${timeSlot.isNotEmpty ? ' at $timeSlot' : ''}'
+            : ' on $dateText${timeSlot.isNotEmpty ? ' at $timeSlot' : ''}';
+      }
+
       await _firestore.collection('appointments').doc(id).update({
         'status': 'Cancelled',
         'cancelledAt': FieldValue.serverTimestamp(),
         'cancelledBy': widget.userName,
       });
+
+      await HistoryLogger.log(
+        role: widget.userRole,
+        userName: widget.userName,
+        action:
+            '${widget.userName} (${widget.userRole.toUpperCase()}) cancelled $name\'s appointment$whenText',
+        metadata: {
+          'appointmentId': id,
+          'patientName': name,
+          'newStatus': 'Cancelled',
+        },
+      );
 
       await _sendAppointmentCancelledEmail(appointment);
 
@@ -309,6 +381,28 @@ class _AdminAppointmentManagementScreenState
         'status': newStatus,
         'updatedAt': FieldValue.serverTimestamp(),
       });
+
+      String patientName = '';
+      for (final r in _transferRequests) {
+        if ((r['id'] ?? '').toString() == requestId) {
+          patientName = (r['userName'] ?? r['fullName'] ?? '').toString();
+          break;
+        }
+      }
+
+      await HistoryLogger.log(
+        role: widget.userRole,
+        userName: widget.userName,
+        action:
+            patientName.isNotEmpty
+                ? '${widget.userName} (${widget.userRole.toUpperCase()}) updated ${patientName}\'s transfer request to $newStatus'
+                : '${widget.userName} (${widget.userRole.toUpperCase()}) updated a transfer request to $newStatus',
+        metadata: {
+          'requestId': requestId,
+          'newStatus': newStatus,
+          if (patientName.isNotEmpty) 'patientName': patientName,
+        },
+      );
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1378,10 +1472,9 @@ class _AdminAppointmentManagementScreenState
         );
         break;
       case 'ADD NEW STAFF/NURSE':
-        screen = AdminDashboardScreen(
+        screen = AdminStaffManagementScreen(
           userRole: widget.userRole,
           userName: widget.userName,
-          openAddStaffOnLoad: true,
         );
         break;
       case 'CHANGE PASSWORD':

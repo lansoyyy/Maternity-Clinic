@@ -7,6 +7,7 @@ import 'package:printing/printing.dart';
 import 'package:maternity_clinic/screens/admin/admin_appointment_scheduling_screen.dart';
 import 'package:maternity_clinic/screens/admin/admin_appointment_management_screen.dart';
 import 'package:maternity_clinic/screens/admin/admin_patient_records_screen.dart';
+import 'package:maternity_clinic/screens/admin/admin_staff_management_screen.dart';
 import 'package:maternity_clinic/screens/admin/admin_transfer_requests_screen.dart';
 import '../../utils/colors.dart';
 import '../auth/home_screen.dart';
@@ -84,7 +85,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (widget.openAddStaffOnLoad) {
-        _showAddStaffDialog();
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AdminStaffManagementScreen(
+              userRole: widget.userRole,
+              userName: widget.userName,
+            ),
+          ),
+        );
       } else if (widget.openChangePasswordOnLoad) {
         _showChangePasswordDialog();
       } else if (widget.openHistoryLogsOnLoad) {
@@ -1914,8 +1923,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           _showAccessDeniedDialog();
           return;
         }
-        _showAddStaffDialog();
-        return;
+        screen = AdminStaffManagementScreen(
+          userRole: widget.userRole,
+          userName: widget.userName,
+        );
+        break;
       case 'CHANGE PASSWORD':
         if (!_isAdmin) {
           _showAccessDeniedDialog();
@@ -1966,245 +1978,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       _scrollController.position.maxScrollExtent,
       duration: const Duration(milliseconds: 500),
       curve: Curves.easeOut,
-    );
-  }
-
-  void _showAddStaffDialog() {
-    if (!_isAdmin) {
-      _showAccessDeniedDialog();
-      return;
-    }
-
-    final TextEditingController nameController = TextEditingController();
-    final TextEditingController usernameController = TextEditingController();
-    final TextEditingController passwordController = TextEditingController();
-    final TextEditingController confirmPasswordController =
-        TextEditingController();
-    bool isSaving = false;
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setStateDialog) {
-            return AlertDialog(
-              title: const Text(
-                'Add New Staff/Nurse',
-                style: TextStyle(fontFamily: 'Bold'),
-              ),
-              content: SizedBox(
-                width: 420,
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Staff Name',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontFamily: 'Regular',
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      TextField(
-                        controller: nameController,
-                        decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                          isDense: true,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'Username',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontFamily: 'Regular',
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      TextField(
-                        controller: usernameController,
-                        decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                          isDense: true,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'Password',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontFamily: 'Regular',
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      TextField(
-                        controller: passwordController,
-                        obscureText: true,
-                        decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                          isDense: true,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'Confirm Password',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontFamily: 'Regular',
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      TextField(
-                        controller: confirmPasswordController,
-                        obscureText: true,
-                        decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                          isDense: true,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'Role: Nurse (staff)',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontFamily: 'Regular',
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: isSaving
-                      ? null
-                      : () {
-                          Navigator.of(dialogContext).pop();
-                        },
-                  child: Text(
-                    'Cancel',
-                    style: TextStyle(
-                      color: Colors.grey.shade700,
-                      fontFamily: 'Regular',
-                    ),
-                  ),
-                ),
-                ElevatedButton(
-                  onPressed: isSaving
-                      ? null
-                      : () async {
-                          final name = nameController.text.trim();
-                          final username = usernameController.text.trim();
-                          final password = passwordController.text.trim();
-                          final confirm = confirmPasswordController.text.trim();
-
-                          if (name.isEmpty ||
-                              username.isEmpty ||
-                              password.isEmpty ||
-                              confirm.isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content:
-                                    Text('Please fill in all required fields'),
-                                behavior: SnackBarBehavior.floating,
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                            return;
-                          }
-                          if (password != confirm) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content:
-                                    Text('Password and confirm do not match'),
-                                behavior: SnackBarBehavior.floating,
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                            return;
-                          }
-
-                          setStateDialog(() {
-                            isSaving = true;
-                          });
-
-                          try {
-                            final docRef = _firestore
-                                .collection('staffAccounts')
-                                .doc(username);
-                            final existing = await docRef.get();
-                            if (existing.exists) {
-                              setStateDialog(() {
-                                isSaving = false;
-                              });
-                              if (!mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Username already exists'),
-                                  behavior: SnackBarBehavior.floating,
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
-                              return;
-                            }
-
-                            await docRef.set({
-                              'username': username,
-                              'name': name,
-                              'role': 'nurse',
-                              'password': password,
-                              'createdAt': FieldValue.serverTimestamp(),
-                              'createdBy': widget.userName,
-                            });
-
-                            if (!mounted) return;
-                            Navigator.of(dialogContext).pop();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Staff account added'),
-                                behavior: SnackBarBehavior.floating,
-                                backgroundColor: Colors.green,
-                              ),
-                            );
-                          } catch (e) {
-                            setStateDialog(() {
-                              isSaving = false;
-                            });
-                            if (!mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Failed to add staff account'),
-                                behavior: SnackBarBehavior.floating,
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                          }
-                        },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                  ),
-                  child: isSaving
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text(
-                          'Save',
-                          style: TextStyle(
-                            fontFamily: 'Bold',
-                          ),
-                        ),
-                ),
-              ],
-            );
-          },
-        );
-      },
     );
   }
 

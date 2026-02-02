@@ -6,6 +6,7 @@ import 'package:maternity_clinic/utils/colors.dart';
 import 'package:maternity_clinic/screens/admin/admin_dashboard_screen.dart';
 import 'package:maternity_clinic/screens/admin/admin_appointment_management_screen.dart';
 import 'package:maternity_clinic/screens/admin/admin_appointment_scheduling_screen.dart';
+import 'package:maternity_clinic/screens/admin/admin_staff_management_screen.dart';
 import 'package:maternity_clinic/screens/admin/admin_prenatal_patient_detail_screen.dart';
 import 'package:maternity_clinic/screens/admin/admin_postnatal_patient_detail_screen.dart';
 import '../auth/home_screen.dart';
@@ -1036,10 +1037,9 @@ class _AdminPatientRecordsScreenState extends State<AdminPatientRecordsScreen> {
         );
         break;
       case 'ADD NEW STAFF/NURSE':
-        screen = AdminDashboardScreen(
+        screen = AdminStaffManagementScreen(
           userRole: widget.userRole,
           userName: widget.userName,
-          openAddStaffOnLoad: true,
         );
         break;
       case 'CHANGE PASSWORD':

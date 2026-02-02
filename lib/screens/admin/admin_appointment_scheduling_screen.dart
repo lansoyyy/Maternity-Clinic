@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:maternity_clinic/utils/colors.dart';
+import 'package:maternity_clinic/utils/history_logger.dart';
 
 import 'admin_patient_records_screen.dart';
 import 'admin_dashboard_screen.dart';
 import 'admin_appointment_management_screen.dart';
+import 'admin_staff_management_screen.dart';
 import '../auth/home_screen.dart';
 
 class AdminAppointmentSchedulingScreen extends StatefulWidget {
@@ -160,6 +162,51 @@ class _AdminAppointmentSchedulingScreenState
         'acceptedAt': FieldValue.serverTimestamp(),
         'acceptedBy': widget.userName,
       });
+
+      final appt = _appointments.cast<Map<String, dynamic>>().firstWhere(
+            (a) => (a['id'] ?? '').toString() == appointmentId,
+            orElse: () => <String, dynamic>{},
+          );
+      final dynamic dateField = appt['appointmentDate'];
+      String dayName = '';
+      String dateText = '';
+      if (dateField is Timestamp) {
+        final d = dateField.toDate();
+        const days = [
+          'Monday',
+          'Tuesday',
+          'Wednesday',
+          'Thursday',
+          'Friday',
+          'Saturday',
+          'Sunday',
+        ];
+        if (d.weekday >= 1 && d.weekday <= 7) {
+          dayName = days[d.weekday - 1];
+        }
+        dateText =
+            '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+      }
+      final String timeSlot = (appt['timeSlot'] ?? '').toString();
+      final String whenText = dayName.isNotEmpty
+          ? ' on $dayName${dateText.isNotEmpty ? ' ($dateText)' : ''}${timeSlot.isNotEmpty ? ' at $timeSlot' : ''}'
+          : (dateText.isNotEmpty
+              ? ' on $dateText${timeSlot.isNotEmpty ? ' at $timeSlot' : ''}'
+              : '');
+
+      await HistoryLogger.log(
+        role: widget.userRole,
+        userName: widget.userName,
+        action:
+            '${widget.userName} (${widget.userRole.toUpperCase()}) accepted $patientName\'s appointment$whenText',
+        metadata: {
+          'appointmentId': appointmentId,
+          'patientName': patientName,
+          'newStatus': 'Accepted',
+          'appointmentDate': dateText,
+          'timeSlot': timeSlot,
+        },
+      );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -317,12 +364,13 @@ class _AdminAppointmentSchedulingScreenState
         final currentWeight = double.tryParse(weightText);
         if (currentWeight != null) {
           final daysBetween =
-              appointmentDate!.difference(previousDate!).inDays.abs();
+              appointmentDate.difference(previousDate).inDays.abs();
           if (daysBetween > 0) {
             final weeks = daysBetween / 7.0;
             if (weeks > 0) {
-              weightGainPerWeek = (currentWeight - previousWeightKg!) / weeks;
-              if (weightGainPerWeek != null && weightGainPerWeek! > 2.0) {
+              final double wg = (currentWeight - previousWeightKg) / weeks;
+              weightGainPerWeek = wg;
+              if (wg > 2.0) {
                 highRisk = true;
                 reasons.add('Weight gain > 2 kg/week');
               }
@@ -350,7 +398,7 @@ class _AdminAppointmentSchedulingScreenState
       if (fundalText.isNotEmpty && lmpDate != null && appointmentDate != null) {
         final fh = double.tryParse(fundalText);
         if (fh != null) {
-          final days = appointmentDate!.difference(lmpDate!).inDays;
+          final days = appointmentDate.difference(lmpDate).inDays;
           if (days >= 0) {
             final gaWeeks = days / 7.0;
             if ((fh - gaWeeks).abs() > 2.0) {
@@ -534,15 +582,16 @@ class _AdminAppointmentSchedulingScreenState
                         const SizedBox(height: 4),
                         Builder(
                           builder: (_) {
-                            final days =
-                                appointmentDate!.difference(lmpDate!).inDays;
+                            final DateTime apptDate = appointmentDate!;
+                            final DateTime lmp = lmpDate!;
+                            final days = apptDate.difference(lmp).inDays;
                             final gaWeeks = days >= 0 ? (days / 7.0) : 0.0;
                             return Text(
                               'Gestational age: ${gaWeeks.toStringAsFixed(1)} weeks',
                               style: TextStyle(
-                                fontSize: 11,
                                 fontFamily: 'Regular',
-                                color: Colors.grey.shade600,
+                                fontSize: 12,
+                                color: Colors.grey.shade700,
                               ),
                             );
                           },
@@ -786,6 +835,42 @@ class _AdminAppointmentSchedulingScreenState
                           .collection('appointments')
                           .doc(appointmentId)
                           .update(update);
+
+                      String completedWhen = '';
+                      if (appointmentDate != null) {
+                        final d = appointmentDate!;
+                        const days = [
+                          'Monday',
+                          'Tuesday',
+                          'Wednesday',
+                          'Thursday',
+                          'Friday',
+                          'Saturday',
+                          'Sunday',
+                        ];
+                        final String dayName =
+                            (d.weekday >= 1 && d.weekday <= 7)
+                                ? days[d.weekday - 1]
+                                : '';
+                        final dateText =
+                            '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+                        completedWhen = dayName.isNotEmpty
+                            ? ' on $dayName ($dateText)'
+                            : ' on $dateText';
+                      }
+
+                      await HistoryLogger.log(
+                        role: widget.userRole,
+                        userName: widget.userName,
+                        action:
+                            '${widget.userName} (${widget.userRole.toUpperCase()}) completed prenatal consultation for $patientName$completedWhen',
+                        metadata: {
+                          'appointmentId': appointmentId,
+                          'patientName': patientName,
+                          'newStatus': 'Completed',
+                          'visitRiskStatus': visitRiskStatus,
+                        },
+                      );
 
                       if (userId.isNotEmpty && visitRiskStatus == 'HIGH RISK') {
                         final userRef =
@@ -1519,6 +1604,42 @@ class _AdminAppointmentSchedulingScreenState
                           .doc(appointmentId)
                           .update(update);
 
+                      String completedWhen = '';
+                      if (appointmentDate != null) {
+                        final d = appointmentDate;
+                        const days = [
+                          'Monday',
+                          'Tuesday',
+                          'Wednesday',
+                          'Thursday',
+                          'Friday',
+                          'Saturday',
+                          'Sunday',
+                        ];
+                        final String dayName =
+                            (d.weekday >= 1 && d.weekday <= 7)
+                                ? days[d.weekday - 1]
+                                : '';
+                        final dateText =
+                            '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+                        completedWhen = dayName.isNotEmpty
+                            ? ' on $dayName ($dateText)'
+                            : ' on $dateText';
+                      }
+
+                      await HistoryLogger.log(
+                        role: widget.userRole,
+                        userName: widget.userName,
+                        action:
+                            '${widget.userName} (${widget.userRole.toUpperCase()}) completed postnatal consultation for $patientName$completedWhen',
+                        metadata: {
+                          'appointmentId': appointmentId,
+                          'patientName': patientName,
+                          'newStatus': 'Completed',
+                          'visitRiskStatus': visitRiskStatus,
+                        },
+                      );
+
                       if (userId.isNotEmpty && visitRiskStatus == 'HIGH RISK') {
                         final userRef =
                             _firestore.collection('users').doc(userId);
@@ -1596,6 +1717,35 @@ class _AdminAppointmentSchedulingScreenState
         'cancelledAt': FieldValue.serverTimestamp(),
         'cancelledBy': widget.userName,
       });
+
+      final appt = _appointments.cast<Map<String, dynamic>>().firstWhere(
+            (a) => (a['id'] ?? '').toString() == appointmentId,
+            orElse: () => <String, dynamic>{},
+          );
+      final dynamic dateField = appt['appointmentDate'];
+      String dateText = '';
+      if (dateField is Timestamp) {
+        final d = dateField.toDate();
+        dateText =
+            '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+      }
+      final String timeSlot = (appt['timeSlot'] ?? '').toString();
+      final String whenText =
+          dateText.isNotEmpty ? ' on $dateText${timeSlot.isNotEmpty ? ' at $timeSlot' : ''}' : '';
+
+      await HistoryLogger.log(
+        role: widget.userRole,
+        userName: widget.userName,
+        action:
+            '${widget.userName} (${widget.userRole.toUpperCase()}) cancelled $patientName\'s appointment$whenText',
+        metadata: {
+          'appointmentId': appointmentId,
+          'patientName': patientName,
+          'newStatus': 'Cancelled',
+          'appointmentDate': dateText,
+          'timeSlot': timeSlot,
+        },
+      );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1706,6 +1856,18 @@ class _AdminAppointmentSchedulingScreenState
           'completedAt': FieldValue.serverTimestamp(),
           'completedBy': widget.userName,
         });
+
+        await HistoryLogger.log(
+          role: widget.userRole,
+          userName: widget.userName,
+          action:
+              '${widget.userName} (${widget.userRole.toUpperCase()}) marked $patientName\'s appointment as completed',
+          metadata: {
+            'appointmentId': appointmentId,
+            'patientName': patientName,
+            'newStatus': 'Completed',
+          },
+        );
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -1977,6 +2139,38 @@ class _AdminAppointmentSchedulingScreenState
         'status': 'Rescheduled',
         'rescheduleReason': 'Admin rescheduled appointment',
       });
+
+      final String dateText =
+          '${newDate.year}-${newDate.month.toString().padLeft(2, '0')}-${newDate.day.toString().padLeft(2, '0')}';
+      const days = [
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday',
+        'Sunday',
+      ];
+      final String dayName =
+          (newDate.weekday >= 1 && newDate.weekday <= 7)
+              ? days[newDate.weekday - 1]
+              : '';
+      final String whenText = dayName.isNotEmpty
+          ? '$dayName ($dateText)'
+          : dateText;
+      await HistoryLogger.log(
+        role: widget.userRole,
+        userName: widget.userName,
+        action:
+            '${widget.userName} (${widget.userRole.toUpperCase()}) rescheduled $patientName\'s appointment to $whenText at $newTime',
+        metadata: {
+          'appointmentId': appointmentId,
+          'patientName': patientName,
+          'newStatus': 'Rescheduled',
+          'appointmentDate': dateText,
+          'timeSlot': newTime,
+        },
+      );
 
       // Queue email notification for reschedule
       if ((email ?? '').isNotEmpty) {
@@ -2331,10 +2525,9 @@ class _AdminAppointmentSchedulingScreenState
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => AdminDashboardScreen(
+            builder: (context) => AdminStaffManagementScreen(
               userRole: widget.userRole,
               userName: widget.userName,
-              openAddStaffOnLoad: true,
             ),
           ),
         );
