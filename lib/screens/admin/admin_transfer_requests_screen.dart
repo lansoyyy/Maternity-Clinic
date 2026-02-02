@@ -4,6 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../utils/colors.dart';
 import '../../utils/history_logger.dart';
 import '../../utils/responsive_utils.dart';
+import '../../services/audit_log_service.dart';
+import '../../services/notification_service.dart';
 import 'admin_dashboard_screen.dart';
 import 'admin_staff_management_screen.dart';
 import 'admin_patient_records_screen.dart';
@@ -83,22 +85,56 @@ class _AdminTransferRequestsScreenState
     }
   }
 
-  Future<void> _updateRequestStatus(String requestId, String newStatus) async {
+  Future<void> _updateRequestStatus(String requestId, String newStatus,
+      Map<String, dynamic> requestData) async {
     try {
       await _firestore.collection('transferRequests').doc(requestId).update({
         'status': newStatus,
         'updatedAt': FieldValue.serverTimestamp(),
       });
 
-      await HistoryLogger.log(
+      // Launch email client for notification
+      final String userName = (requestData['userName'] ?? 'User').toString();
+      final String userId = (requestData['userId'] ?? '').toString();
+      String email = '';
+      String phone = '';
+      try {
+        if (userId.isNotEmpty) {
+          final userDoc =
+              await _firestore.collection('users').doc(userId).get();
+          if (userDoc.exists) {
+            Map<String, dynamic> userData =
+                userDoc.data() as Map<String, dynamic>;
+            email = (userData['email'] ?? '').toString();
+            phone = (userData['contactNumber'] ?? '').toString();
+          }
+        }
+      } catch (_) {}
+
+      try {
+        final notification = NotificationService();
+        await notification.sendToUser(
+          subject: 'Transfer request status update',
+          message:
+              'Dear $userName, your transfer request status has been updated to $newStatus.\n\nThank you,\nVictory Lying-in Center',
+          email: email,
+          phone: phone,
+          name: userName,
+        );
+        await notification.sendToClinic(
+          subject: 'Transfer request updated',
+          message:
+              '${widget.userName} updated $userName\'s transfer request to $newStatus.',
+        );
+      } catch (_) {}
+
+      await AuditLogService.log(
         role: widget.userRole,
         userName: widget.userName,
         action:
-            '${widget.userName} (${widget.userRole.toUpperCase()}) updated a transfer request to $newStatus',
-        metadata: {
-          'requestId': requestId,
-          'newStatus': newStatus,
-        },
+            '${widget.userName} updated $userName\'s transfer request to $newStatus',
+        entityType: 'transferRequests',
+        entityId: requestId,
       );
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -142,29 +178,33 @@ class _AdminTransferRequestsScreenState
   @override
   Widget build(BuildContext context) {
     final isMobile = context.isMobile;
-    
+
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
-      appBar: isMobile ? AppBar(
-        backgroundColor: primary,
-        title: Text(
-          'TRANSFER REQUESTS',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: context.responsiveFontSize(18),
-            fontFamily: 'Bold',
-          ),
-        ),
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
-      ) : null,
-      drawer: isMobile ? Drawer(
-        child: _buildSidebar(),
-      ) : null,
+      appBar: isMobile
+          ? AppBar(
+              backgroundColor: primary,
+              title: Text(
+                'TRANSFER REQUESTS',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: context.responsiveFontSize(18),
+                  fontFamily: 'Bold',
+                ),
+              ),
+              leading: Builder(
+                builder: (context) => IconButton(
+                  icon: const Icon(Icons.menu, color: Colors.white),
+                  onPressed: () => Scaffold.of(context).openDrawer(),
+                ),
+              ),
+            )
+          : null,
+      drawer: isMobile
+          ? Drawer(
+              child: _buildSidebar(),
+            )
+          : null,
       body: Row(
         children: [
           if (!isMobile) _buildSidebar(),
@@ -618,7 +658,7 @@ class _AdminTransferRequestsScreenState
                   PopupMenuButton<String>(
                     icon: const Icon(Icons.more_vert, size: 20),
                     onSelected: (value) {
-                      _updateRequestStatus(requestId, value);
+                      _updateRequestStatus(requestId, value, requestData);
                     },
                     itemBuilder: (context) => [
                       const PopupMenuItem(
@@ -639,7 +679,7 @@ class _AdminTransferRequestsScreenState
                   PopupMenuButton<String>(
                     icon: const Icon(Icons.more_vert, size: 20),
                     onSelected: (value) {
-                      _updateRequestStatus(requestId, value);
+                      _updateRequestStatus(requestId, value, requestData);
                     },
                     itemBuilder: (context) => [
                       const PopupMenuItem(

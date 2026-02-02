@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:maternity_clinic/utils/colors.dart';
 import 'package:maternity_clinic/utils/history_logger.dart';
+import 'package:maternity_clinic/services/audit_log_service.dart';
+import 'package:maternity_clinic/services/notification_service.dart';
 
 import 'admin_patient_records_screen.dart';
 import 'admin_dashboard_screen.dart';
@@ -155,8 +157,8 @@ class _AdminAppointmentSchedulingScreenState
     return '${date.month}/${date.day}/${date.year}';
   }
 
-  Future<void> _acceptAppointment(
-      String appointmentId, String patientName) async {
+  Future<void> _acceptAppointment(String appointmentId, String patientName,
+      Map<String, dynamic> appointmentData) async {
     try {
       await _firestore.collection('appointments').doc(appointmentId).update({
         'status': 'Accepted',
@@ -195,18 +197,34 @@ class _AdminAppointmentSchedulingScreenState
               ? ' on $dateText${timeSlot.isNotEmpty ? ' at $timeSlot' : ''}'
               : '');
 
-      await HistoryLogger.log(
+      // Launch email client for notification
+      final String email = (appointmentData['email'] ?? '').toString();
+      final String phone = (appointmentData['contactNumber'] ?? '').toString();
+
+      try {
+        final notification = NotificationService();
+        await notification.sendToUser(
+          subject: 'Your appointment has been accepted',
+          message:
+              'Dear $patientName, your appointment on $dateText at $timeSlot has been accepted.\n\nThank you,\nVictory Lying-in Center',
+          email: email,
+          phone: phone,
+          name: patientName,
+        );
+        await notification.sendToClinic(
+          subject: 'Appointment accepted',
+          message:
+              '${widget.userName} accepted $patientName\'s appointment on $dateText at $timeSlot.',
+        );
+      } catch (_) {}
+
+      await AuditLogService.log(
         role: widget.userRole,
         userName: widget.userName,
         action:
-            '${widget.userName} (${widget.userRole.toUpperCase()}) accepted $patientName\'s appointment$whenText',
-        metadata: {
-          'appointmentId': appointmentId,
-          'patientName': patientName,
-          'newStatus': 'Accepted',
-          'appointmentDate': dateText,
-          'timeSlot': timeSlot,
-        },
+            '${widget.userName} accepted $patientName\'s appointment on $dateText at $timeSlot',
+        entityType: 'appointments',
+        entityId: appointmentId,
       );
 
       if (mounted) {
@@ -1710,8 +1728,8 @@ class _AdminAppointmentSchedulingScreenState
     adviceController.dispose();
   }
 
-  Future<void> _cancelAppointment(
-      String appointmentId, String patientName) async {
+  Future<void> _cancelAppointment(String appointmentId, String patientName,
+      Map<String, dynamic> appointmentData) async {
     try {
       await _firestore.collection('appointments').doc(appointmentId).update({
         'status': 'Cancelled',
@@ -1731,21 +1749,38 @@ class _AdminAppointmentSchedulingScreenState
             '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
       }
       final String timeSlot = (appt['timeSlot'] ?? '').toString();
-      final String whenText =
-          dateText.isNotEmpty ? ' on $dateText${timeSlot.isNotEmpty ? ' at $timeSlot' : ''}' : '';
+      final String whenText = dateText.isNotEmpty
+          ? ' on $dateText${timeSlot.isNotEmpty ? ' at $timeSlot' : ''}'
+          : '';
 
-      await HistoryLogger.log(
+      // Launch email client for notification
+      final String email = (appointmentData['email'] ?? '').toString();
+      final String phone = (appointmentData['contactNumber'] ?? '').toString();
+
+      try {
+        final notification = NotificationService();
+        await notification.sendToUser(
+          subject: 'Your appointment has been cancelled',
+          message:
+              'Dear $patientName, your appointment on $dateText at $timeSlot has been cancelled.\n\nThank you,\nVictory Lying-in Center',
+          email: email,
+          phone: phone,
+          name: patientName,
+        );
+        await notification.sendToClinic(
+          subject: 'Appointment cancelled',
+          message:
+              '${widget.userName} cancelled $patientName\'s appointment on $dateText at $timeSlot.',
+        );
+      } catch (_) {}
+
+      await AuditLogService.log(
         role: widget.userRole,
         userName: widget.userName,
         action:
-            '${widget.userName} (${widget.userRole.toUpperCase()}) cancelled $patientName\'s appointment$whenText',
-        metadata: {
-          'appointmentId': appointmentId,
-          'patientName': patientName,
-          'newStatus': 'Cancelled',
-          'appointmentDate': dateText,
-          'timeSlot': timeSlot,
-        },
+            '${widget.userName} cancelled $patientName\'s appointment on $dateText at $timeSlot',
+        entityType: 'appointments',
+        entityId: appointmentId,
       );
 
       if (mounted) {
@@ -1777,8 +1812,8 @@ class _AdminAppointmentSchedulingScreenState
     }
   }
 
-  Future<void> _completeAppointment(
-      String appointmentId, String patientName) async {
+  Future<void> _completeAppointment(String appointmentId, String patientName,
+      Map<String, dynamic> appointmentData) async {
     // Show confirmation dialog
     bool? confirmed = await showDialog<bool>(
       context: context,
@@ -1858,16 +1893,35 @@ class _AdminAppointmentSchedulingScreenState
           'completedBy': widget.userName,
         });
 
-        await HistoryLogger.log(
+        // Launch email client for notification
+        final String email = (appointmentData['email'] ?? '').toString();
+        final String phone =
+            (appointmentData['contactNumber'] ?? '').toString();
+
+        try {
+          final notification = NotificationService();
+          await notification.sendToUser(
+            subject: 'Your appointment has been completed',
+            message:
+                'Dear $patientName, your appointment has been completed. Thank you for visiting Victory Lying-in Center.\n\nThank you,\nVictory Lying-in Center',
+            email: email,
+            phone: phone,
+            name: patientName,
+          );
+          await notification.sendToClinic(
+            subject: 'Appointment completed',
+            message:
+                '${widget.userName} marked $patientName\'s appointment as completed.',
+          );
+        } catch (_) {}
+
+        await AuditLogService.log(
           role: widget.userRole,
           userName: widget.userName,
           action:
-              '${widget.userName} (${widget.userRole.toUpperCase()}) marked $patientName\'s appointment as completed',
-          metadata: {
-            'appointmentId': appointmentId,
-            'patientName': patientName,
-            'newStatus': 'Completed',
-          },
+              '${widget.userName} marked $patientName\'s appointment as completed',
+          entityType: 'appointments',
+          entityId: appointmentId,
         );
 
         if (mounted) {
@@ -2067,14 +2121,12 @@ class _AdminAppointmentSchedulingScreenState
                   onPressed: selectedDate != null && selectedTime != null
                       ? () async {
                           Navigator.pop(context);
-                          final String email =
-                              (currentAppointment['email'] ?? '').toString();
                           await _updateAppointment(
                             appointmentId,
                             patientName,
                             selectedDate!,
                             selectedTime!,
-                            email: email,
+                            appointmentData: currentAppointment,
                           );
                         }
                       : null,
@@ -2099,7 +2151,7 @@ class _AdminAppointmentSchedulingScreenState
 
   Future<void> _updateAppointment(String appointmentId, String patientName,
       DateTime newDate, String newTime,
-      {String? email}) async {
+      {Map<String, dynamic>? appointmentData}) async {
     try {
       // Prevent overbooking: max 3 appointments per time slot per day
       final DateTime startOfDay =
@@ -2152,44 +2204,45 @@ class _AdminAppointmentSchedulingScreenState
         'Saturday',
         'Sunday',
       ];
-      final String dayName =
-          (newDate.weekday >= 1 && newDate.weekday <= 7)
-              ? days[newDate.weekday - 1]
-              : '';
-      final String whenText = dayName.isNotEmpty
-          ? '$dayName ($dateText)'
-          : dateText;
-      await HistoryLogger.log(
+      final String dayName = (newDate.weekday >= 1 && newDate.weekday <= 7)
+          ? days[newDate.weekday - 1]
+          : '';
+      final String whenText =
+          dayName.isNotEmpty ? '$dayName ($dateText)' : dateText;
+
+      // Launch email client for notification
+      final String email = appointmentData != null
+          ? (appointmentData['email'] ?? '').toString()
+          : '';
+      final String phone = appointmentData != null
+          ? (appointmentData['contactNumber'] ?? '').toString()
+          : '';
+
+      try {
+        final notification = NotificationService();
+        await notification.sendToUser(
+          subject: 'Your appointment has been rescheduled',
+          message:
+              'Dear $patientName, your appointment has been rescheduled to $dateText at $newTime.\n\nThank you,\nVictory Lying-in Center',
+          email: email,
+          phone: phone,
+          name: patientName,
+        );
+        await notification.sendToClinic(
+          subject: 'Appointment rescheduled',
+          message:
+              '${widget.userName} rescheduled $patientName\'s appointment to $dateText at $newTime.',
+        );
+      } catch (_) {}
+
+      await AuditLogService.log(
         role: widget.userRole,
         userName: widget.userName,
         action:
-            '${widget.userName} (${widget.userRole.toUpperCase()}) rescheduled $patientName\'s appointment to $whenText at $newTime',
-        metadata: {
-          'appointmentId': appointmentId,
-          'patientName': patientName,
-          'newStatus': 'Rescheduled',
-          'appointmentDate': dateText,
-          'timeSlot': newTime,
-        },
+            '${widget.userName} rescheduled $patientName\'s appointment to $dateText at $newTime',
+        entityType: 'appointments',
+        entityId: appointmentId,
       );
-
-      // Queue email notification for reschedule
-      if ((email ?? '').isNotEmpty) {
-        try {
-          await _firestore.collection('emailQueue').add({
-            'to': email,
-            'subject': 'Your appointment has been rescheduled',
-            'body':
-                'Dear $patientName, your appointment has been rescheduled to ${_formatDate(newDate)}, $newTime.\n\nThank you,\nVictory Lying-in Center',
-            'type': 'appointmentRescheduled',
-            'appointmentId': appointmentId,
-            'createdAt': FieldValue.serverTimestamp(),
-            'status': 'pending',
-          });
-        } catch (_) {
-          // ignore email queue errors
-        }
-      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -2254,29 +2307,33 @@ class _AdminAppointmentSchedulingScreenState
   @override
   Widget build(BuildContext context) {
     final isMobile = context.isMobile;
-    
+
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
-      appBar: isMobile ? AppBar(
-        backgroundColor: primary,
-        title: Text(
-          'APPROVE SCHEDULES',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: context.responsiveFontSize(18),
-            fontFamily: 'Bold',
-          ),
-        ),
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
-      ) : null,
-      drawer: isMobile ? Drawer(
-        child: _buildSidebar(),
-      ) : null,
+      appBar: isMobile
+          ? AppBar(
+              backgroundColor: primary,
+              title: Text(
+                'APPROVE SCHEDULES',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: context.responsiveFontSize(18),
+                  fontFamily: 'Bold',
+                ),
+              ),
+              leading: Builder(
+                builder: (context) => IconButton(
+                  icon: const Icon(Icons.menu, color: Colors.white),
+                  onPressed: () => Scaffold.of(context).openDrawer(),
+                ),
+              ),
+            )
+          : null,
+      drawer: isMobile
+          ? Drawer(
+              child: _buildSidebar(),
+            )
+          : null,
       body: Row(
         children: [
           if (!isMobile) _buildSidebar(),
@@ -2823,7 +2880,8 @@ class _AdminAppointmentSchedulingScreenState
               children: [
                 if (status == 'Pending')
                   TextButton(
-                    onPressed: () => _acceptAppointment(appointmentId, name),
+                    onPressed: () => _acceptAppointment(
+                        appointmentId, name, appointmentData),
                     child: const Text(
                       'Accept',
                       style: TextStyle(
@@ -2848,7 +2906,8 @@ class _AdminAppointmentSchedulingScreenState
                   ),
                 if (status != 'Cancelled' && status != 'Completed')
                   TextButton(
-                    onPressed: () => _cancelAppointment(appointmentId, name),
+                    onPressed: () => _cancelAppointment(
+                        appointmentId, name, appointmentData),
                     child: const Text(
                       'Cancel',
                       style: TextStyle(
@@ -2887,8 +2946,8 @@ class _AdminAppointmentSchedulingScreenState
                     )
                   else
                     TextButton(
-                      onPressed: () =>
-                          _completeAppointment(appointmentId, name),
+                      onPressed: () => _completeAppointment(
+                          appointmentId, name, appointmentData),
                       child: const Text(
                         'Complete',
                         style: TextStyle(

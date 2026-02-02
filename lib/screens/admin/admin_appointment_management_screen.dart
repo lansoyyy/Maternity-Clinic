@@ -12,6 +12,8 @@ import '../auth/home_screen.dart';
 import '../../utils/colors.dart';
 import '../../utils/responsive_utils.dart';
 import '../../utils/history_logger.dart';
+import '../../services/audit_log_service.dart';
+import '../../services/notification_service.dart';
 
 class AdminAppointmentManagementScreen extends StatefulWidget {
   final String userRole;
@@ -394,10 +396,9 @@ class _AdminAppointmentManagementScreenState
       await HistoryLogger.log(
         role: widget.userRole,
         userName: widget.userName,
-        action:
-            patientName.isNotEmpty
-                ? '${widget.userName} (${widget.userRole.toUpperCase()}) updated ${patientName}\'s transfer request to $newStatus'
-                : '${widget.userName} (${widget.userRole.toUpperCase()}) updated a transfer request to $newStatus',
+        action: patientName.isNotEmpty
+            ? '${widget.userName} (${widget.userRole.toUpperCase()}) updated ${patientName}\'s transfer request to $newStatus'
+            : '${widget.userName} (${widget.userRole.toUpperCase()}) updated a transfer request to $newStatus',
         metadata: {
           'requestId': requestId,
           'newStatus': newStatus,
@@ -430,7 +431,8 @@ class _AdminAppointmentManagementScreenState
       Map<String, dynamic> appointment) async {
     try {
       final String email = appointment['email']?.toString() ?? '';
-      if (email.isEmpty) return;
+      final String phone = appointment['contactNumber']?.toString() ?? '';
+      if (email.isEmpty && phone.isEmpty) return;
 
       final String name = appointment['name']?.toString() ?? 'Patient';
       final dynamic dateField = appointment['appointmentDate'];
@@ -442,16 +444,20 @@ class _AdminAppointmentManagementScreenState
       }
       final String timeSlot = appointment['timeSlot']?.toString() ?? '';
 
-      await _firestore.collection('emailQueue').add({
-        'to': email,
-        'subject': 'Your appointment has been accepted',
-        'body':
+      final notification = NotificationService();
+      await notification.sendToUser(
+        subject: 'Your appointment has been accepted',
+        message:
             'Dear $name, your appointment on $dateText at $timeSlot has been accepted.\n\nThank you,\nVictory Lying-in Center',
-        'type': 'appointmentAccepted',
-        'appointmentId': appointment['id']?.toString() ?? '',
-        'createdAt': FieldValue.serverTimestamp(),
-        'status': 'pending',
-      });
+        email: email,
+        phone: phone,
+        name: name,
+      );
+      await notification.sendToClinic(
+        subject: 'Appointment accepted',
+        message:
+            '${widget.userName} accepted $name\'s appointment on $dateText at $timeSlot.',
+      );
     } catch (_) {
       // Fail silently for email queue
     }
@@ -461,7 +467,8 @@ class _AdminAppointmentManagementScreenState
       Map<String, dynamic> appointment) async {
     try {
       final String email = appointment['email']?.toString() ?? '';
-      if (email.isEmpty) return;
+      final String phone = appointment['contactNumber']?.toString() ?? '';
+      if (email.isEmpty && phone.isEmpty) return;
 
       final String name = appointment['name']?.toString() ?? 'Patient';
       final dynamic dateField = appointment['appointmentDate'];
@@ -473,16 +480,20 @@ class _AdminAppointmentManagementScreenState
       }
       final String timeSlot = appointment['timeSlot']?.toString() ?? '';
 
-      await _firestore.collection('emailQueue').add({
-        'to': email,
-        'subject': 'Your appointment has been cancelled',
-        'body':
-            'Dear $name, your appointment on $dateText at $timeSlot has been cancelled.\n\nIf you have any questions, please contact the clinic.',
-        'type': 'appointmentCancelled',
-        'appointmentId': appointment['id']?.toString() ?? '',
-        'createdAt': FieldValue.serverTimestamp(),
-        'status': 'pending',
-      });
+      final notification = NotificationService();
+      await notification.sendToUser(
+        subject: 'Your appointment has been cancelled',
+        message:
+            'Dear $name, your appointment on $dateText at $timeSlot has been cancelled.\n\nIf you have any questions, please contact the clinic.\n\nThank you,\nVictory Lying-in Center',
+        email: email,
+        phone: phone,
+        name: name,
+      );
+      await notification.sendToClinic(
+        subject: 'Appointment cancelled',
+        message:
+            '${widget.userName} cancelled $name\'s appointment on $dateText at $timeSlot.',
+      );
     } catch (_) {
       // Fail silently for email queue
     }
@@ -567,29 +578,33 @@ class _AdminAppointmentManagementScreenState
   @override
   Widget build(BuildContext context) {
     final isMobile = context.isMobile;
-    
+
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
-      appBar: isMobile ? AppBar(
-        backgroundColor: primary,
-        title: Text(
-          'APPOINTMENT MANAGEMENT',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: context.responsiveFontSize(18),
-            fontFamily: 'Bold',
-          ),
-        ),
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
-      ) : null,
-      drawer: isMobile ? Drawer(
-        child: _buildSidebar(),
-      ) : null,
+      appBar: isMobile
+          ? AppBar(
+              backgroundColor: primary,
+              title: Text(
+                'APPOINTMENT MANAGEMENT',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: context.responsiveFontSize(18),
+                  fontFamily: 'Bold',
+                ),
+              ),
+              leading: Builder(
+                builder: (context) => IconButton(
+                  icon: const Icon(Icons.menu, color: Colors.white),
+                  onPressed: () => Scaffold.of(context).openDrawer(),
+                ),
+              ),
+            )
+          : null,
+      drawer: isMobile
+          ? Drawer(
+              child: _buildSidebar(),
+            )
+          : null,
       body: Row(
         children: [
           if (!isMobile) _buildSidebar(),

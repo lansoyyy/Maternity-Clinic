@@ -4,6 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../utils/colors.dart';
 import '../utils/responsive_utils.dart';
 import '../widgets/forgot_password_dialog.dart';
+import '../services/audit_log_service.dart';
+import '../services/notification_service.dart';
 import 'prenatal_dashboard_screen.dart';
 import 'postnatal_dashboard_screen.dart';
 import 'prenatal_history_checkup_screen.dart';
@@ -132,6 +134,39 @@ class _TransferRecordRequestScreenState
         'cancelledBy': 'patient',
       });
 
+      // Launch email client for notification
+      String email = '';
+      String phone = '';
+      try {
+        User? user = _auth.currentUser;
+        if (user != null) {
+          DocumentSnapshot userDoc =
+              await _firestore.collection('users').doc(user.uid).get();
+          if (userDoc.exists) {
+            Map<String, dynamic> userData =
+                userDoc.data() as Map<String, dynamic>;
+            email = (userData['email'] ?? user.email ?? '').toString();
+            phone = (userData['contactNumber'] ?? '').toString();
+          }
+        }
+      } catch (_) {}
+
+      try {
+        final notification = NotificationService();
+        await notification.sendToUser(
+          subject: 'Transfer request cancelled',
+          message:
+              'Dear $_userName, your transfer request has been cancelled.\n\nThank you,\nVictory Lying-in Center',
+          email: email,
+          phone: phone,
+          name: _userName,
+        );
+        await notification.sendToClinic(
+          subject: 'Transfer request cancelled',
+          message: '$_userName cancelled their transfer request.',
+        );
+      } catch (_) {}
+
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -247,7 +282,55 @@ class _TransferRecordRequestScreenState
               .update(requestData);
         } else {
           requestData['createdAt'] = FieldValue.serverTimestamp();
-          await _firestore.collection('transferRequests').add(requestData);
+          final docRef =
+              await _firestore.collection('transferRequests').add(requestData);
+
+          // Launch email client for notification
+          String email = '';
+          String phone = '';
+          try {
+            User? user = _auth.currentUser;
+            if (user != null) {
+              DocumentSnapshot userDoc =
+                  await _firestore.collection('users').doc(user.uid).get();
+              if (userDoc.exists) {
+                Map<String, dynamic> userData =
+                    userDoc.data() as Map<String, dynamic>;
+                email = (userData['email'] ?? user.email ?? '').toString();
+                phone = (userData['contactNumber'] ?? '').toString();
+              }
+            }
+          } catch (_) {}
+
+          try {
+            final notification = NotificationService();
+            await notification.sendToUser(
+              subject: _existingRequest != null
+                  ? 'Transfer request updated'
+                  : 'Transfer request submitted',
+              message:
+                  'Dear $_userName, your ${_existingRequest != null ? 'transfer request has been updated' : 'transfer request has been submitted'} and is ${_existingRequest != null ? 'being processed' : 'pending approval'}.\n\nThank you,\nVictory Lying-in Center',
+              email: email,
+              phone: phone,
+              name: _userName,
+            );
+            await notification.sendToClinic(
+              subject: _existingRequest != null
+                  ? 'Transfer request updated'
+                  : 'New transfer request',
+              message:
+                  '$_userName ${_existingRequest != null ? 'updated their' : 'submitted a'} transfer request.',
+            );
+          } catch (_) {}
+
+          await AuditLogService.log(
+            role: 'patient',
+            userName: _userName,
+            action:
+                '$_userName ${_existingRequest != null ? 'updated' : 'submitted'} a transfer request',
+            entityType: 'transferRequests',
+            entityId: docRef.id,
+          );
         }
 
         setState(() {
@@ -300,29 +383,33 @@ class _TransferRecordRequestScreenState
   @override
   Widget build(BuildContext context) {
     final isMobile = context.isMobile;
-    
+
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: isMobile ? AppBar(
-        backgroundColor: primary,
-        title: const Text(
-          'TRANSFER REQUEST',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontFamily: 'Bold',
-          ),
-        ),
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
-      ) : null,
-      drawer: isMobile ? Drawer(
-        child: _buildSidebar(),
-      ) : null,
+      appBar: isMobile
+          ? AppBar(
+              backgroundColor: primary,
+              title: const Text(
+                'TRANSFER REQUEST',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontFamily: 'Bold',
+                ),
+              ),
+              leading: Builder(
+                builder: (context) => IconButton(
+                  icon: const Icon(Icons.menu, color: Colors.white),
+                  onPressed: () => Scaffold.of(context).openDrawer(),
+                ),
+              ),
+            )
+          : null,
+      drawer: isMobile
+          ? Drawer(
+              child: _buildSidebar(),
+            )
+          : null,
       body: Row(
         children: [
           if (!isMobile) _buildSidebar(),
@@ -359,26 +446,28 @@ class _TransferRecordRequestScreenState
                               const SizedBox(height: 40),
                             ],
                             isMobile
-                              ? Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    _buildLeftColumn(),
-                                    const SizedBox(height: 20),
-                                    _buildRightColumn(),
-                                  ],
-                                )
-                              : Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Expanded(
-                                      child: _buildLeftColumn(),
-                                    ),
-                                    const SizedBox(width: 60),
-                                    Expanded(
-                                      child: _buildRightColumn(),
-                                    ),
-                                  ],
-                                ),
+                                ? Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      _buildLeftColumn(),
+                                      const SizedBox(height: 20),
+                                      _buildRightColumn(),
+                                    ],
+                                  )
+                                : Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(
+                                        child: _buildLeftColumn(),
+                                      ),
+                                      const SizedBox(width: 60),
+                                      Expanded(
+                                        child: _buildRightColumn(),
+                                      ),
+                                    ],
+                                  ),
                           ],
                         ),
                       ),
