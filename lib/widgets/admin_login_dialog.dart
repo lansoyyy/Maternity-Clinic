@@ -595,56 +595,8 @@ class _AdminLoginDialogState extends State<AdminLoginDialog> {
                         ),
                       ),
               ),
-              const SizedBox(height: 15),
 
-              // Staff Account Info
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey.shade300),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Staff Accounts:',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontFamily: 'Bold',
-                        color: Colors.grey.shade700,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Admin: admin / admin123',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontFamily: 'Regular',
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                    Text(
-                      'Nurse1: nurse1 / nurse123',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontFamily: 'Regular',
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                    Text(
-                      'Nurse2: nurse2 / nurse123',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontFamily: 'Regular',
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 15),
+              const SizedBox(height: 20),
 
               // Back to Patient Login
               TextButton(
