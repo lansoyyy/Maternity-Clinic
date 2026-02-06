@@ -2,15 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:maternity_clinic/utils/colors.dart';
-import 'package:maternity_clinic/utils/history_logger.dart';
-import 'package:maternity_clinic/services/audit_log_service.dart';
 import 'package:maternity_clinic/services/notification_service.dart';
+import 'package:maternity_clinic/services/audit_log_service.dart';
 
 import 'admin_patient_records_screen.dart';
 import 'admin_dashboard_screen.dart';
 import 'admin_appointment_management_screen.dart';
-import 'admin_staff_management_screen.dart';
-import '../../utils/responsive_utils.dart';
 import '../auth/home_screen.dart';
 
 class AdminAppointmentSchedulingScreen extends StatefulWidget {
@@ -39,6 +36,9 @@ class _AdminAppointmentSchedulingScreenState
   int _pendingCount = 0;
   int _cancelledCount = 0;
   final ScrollController _horizontalScrollController = ScrollController();
+  String _selectedMaternityFilter = 'PRENATAL';
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -94,6 +94,7 @@ class _AdminAppointmentSchedulingScreenState
           appointment['name'] = userData['name'] ?? 'Unknown';
           appointment['maternityStatus'] = userData['patientType'] ?? 'Unknown';
           appointment['email'] = userData['email'] ?? '';
+          appointment['contactNumber'] = userData['contactNumber'] ?? '';
         } else {
           appointment['patientId'] = 'N/A';
           appointment['name'] = 'Unknown';
@@ -112,6 +113,12 @@ class _AdminAppointmentSchedulingScreenState
 
         // Do not include cancelled appointments in the schedules list
         if (status == 'cancelled') {
+          continue;
+        }
+        if (status == 'pending') {
+          continue;
+        }
+        if (status == 'completed') {
           continue;
         }
 
@@ -166,40 +173,17 @@ class _AdminAppointmentSchedulingScreenState
         'acceptedBy': widget.userName,
       });
 
-      final appt = _appointments.cast<Map<String, dynamic>>().firstWhere(
-            (a) => (a['id'] ?? '').toString() == appointmentId,
-            orElse: () => <String, dynamic>{},
-          );
-      final dynamic dateField = appt['appointmentDate'];
-      String dayName = '';
-      String dateText = '';
-      if (dateField is Timestamp) {
-        final d = dateField.toDate();
-        const days = [
-          'Monday',
-          'Tuesday',
-          'Wednesday',
-          'Thursday',
-          'Friday',
-          'Saturday',
-          'Sunday',
-        ];
-        if (d.weekday >= 1 && d.weekday <= 7) {
-          dayName = days[d.weekday - 1];
-        }
-        dateText =
-            '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-      }
-      final String timeSlot = (appt['timeSlot'] ?? '').toString();
-      final String whenText = dayName.isNotEmpty
-          ? ' on $dayName${dateText.isNotEmpty ? ' ($dateText)' : ''}${timeSlot.isNotEmpty ? ' at $timeSlot' : ''}'
-          : (dateText.isNotEmpty
-              ? ' on $dateText${timeSlot.isNotEmpty ? ' at $timeSlot' : ''}'
-              : '');
-
       // Launch email client for notification
       final String email = (appointmentData['email'] ?? '').toString();
       final String phone = (appointmentData['contactNumber'] ?? '').toString();
+      String dateText = '';
+      final dynamic dateField = appointmentData['appointmentDate'];
+      if (dateField is Timestamp) {
+        final d = dateField.toDate();
+        dateText = _formatDate(d);
+      }
+      final String timeSlot =
+          (appointmentData['timeSlot'] ?? 'Unknown').toString();
 
       try {
         final notification = NotificationService();
@@ -363,6 +347,7 @@ class _AdminAppointmentSchedulingScreenState
     final TextEditingController fundalHeightController =
         TextEditingController();
     final TextEditingController remarksController = TextEditingController();
+    final TextEditingController labRemarksController = TextEditingController();
     final TextEditingController findingsController = TextEditingController();
     final TextEditingController adviceController = TextEditingController();
 
@@ -383,13 +368,12 @@ class _AdminAppointmentSchedulingScreenState
         final currentWeight = double.tryParse(weightText);
         if (currentWeight != null) {
           final daysBetween =
-              appointmentDate.difference(previousDate).inDays.abs();
+              appointmentDate!.difference(previousDate!).inDays.abs();
           if (daysBetween > 0) {
             final weeks = daysBetween / 7.0;
             if (weeks > 0) {
-              final double wg = (currentWeight - previousWeightKg) / weeks;
-              weightGainPerWeek = wg;
-              if (wg > 2.0) {
+              weightGainPerWeek = (currentWeight - previousWeightKg!) / weeks;
+              if (weightGainPerWeek != null && weightGainPerWeek! > 2.0) {
                 highRisk = true;
                 reasons.add('Weight gain > 2 kg/week');
               }
@@ -403,7 +387,7 @@ class _AdminAppointmentSchedulingScreenState
       if (systolic != null && diastolic != null) {
         if (systolic >= 140 || diastolic >= 90) {
           highRisk = true;
-          reasons.add('BP 9140/90 (possible preeclampsia)');
+          reasons.add('BP 9140/90 (possible preeclampsia)');
         }
       }
 
@@ -417,12 +401,12 @@ class _AdminAppointmentSchedulingScreenState
       if (fundalText.isNotEmpty && lmpDate != null && appointmentDate != null) {
         final fh = double.tryParse(fundalText);
         if (fh != null) {
-          final days = appointmentDate.difference(lmpDate).inDays;
+          final days = appointmentDate!.difference(lmpDate!).inDays;
           if (days >= 0) {
             final gaWeeks = days / 7.0;
             if ((fh - gaWeeks).abs() > 2.0) {
               highRisk = true;
-              reasons.add('Fundal height 92 cm from GA');
+              reasons.add('Fundal height 92 cm from GA');
             }
           }
         }
@@ -512,9 +496,9 @@ class _AdminAppointmentSchedulingScreenState
                       TextField(
                         controller: weightController,
                         keyboardType: TextInputType.number,
-                        decoration: InputDecoration(
+                        decoration: const InputDecoration(
                           labelText: 'Weight (kg)',
-                          border: const OutlineInputBorder(),
+                          border: OutlineInputBorder(),
                         ),
                         onChanged: (_) {
                           setStateDialog(() {
@@ -601,16 +585,15 @@ class _AdminAppointmentSchedulingScreenState
                         const SizedBox(height: 4),
                         Builder(
                           builder: (_) {
-                            final DateTime apptDate = appointmentDate!;
-                            final DateTime lmp = lmpDate!;
-                            final days = apptDate.difference(lmp).inDays;
+                            final days =
+                                appointmentDate!.difference(lmpDate!).inDays;
                             final gaWeeks = days >= 0 ? (days / 7.0) : 0.0;
                             return Text(
                               'Gestational age: ${gaWeeks.toStringAsFixed(1)} weeks',
                               style: TextStyle(
+                                fontSize: 11,
                                 fontFamily: 'Regular',
-                                fontSize: 12,
-                                color: Colors.grey.shade700,
+                                color: Colors.grey.shade600,
                               ),
                             );
                           },
@@ -629,6 +612,15 @@ class _AdminAppointmentSchedulingScreenState
                             evaluateRisk();
                           });
                         },
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: labRemarksController,
+                        maxLines: 3,
+                        decoration: const InputDecoration(
+                          labelText: 'Remarks Laboratory Result',
+                          border: OutlineInputBorder(),
+                        ),
                       ),
                       const SizedBox(height: 12),
                       Row(
@@ -831,6 +823,7 @@ class _AdminAppointmentSchedulingScreenState
                         'checkupFetalHeartRateBpm': fhr,
                         'checkupFundalHeightCm': fundalHeight,
                         'checkupRemarks': remarksController.text.trim(),
+                        'labRemarks': labRemarksController.text.trim(),
                         'visitRiskStatus': visitRiskStatus,
                         'findings': findingsController.text.trim(),
                         'advice': adviceController.text.trim(),
@@ -854,42 +847,6 @@ class _AdminAppointmentSchedulingScreenState
                           .collection('appointments')
                           .doc(appointmentId)
                           .update(update);
-
-                      String completedWhen = '';
-                      if (appointmentDate != null) {
-                        final d = appointmentDate!;
-                        const days = [
-                          'Monday',
-                          'Tuesday',
-                          'Wednesday',
-                          'Thursday',
-                          'Friday',
-                          'Saturday',
-                          'Sunday',
-                        ];
-                        final String dayName =
-                            (d.weekday >= 1 && d.weekday <= 7)
-                                ? days[d.weekday - 1]
-                                : '';
-                        final dateText =
-                            '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-                        completedWhen = dayName.isNotEmpty
-                            ? ' on $dayName ($dateText)'
-                            : ' on $dateText';
-                      }
-
-                      await HistoryLogger.log(
-                        role: widget.userRole,
-                        userName: widget.userName,
-                        action:
-                            '${widget.userName} (${widget.userRole.toUpperCase()}) completed prenatal consultation for $patientName$completedWhen',
-                        metadata: {
-                          'appointmentId': appointmentId,
-                          'patientName': patientName,
-                          'newStatus': 'Completed',
-                          'visitRiskStatus': visitRiskStatus,
-                        },
-                      );
 
                       if (userId.isNotEmpty && visitRiskStatus == 'HIGH RISK') {
                         final userRef =
@@ -957,6 +914,7 @@ class _AdminAppointmentSchedulingScreenState
     fhrController.dispose();
     fundalHeightController.dispose();
     remarksController.dispose();
+    labRemarksController.dispose();
     findingsController.dispose();
     adviceController.dispose();
   }
@@ -1623,42 +1581,6 @@ class _AdminAppointmentSchedulingScreenState
                           .doc(appointmentId)
                           .update(update);
 
-                      String completedWhen = '';
-                      if (appointmentDate != null) {
-                        final d = appointmentDate;
-                        const days = [
-                          'Monday',
-                          'Tuesday',
-                          'Wednesday',
-                          'Thursday',
-                          'Friday',
-                          'Saturday',
-                          'Sunday',
-                        ];
-                        final String dayName =
-                            (d.weekday >= 1 && d.weekday <= 7)
-                                ? days[d.weekday - 1]
-                                : '';
-                        final dateText =
-                            '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-                        completedWhen = dayName.isNotEmpty
-                            ? ' on $dayName ($dateText)'
-                            : ' on $dateText';
-                      }
-
-                      await HistoryLogger.log(
-                        role: widget.userRole,
-                        userName: widget.userName,
-                        action:
-                            '${widget.userName} (${widget.userRole.toUpperCase()}) completed postnatal consultation for $patientName$completedWhen',
-                        metadata: {
-                          'appointmentId': appointmentId,
-                          'patientName': patientName,
-                          'newStatus': 'Completed',
-                          'visitRiskStatus': visitRiskStatus,
-                        },
-                      );
-
                       if (userId.isNotEmpty && visitRiskStatus == 'HIGH RISK') {
                         final userRef =
                             _firestore.collection('users').doc(userId);
@@ -1730,90 +1652,156 @@ class _AdminAppointmentSchedulingScreenState
 
   Future<void> _cancelAppointment(String appointmentId, String patientName,
       Map<String, dynamic> appointmentData) async {
-    try {
-      await _firestore.collection('appointments').doc(appointmentId).update({
-        'status': 'Cancelled',
-        'cancelledAt': FieldValue.serverTimestamp(),
-        'cancelledBy': widget.userName,
-      });
+    // Show confirmation dialog
+    bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            'Cancel Appointment',
+            style: const TextStyle(fontFamily: 'Bold'),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Patient: $patientName',
+                style: const TextStyle(
+                  fontFamily: 'Regular',
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 15),
+              const Text(
+                'Are you sure you want to cancel this appointment?',
+                style: TextStyle(fontFamily: 'Regular'),
+              ),
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange.shade200),
+                ),
+                child: const Text(
+                  'This will:\n• Mark appointment as cancelled\n• Add cancellation timestamp\n• Update patient records',
+                  style: TextStyle(
+                    fontFamily: 'Regular',
+                    fontSize: 12,
+                    color: Colors.orange,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                    color: Colors.grey.shade600, fontFamily: 'Regular'),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+              ),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontFamily: 'Bold',
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
 
-      final appt = _appointments.cast<Map<String, dynamic>>().firstWhere(
-            (a) => (a['id'] ?? '').toString() == appointmentId,
-            orElse: () => <String, dynamic>{},
-          );
-      final dynamic dateField = appt['appointmentDate'];
-      String dateText = '';
-      if (dateField is Timestamp) {
-        final d = dateField.toDate();
-        dateText =
-            '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-      }
-      final String timeSlot = (appt['timeSlot'] ?? '').toString();
-      final String whenText = dateText.isNotEmpty
-          ? ' on $dateText${timeSlot.isNotEmpty ? ' at $timeSlot' : ''}'
-          : '';
-
-      // Launch email client for notification
-      final String email = (appointmentData['email'] ?? '').toString();
-      final String phone = (appointmentData['contactNumber'] ?? '').toString();
-
+    if (confirmed == true) {
       try {
-        final notification = NotificationService();
-        await notification.sendToUser(
-          subject: 'Your appointment has been cancelled',
-          message:
-              'Dear $patientName, your appointment on $dateText at $timeSlot has been cancelled.\n\nThank you,\nVictory Lying-in Center',
-          email: email,
-          phone: phone,
-          name: patientName,
-        );
-        await notification.sendToClinic(
-          subject: 'Appointment cancelled',
-          message:
-              '${widget.userName} cancelled $patientName\'s appointment on $dateText at $timeSlot.',
-        );
-      } catch (_) {}
+        await _firestore.collection('appointments').doc(appointmentId).update({
+          'status': 'Cancelled',
+          'cancelledAt': FieldValue.serverTimestamp(),
+          'cancelledBy': widget.userName,
+        });
 
-      await AuditLogService.log(
-        role: widget.userRole,
-        userName: widget.userName,
-        action:
-            '${widget.userName} cancelled $patientName\'s appointment on $dateText at $timeSlot',
-        entityType: 'appointments',
-        entityId: appointmentId,
-      );
+        // Launch email client for notification
+        final String email = (appointmentData['email'] ?? '').toString();
+        final String phone =
+            (appointmentData['contactNumber'] ?? '').toString();
+        String dateText = '';
+        final dynamic dateField = appointmentData['appointmentDate'];
+        if (dateField is Timestamp) {
+          final d = dateField.toDate();
+          dateText = _formatDate(d);
+        }
+        final String timeSlot =
+            (appointmentData['timeSlot'] ?? 'Unknown').toString();
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Appointment for $patientName has been cancelled',
-              style: const TextStyle(fontFamily: 'Regular'),
-            ),
-            backgroundColor: Colors.orange,
-            behavior: SnackBarBehavior.floating,
-          ),
+        try {
+          final notification = NotificationService();
+          await notification.sendToUser(
+            subject: 'Your appointment has been cancelled',
+            message:
+                'Dear $patientName, your appointment on $dateText at $timeSlot has been cancelled.\n\nIf you have any questions, please contact the clinic.',
+            email: email,
+            phone: phone,
+            name: patientName,
+          );
+          await notification.sendToClinic(
+            subject: 'Appointment cancelled',
+            message:
+                '${widget.userName} cancelled $patientName\'s appointment on $dateText at $timeSlot.',
+          );
+        } catch (_) {}
+
+        await AuditLogService.log(
+          role: widget.userRole,
+          userName: widget.userName,
+          action:
+              '${widget.userName} cancelled $patientName\'s appointment on $dateText at $timeSlot',
+          entityType: 'appointments',
+          entityId: appointmentId,
         );
-        _fetchAppointments(); // Refresh the list
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(
-              'Failed to cancel appointment',
-              style: TextStyle(fontFamily: 'Regular'),
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Appointment for $patientName has been cancelled',
+                style: const TextStyle(fontFamily: 'Regular'),
+              ),
+              backgroundColor: Colors.orange,
+              behavior: SnackBarBehavior.floating,
             ),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+          );
+          _fetchAppointments(); // Refresh the list
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                'Failed to cancel appointment',
+                style: TextStyle(fontFamily: 'Regular'),
+              ),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
       }
     }
   }
 
-  Future<void> _completeAppointment(String appointmentId, String patientName,
-      Map<String, dynamic> appointmentData) async {
+  Future<void> _completeAppointment(
+      String appointmentId, String patientName) async {
     // Show confirmation dialog
     bool? confirmed = await showDialog<bool>(
       context: context,
@@ -1893,17 +1881,36 @@ class _AdminAppointmentSchedulingScreenState
           'completedBy': widget.userName,
         });
 
-        // Launch email client for notification
-        final String email = (appointmentData['email'] ?? '').toString();
-        final String phone =
-            (appointmentData['contactNumber'] ?? '').toString();
-
         try {
+          final doc = await _firestore
+              .collection('appointments')
+              .doc(appointmentId)
+              .get();
+          final data = doc.data();
+          final String userId = (data?['userId'] ?? '').toString();
+          String email = '';
+          String phone = '';
+          String dateText = '';
+          final dynamic dateField = data?['appointmentDate'];
+          if (dateField is Timestamp) {
+            final d = dateField.toDate();
+            dateText = _formatDate(d);
+          }
+          final String timeSlot = (data?['timeSlot'] ?? '').toString();
+
+          if (userId.isNotEmpty) {
+            final userDoc =
+                await _firestore.collection('users').doc(userId).get();
+            final userData = userDoc.data();
+            email = (userData?['email'] ?? '').toString();
+            phone = (userData?['contactNumber'] ?? '').toString();
+          }
+
           final notification = NotificationService();
           await notification.sendToUser(
             subject: 'Your appointment has been completed',
             message:
-                'Dear $patientName, your appointment has been completed. Thank you for visiting Victory Lying-in Center.\n\nThank you,\nVictory Lying-in Center',
+                'Dear $patientName, your appointment on $dateText at $timeSlot has been completed.\n\nThank you,\nVictory Lying-in Center',
             email: email,
             phone: phone,
             name: patientName,
@@ -1911,18 +1918,18 @@ class _AdminAppointmentSchedulingScreenState
           await notification.sendToClinic(
             subject: 'Appointment completed',
             message:
-                '${widget.userName} marked $patientName\'s appointment as completed.',
+                '${widget.userName} marked $patientName\'s appointment on $dateText at $timeSlot as completed.',
+          );
+
+          await AuditLogService.log(
+            role: widget.userRole,
+            userName: widget.userName,
+            action:
+                '${widget.userName} marked $patientName\'s appointment on $dateText at $timeSlot as completed',
+            entityType: 'appointments',
+            entityId: appointmentId,
           );
         } catch (_) {}
-
-        await AuditLogService.log(
-          role: widget.userRole,
-          userName: widget.userName,
-          action:
-              '${widget.userName} marked $patientName\'s appointment as completed',
-          entityType: 'appointments',
-          entityId: appointmentId,
-        );
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -2121,12 +2128,18 @@ class _AdminAppointmentSchedulingScreenState
                   onPressed: selectedDate != null && selectedTime != null
                       ? () async {
                           Navigator.pop(context);
+                          final String email =
+                              (currentAppointment['email'] ?? '').toString();
+                          final String phone =
+                              (currentAppointment['contactNumber'] ?? '')
+                                  .toString();
                           await _updateAppointment(
                             appointmentId,
                             patientName,
                             selectedDate!,
                             selectedTime!,
-                            appointmentData: currentAppointment,
+                            email: email,
+                            phone: phone,
                           );
                         }
                       : null,
@@ -2151,7 +2164,7 @@ class _AdminAppointmentSchedulingScreenState
 
   Future<void> _updateAppointment(String appointmentId, String patientName,
       DateTime newDate, String newTime,
-      {Map<String, dynamic>? appointmentData}) async {
+      {String? email, String? phone}) async {
     try {
       // Prevent overbooking: max 3 appointments per time slot per day
       final DateTime startOfDay =
@@ -2193,45 +2206,21 @@ class _AdminAppointmentSchedulingScreenState
         'rescheduleReason': 'Admin rescheduled appointment',
       });
 
-      final String dateText =
-          '${newDate.year}-${newDate.month.toString().padLeft(2, '0')}-${newDate.day.toString().padLeft(2, '0')}';
-      const days = [
-        'Monday',
-        'Tuesday',
-        'Wednesday',
-        'Thursday',
-        'Friday',
-        'Saturday',
-        'Sunday',
-      ];
-      final String dayName = (newDate.weekday >= 1 && newDate.weekday <= 7)
-          ? days[newDate.weekday - 1]
-          : '';
-      final String whenText =
-          dayName.isNotEmpty ? '$dayName ($dateText)' : dateText;
-
-      // Launch email client for notification
-      final String email = appointmentData != null
-          ? (appointmentData['email'] ?? '').toString()
-          : '';
-      final String phone = appointmentData != null
-          ? (appointmentData['contactNumber'] ?? '').toString()
-          : '';
-
+      // Launch email client for reschedule notification
       try {
         final notification = NotificationService();
         await notification.sendToUser(
           subject: 'Your appointment has been rescheduled',
           message:
-              'Dear $patientName, your appointment has been rescheduled to $dateText at $newTime.\n\nThank you,\nVictory Lying-in Center',
-          email: email,
-          phone: phone,
+              'Dear $patientName, your appointment has been rescheduled to ${_formatDate(newDate)}, $newTime.\n\nThank you,\nVictory Lying-in Center',
+          email: (email ?? '').isNotEmpty ? email : null,
+          phone: (phone ?? '').isNotEmpty ? phone : null,
           name: patientName,
         );
         await notification.sendToClinic(
           subject: 'Appointment rescheduled',
           message:
-              '${widget.userName} rescheduled $patientName\'s appointment to $dateText at $newTime.',
+              '${widget.userName} rescheduled $patientName\'s appointment to ${_formatDate(newDate)} at $newTime.',
         );
       } catch (_) {}
 
@@ -2239,7 +2228,7 @@ class _AdminAppointmentSchedulingScreenState
         role: widget.userRole,
         userName: widget.userName,
         action:
-            '${widget.userName} rescheduled $patientName\'s appointment to $dateText at $newTime',
+            '${widget.userName} rescheduled $patientName\'s appointment to ${_formatDate(newDate)} at $newTime',
         entityType: 'appointments',
         entityId: appointmentId,
       );
@@ -2301,65 +2290,108 @@ class _AdminAppointmentSchedulingScreenState
   @override
   void dispose() {
     _horizontalScrollController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = context.isMobile;
-
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
-      appBar: isMobile
-          ? AppBar(
-              backgroundColor: primary,
-              title: Text(
-                'APPROVE SCHEDULES',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: context.responsiveFontSize(18),
-                  fontFamily: 'Bold',
-                ),
-              ),
-              leading: Builder(
-                builder: (context) => IconButton(
-                  icon: const Icon(Icons.menu, color: Colors.white),
-                  onPressed: () => Scaffold.of(context).openDrawer(),
-                ),
-              ),
-            )
-          : null,
-      drawer: isMobile
-          ? Drawer(
-              child: _buildSidebar(),
-            )
-          : null,
       body: Row(
         children: [
-          if (!isMobile) _buildSidebar(),
+          // Sidebar
+          _buildSidebar(),
+
+          // Main Content
           Expanded(
             child: Padding(
-              padding: EdgeInsets.all(isMobile ? 16 : 30),
+              padding: const EdgeInsets.all(30),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (!isMobile)
-                    Row(
-                      children: const [
-                        Icon(Icons.event_available,
-                            size: 28, color: Colors.black87),
-                        SizedBox(width: 12),
-                        Text(
-                          'Approve Schedules',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontFamily: 'Bold',
-                            color: Colors.black87,
+                  // Header
+                  Row(
+                    children: const [
+                      Icon(Icons.event_available,
+                          size: 28, color: Colors.black87),
+                      SizedBox(width: 12),
+                      Text(
+                        'Approve Schedules',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontFamily: 'Bold',
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Filters: Prenatal/Postnatal + Search
+                  Row(
+                    children: [
+                      ToggleButtons(
+                        isSelected: [
+                          _selectedMaternityFilter == 'PRENATAL',
+                          _selectedMaternityFilter == 'POSTNATAL',
+                        ],
+                        onPressed: (index) {
+                          setState(() {
+                            _selectedMaternityFilter =
+                                index == 0 ? 'PRENATAL' : 'POSTNATAL';
+                          });
+                        },
+                        borderRadius: BorderRadius.circular(20),
+                        selectedColor: Colors.white,
+                        color: Colors.black87,
+                        fillColor: primary,
+                        constraints: const BoxConstraints(
+                          minHeight: 36,
+                          minWidth: 140,
+                        ),
+                        children: const [
+                          Text(
+                            'Prenatal Approved',
+                            style:
+                                TextStyle(fontFamily: 'Medium', fontSize: 12),
+                          ),
+                          Text(
+                            'Postnatal Approved',
+                            style:
+                                TextStyle(fontFamily: 'Medium', fontSize: 12),
+                          ),
+                        ],
+                      ),
+                      const Spacer(),
+                      SizedBox(
+                        width: 260,
+                        child: TextField(
+                          controller: _searchController,
+                          onChanged: (value) {
+                            setState(() {
+                              _searchQuery = value.trim().toLowerCase();
+                            });
+                          },
+                          decoration: InputDecoration(
+                            hintText: 'Search name...',
+                            prefixIcon: const Icon(Icons.search, size: 18),
+                            isDense: true,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 10,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
                           ),
                         ),
-                      ],
-                    ),
-                  if (!isMobile) const SizedBox(height: 20),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Appointments Table
                   Expanded(
                     child: Container(
                       decoration: BoxDecoration(
@@ -2453,12 +2485,6 @@ class _AdminAppointmentSchedulingScreenState
           _buildMenuItem('APPOINTMENT MANAGEMENT', false),
           _buildMenuItem('APPROVE SCHEDULES', true),
           _buildMenuItem('PATIENT RECORDS', false),
-          if (widget.userRole == 'admin') _buildMenuItem('HISTORY LOGS', false),
-
-          if (widget.userRole == 'admin') ...[
-            _buildMenuItem('ADD NEW STAFF/NURSE', false),
-            _buildMenuItem('CHANGE PASSWORD', false),
-          ],
 
           _buildMenuItem('LOGOUT', false),
         ],
@@ -2600,9 +2626,10 @@ class _AdminAppointmentSchedulingScreenState
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => AdminStaffManagementScreen(
+            builder: (context) => AdminDashboardScreen(
               userRole: widget.userRole,
               userName: widget.userName,
+              openAddStaffOnLoad: true,
             ),
           ),
         );
@@ -2677,6 +2704,27 @@ class _AdminAppointmentSchedulingScreenState
   Widget _buildAppointmentsTable() {
     const double columnWidth = 120.0;
 
+    // Filter appointments by maternity type and search query
+    final List<Map<String, dynamic>> filtered = _appointments.where((a) {
+      final String maternity =
+          (a['maternityStatus'] ?? '').toString().toUpperCase();
+      if (_selectedMaternityFilter == 'PRENATAL' && maternity != 'PRENATAL') {
+        return false;
+      }
+      if (_selectedMaternityFilter == 'POSTNATAL' && maternity != 'POSTNATAL') {
+        return false;
+      }
+
+      if (_searchQuery.isNotEmpty) {
+        final name = (a['name'] ?? '').toString().toLowerCase();
+        if (!name.contains(_searchQuery)) {
+          return false;
+        }
+      }
+
+      return true;
+    }).toList();
+
     return SingleChildScrollView(
       child: Column(
         children: [
@@ -2697,23 +2745,23 @@ class _AdminAppointmentSchedulingScreenState
                   child: _buildHeaderCell('NO.'),
                 ),
                 SizedBox(
-                  width: columnWidth * 1.2,
+                  width: columnWidth * 1.4,
                   child: _buildHeaderCell('NAME'),
                 ),
                 SizedBox(
-                  width: columnWidth * 1.5,
-                  child: _buildHeaderCell('STATUS (with timestamps)'),
+                  width: columnWidth * 1.1,
+                  child: _buildHeaderCell('STATUS'),
                 ),
                 SizedBox(
                   width: columnWidth * 1.3,
-                  child: _buildHeaderCell('APPOINTMENT'),
+                  child: _buildHeaderCell('APPOINTMENT DATE'),
                 ),
                 SizedBox(
-                  width: columnWidth * 1.2,
-                  child: _buildHeaderCell('MATERNITY STATUS'),
+                  width: columnWidth * 1.3,
+                  child: _buildHeaderCell('APPOINTMENT TYPE'),
                 ),
                 SizedBox(
-                  width: columnWidth * 2.5,
+                  width: columnWidth * 2.3,
                   child: _buildHeaderCell('ACTIONS'),
                 ),
               ],
@@ -2721,16 +2769,16 @@ class _AdminAppointmentSchedulingScreenState
           ),
 
           // Table Rows
-          ..._appointments.map((appointment) {
+          ...filtered.asMap().entries.map((entry) {
+            final index = entry.key;
+            final appointment = entry.value;
             return _buildTableRow(
-              appointment['id'] ?? '', // This is the actual appointment ID
-              (_appointments.indexOf(appointment) + 1)
-                  .toString(), // This is the row number
+              appointment['id'] ?? '',
+              (index + 1).toString(),
               appointment['name'] ?? 'Unknown',
               appointment['status'] ?? 'Pending',
-              appointment['appointment'] ?? 'Not specified',
               appointment['maternityStatus'] ?? 'Unknown',
-              appointment, // Pass full appointment data for timestamps and email
+              appointment,
             );
           }).toList(),
         ],
@@ -2755,7 +2803,6 @@ class _AdminAppointmentSchedulingScreenState
     String rowNumber,
     String name,
     String status,
-    String appointment,
     String maternityStatus,
     Map<String, dynamic> appointmentData,
   ) {
@@ -2804,6 +2851,15 @@ class _AdminAppointmentSchedulingScreenState
     }
 
     const double columnWidth = 120.0;
+
+    // Appointment date and type for new layout
+    String appointmentDateText = '-';
+    final DateTime? apptDate = _getAppointmentDateFromData(appointmentData);
+    if (apptDate != null) {
+      appointmentDateText = _formatDate(apptDate);
+    }
+    String appointmentTypeText =
+        (appointmentData['appointmentType'] ?? 'Clinic').toString();
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
@@ -2862,15 +2918,15 @@ class _AdminAppointmentSchedulingScreenState
               ],
             ),
           ),
-          // APPOINTMENT Column
+          // APPOINTMENT DATE Column
           SizedBox(
             width: columnWidth * 1.3,
-            child: _buildTableCell(appointment),
+            child: _buildTableCell(appointmentDateText),
           ),
-          // MATERNITY STATUS Column
+          // APPOINTMENT TYPE Column
           SizedBox(
-            width: columnWidth * 1.2,
-            child: _buildTableCell(maternityStatus),
+            width: columnWidth * 1.3,
+            child: _buildTableCell(appointmentTypeText),
           ),
           // ACTIONS Column
           SizedBox(
@@ -2946,8 +3002,8 @@ class _AdminAppointmentSchedulingScreenState
                     )
                   else
                     TextButton(
-                      onPressed: () => _completeAppointment(
-                          appointmentId, name, appointmentData),
+                      onPressed: () =>
+                          _completeAppointment(appointmentId, name),
                       child: const Text(
                         'Complete',
                         style: TextStyle(

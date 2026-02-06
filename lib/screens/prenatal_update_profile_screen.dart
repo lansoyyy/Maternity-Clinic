@@ -3,7 +3,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../utils/colors.dart';
-import '../utils/responsive_utils.dart';
+import '../widgets/forgot_password_dialog.dart';
+import 'prenatal_dashboard_screen.dart';
+import 'prenatal_history_checkup_screen.dart';
+import 'notification_appointment_screen.dart';
+import 'transfer_record_request_screen.dart';
+import 'auth/home_screen.dart';
 
 class PrenatalUpdateProfileScreen extends StatefulWidget {
   const PrenatalUpdateProfileScreen({super.key});
@@ -42,6 +47,12 @@ class _PrenatalUpdateProfileScreenState
       TextEditingController();
   final TextEditingController _emergencyNumberController =
       TextEditingController();
+
+  final List<String> _civilStatusOptions = const [
+    'Single',
+    'Married',
+    'Live-in Partner',
+  ];
 
   // Pregnancy details
   DateTime? _lmpDate;
@@ -304,105 +315,100 @@ class _PrenatalUpdateProfileScreenState
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = context.isMobile;
-    
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: primary,
-        title: const Text(
-          'UPDATE PROFILE',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontFamily: 'Bold',
-          ),
-        ),
-      ),
-      body: _isLoading
-          ? Center(
-              child: CircularProgressIndicator(color: primary),
-            )
-          : SingleChildScrollView(
-              padding: EdgeInsets.all(isMobile ? 16 : 32),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(14),
-                    margin: const EdgeInsets.only(bottom: 24),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.shade50,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.orange.shade200),
-                    ),
+      backgroundColor: Colors.white,
+      body: Row(
+        children: [
+          _buildSidebar(),
+          Expanded(
+            child: _isLoading
+                ? Center(
+                    child: CircularProgressIndicator(color: primary),
+                  )
+                : SingleChildScrollView(
+                    padding: const EdgeInsets.all(32),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Text(
-                          'Before you can book an appointment, you need to complete your profile information below.',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontFamily: 'Regular',
-                            color: Colors.black87,
+                      children: [
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(14),
+                          margin: const EdgeInsets.only(bottom: 24),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.orange.shade200),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: const [
+                              Text(
+                                'Before you can book an appointment, you need to complete your profile information below.',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontFamily: 'Regular',
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              SizedBox(height: 6),
+                              Text(
+                                'Once you have saved the required details, they can no longer be edited in the system. Only the clinic information can be changed.',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontFamily: 'Regular',
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        SizedBox(height: 6),
-                        Text(
-                          'Once you have saved the required details, they can no longer be edited in the system. Only the clinic information can be changed.',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontFamily: 'Regular',
-                            color: Colors.black87,
+                        _buildBasicInfoSection(),
+                        const SizedBox(height: 20),
+                        _buildRequiredProfileSection(),
+                        const SizedBox(height: 20),
+                        _buildDerivedInfoSection(),
+                        const SizedBox(height: 28),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: ElevatedButton(
+                            onPressed: _isSaving || _isProfileCompleted
+                                ? null
+                                : _saveProfile,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: primary,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 40,
+                                vertical: 16,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            child: _isSaving
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Text(
+                                    'Save Profile',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontFamily: 'Bold',
+                                    ),
+                                  ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  _buildBasicInfoSection(),
-                  SizedBox(height: isMobile ? 16 : 20),
-                  _buildRequiredProfileSection(),
-                  SizedBox(height: isMobile ? 16 : 20),
-                  _buildDerivedInfoSection(),
-                  SizedBox(height: isMobile ? 24 : 28),
-                  Align(
-                    alignment: isMobile ? Alignment.center : Alignment.centerRight,
-                    child: ElevatedButton(
-                      onPressed: _isSaving || _isProfileCompleted
-                          ? null
-                          : _saveProfile,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primary,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 40,
-                          vertical: 16,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      child: _isSaving
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
-                            )
-                          : const Text(
-                              'Save Profile',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontFamily: 'Bold',
-                              ),
-                            ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -593,10 +599,58 @@ class _PrenatalUpdateProfileScreenState
             ],
           ),
           const SizedBox(height: 12),
-          _buildTextField(
-            label: 'Civil Status (e.g., Single, Married, Live-in Partner)',
-            controller: _civilStatusController,
-            hintText: 'e.g. Married',
+          const Text(
+            'Civil Status',
+            style: TextStyle(
+              fontSize: 12,
+              fontFamily: 'Regular',
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 6),
+          DropdownButtonFormField<String>(
+            value: _civilStatusController.text.isEmpty
+                ? null
+                : _civilStatusController.text,
+            items: _civilStatusOptions
+                .map(
+                  (status) => DropdownMenuItem(
+                    value: status,
+                    child: Text(
+                      status,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontFamily: 'Regular',
+                      ),
+                    ),
+                  ),
+                )
+                .toList(),
+            onChanged: _isProfileCompleted
+                ? null
+                : (value) {
+                    setState(() {
+                      _civilStatusController.text = value ?? '';
+                    });
+                  },
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade400),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade400),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: primary, width: 2),
+              ),
+            ),
           ),
           const SizedBox(height: 12),
           const Text(
@@ -849,6 +903,175 @@ class _PrenatalUpdateProfileScreenState
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildSidebar() {
+    return Container(
+      width: 250,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [primary, secondary],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 30),
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  'PRENATAL PATIENT',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12,
+                    fontFamily: 'Regular',
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          _buildMenuItem('PERSONAL DETAILS', true),
+          _buildMenuItem('EDUCATIONAL\nLEARNERS', false),
+          _buildMenuItem('HISTORY OF\nCHECK UP', false),
+          _buildMenuItem('REQUEST &\nNOTIFICATION APPOINTMENT', false),
+          _buildMenuItem('TRANSFER OF\nRECORD REQUEST', false),
+          _buildMenuItem('CHANGE PASSWORD', false),
+          _buildMenuItem('LOGOUT', false),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMenuItem(String title, bool isActive) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: () {
+          if (title == 'LOGOUT') {
+            _showLogoutConfirmationDialog();
+            return;
+          }
+          if (title == 'CHANGE PASSWORD') {
+            showDialog(
+              context: context,
+              builder: (context) => const ForgotPasswordDialog(),
+            );
+            return;
+          }
+
+          if (isActive) {
+            return;
+          }
+
+          if (title == 'EDUCATIONAL\nLEARNERS') {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const PrenatalDashboardScreen(),
+              ),
+            );
+          } else if (title == 'HISTORY OF\nCHECK UP') {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const PrenatalHistoryCheckupScreen(),
+              ),
+            );
+          } else if (title == 'REQUEST &\nNOTIFICATION APPOINTMENT') {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const NotificationAppointmentScreen(
+                  patientType: 'PRENATAL',
+                ),
+              ),
+            );
+          } else if (title == 'TRANSFER OF\nRECORD REQUEST') {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const TransferRecordRequestScreen(
+                  patientType: 'PRENATAL',
+                ),
+              ),
+            );
+          }
+        },
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+          decoration: BoxDecoration(
+            color:
+                isActive ? Colors.white.withOpacity(0.2) : Colors.transparent,
+            border: Border(
+              left: BorderSide(
+                color: isActive ? Colors.white : Colors.transparent,
+                width: 4,
+              ),
+            ),
+          ),
+          child: Text(
+            title,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontFamily: isActive ? 'Bold' : 'Medium',
+              height: 1.3,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showLogoutConfirmationDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+          'Logout Confirmation',
+          style: TextStyle(fontFamily: 'Bold'),
+        ),
+        content: const Text(
+          'Are you sure you want to logout?',
+          style: TextStyle(fontFamily: 'Regular'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancel',
+              style:
+                  TextStyle(color: Colors.grey.shade600, fontFamily: 'Medium'),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _auth.signOut();
+              if (mounted) {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const HomeScreen()),
+                  (route) => false,
+                );
+              }
+            },
+            child: const Text(
+              'Logout',
+              style: TextStyle(color: Color(0xffEC008C), fontFamily: 'Bold'),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
