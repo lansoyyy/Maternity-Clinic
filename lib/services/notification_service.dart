@@ -111,10 +111,9 @@ class NotificationService {
     String? phone,
     String? name,
   }) async {
-    bool emailSent = false;
-
+    // Send email if email is provided
     if ((email ?? '').isNotEmpty) {
-      emailSent = await sendEmail(
+      await sendEmail(
         toEmail: email!,
         subject: subject,
         message: message,
@@ -122,7 +121,8 @@ class NotificationService {
       );
     }
 
-    if (!emailSent && (phone ?? '').isNotEmpty) {
+    // Send SMS if phone is provided (independent of email)
+    if ((phone ?? '').isNotEmpty) {
       await sendSms(number: phone!, message: message);
     }
   }
