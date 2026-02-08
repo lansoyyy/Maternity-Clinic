@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import 'third_party_config.dart';
@@ -48,6 +49,21 @@ class NotificationService {
     required String message,
   }) async {
     try {
+      // Semaphore expects Philippine numbers in 09XXXXXXXXX format
+      // The +63 international format is rejected by the API
+      String formattedNumber = number.trim();
+      
+      // Remove any +63 or 63 prefix if present, keep the 0 prefix
+      if (formattedNumber.startsWith('+63')) {
+        formattedNumber = '0${formattedNumber.substring(3)}';
+      } else if (formattedNumber.startsWith('63') && formattedNumber.length == 12) {
+        formattedNumber = '0${formattedNumber.substring(2)}';
+      }
+
+      debugPrint('[SMS] Sending to: $formattedNumber');
+      debugPrint('[SMS] Message: $message');
+      debugPrint('[SMS] Sender: ${ThirdPartyConfig.semaphoreSenderName}');
+
       final res = await _client.post(
         Uri.parse(ThirdPartyConfig.semaphoreMessagesEndpoint),
         headers: {
@@ -55,14 +71,35 @@ class NotificationService {
         },
         body: {
           'apikey': ThirdPartyConfig.semaphoreApiKey,
-          'number': number,
+          'number': formattedNumber,
           'message': message,
           'sendername': ThirdPartyConfig.semaphoreSenderName,
         },
       );
 
-      return res.statusCode == 200;
-    } catch (_) {
+      debugPrint('[SMS] Status Code: ${res.statusCode}');
+      debugPrint('[SMS] Response Body: ${res.body}');
+
+      // Semaphore returns 200 on success, but let's check the response body too
+      if (res.statusCode == 200) {
+        try {
+          final responseData = jsonDecode(res.body);
+          if (responseData is List && responseData.isNotEmpty) {
+            final firstMessage = responseData[0];
+            debugPrint('[SMS] Message ID: ${firstMessage['message_id']}');
+            debugPrint('[SMS] Status: ${firstMessage['status']}');
+            return firstMessage['status'] == 'Pending' || firstMessage['status'] == 'Success';
+          }
+        } catch (_) {
+          // If we can't parse JSON, just check status code
+        }
+        return true;
+      }
+
+      return false;
+    } catch (e, stackTrace) {
+      debugPrint('[SMS] Error: $e');
+      debugPrint('[SMS] StackTrace: $stackTrace');
       return false;
     }
   }
