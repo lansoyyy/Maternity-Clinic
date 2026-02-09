@@ -5,6 +5,9 @@ import '../../utils/responsive_utils.dart';
 import 'home_screen.dart';
 import 'about_us_screen.dart';
 import 'services_screen.dart';
+import 'dart:html' hide VoidCallback;
+import 'dart:ui_web' as ui;
+import 'package:flutter/foundation.dart';
 
 class ContactUsScreen extends StatefulWidget {
   const ContactUsScreen({super.key});
@@ -71,13 +74,11 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
 
   Widget _buildHeader() {
     final isMobile = context.isMobile;
-    
+
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 16 : 40, 
-        vertical: isMobile ? 16 : 20
-      ),
+          horizontal: isMobile ? 16 : 40, vertical: isMobile ? 16 : 20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [primary, secondary],
@@ -151,31 +152,48 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
             children: [
               ListTile(
                 leading: const Icon(Icons.home, color: Colors.white70),
-                title: const Text('HOME', style: TextStyle(color: Colors.white70, fontFamily: 'Medium')),
+                title: const Text('HOME',
+                    style:
+                        TextStyle(color: Colors.white70, fontFamily: 'Medium')),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const HomeScreen()));
+                  Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const HomeScreen()));
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.info, color: Colors.white70),
-                title: const Text('ABOUT US', style: TextStyle(color: Colors.white70, fontFamily: 'Medium')),
+                title: const Text('ABOUT US',
+                    style:
+                        TextStyle(color: Colors.white70, fontFamily: 'Medium')),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const AboutUsScreen()));
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const AboutUsScreen()));
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.medical_services, color: Colors.white70),
-                title: const Text('SERVICES', style: TextStyle(color: Colors.white70, fontFamily: 'Medium')),
+                leading:
+                    const Icon(Icons.medical_services, color: Colors.white70),
+                title: const Text('SERVICES',
+                    style:
+                        TextStyle(color: Colors.white70, fontFamily: 'Medium')),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const ServicesScreen()));
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const ServicesScreen()));
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.contact_mail, color: Colors.white),
-                title: const Text('CONTACT US', style: TextStyle(color: Colors.white, fontFamily: 'Bold')),
+                title: const Text('CONTACT US',
+                    style: TextStyle(color: Colors.white, fontFamily: 'Bold')),
                 onTap: () => Navigator.pop(context),
               ),
             ],
@@ -378,14 +396,16 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
   }
 
   Widget _buildAddressSection() {
+    final isMobile = context.isMobile;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Title
-        const Text(
+        Text(
           'CONTACT INFORMATION',
           style: TextStyle(
-            fontSize: 32,
+            fontSize: isMobile ? 24 : 32,
             fontFamily: 'Bold',
             color: Colors.black,
             letterSpacing: 0.5,
@@ -395,7 +415,7 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
 
         // Contact Information Card
         Container(
-          padding: const EdgeInsets.all(25),
+          padding: EdgeInsets.all(isMobile ? 16 : 25),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [primary.withOpacity(0.85), secondary.withOpacity(0.85)],
@@ -420,7 +440,7 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
                 value: 'victorylying@yahoo.com',
                 onTap: () => _launchEmail('victorylying@yahoo.com'),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
 
               // Instagram
               _buildContactItem(
@@ -429,7 +449,7 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
                 value: '@victory_lyingincenter',
                 onTap: () => _launchInstagram('victory_lyingincenter'),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
 
               // Facebook
               _buildContactItem(
@@ -438,7 +458,7 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
                 value: 'Victory Lying-In Center',
                 onTap: () => _launchFacebook(),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
 
               // Telephone
               _buildContactItem(
@@ -452,21 +472,21 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
         ),
         const SizedBox(height: 30),
 
-        // Map Section
-        const Text(
+        // Map Section with Embedded Google Maps
+        Text(
           'ADDRESS & LOCATION',
           style: TextStyle(
-            fontSize: 32,
+            fontSize: isMobile ? 24 : 32,
             fontFamily: 'Bold',
             color: Colors.black,
             letterSpacing: 0.5,
           ),
         ),
         const SizedBox(height: 10),
-        const Text(
+        Text(
           '2104-2114 Dimasalang St, Santa Cruz, Manila, 1008 Metro Manila',
           style: TextStyle(
-            fontSize: 16,
+            fontSize: isMobile ? 14 : 16,
             fontFamily: 'Regular',
             color: Colors.black87,
             height: 1.4,
@@ -474,10 +494,10 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
         ),
         const SizedBox(height: 30),
 
-        // Map Image
+        // Embedded Google Maps
         Container(
           width: double.infinity,
-          height: 400,
+          height: isMobile ? 250 : 400,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
@@ -490,43 +510,60 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(20),
-            child: Image.asset(
-              'assets/images/map.png',
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                // Fallback if map image doesn't exist
-                return Container(
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.map,
-                          size: 80,
-                          color: Colors.grey.shade400,
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          'Map Location',
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                            fontFamily: 'Medium',
-                            fontSize: 18,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
+            child: _buildGoogleMap(),
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // Open in Maps Button
+        Center(
+          child: ElevatedButton.icon(
+            onPressed: () async {
+              final Uri mapUri = Uri.parse(
+                'https://www.google.com/maps/search/?api=1&query=14.6043,120.9898&query_place_id=ChIJY1iZ0PjJlzMRbDGxJ02EfSg',
+              );
+              if (!await launchUrl(mapUri,
+                  mode: LaunchMode.externalApplication)) {
+                _showErrorDialog('Could not open map');
+              }
+            },
+            icon: const Icon(Icons.map, color: Colors.white),
+            label: Text(
+              'Open in Google Maps',
+              style: TextStyle(
+                fontFamily: 'Bold',
+                color: Colors.white,
+                fontSize: isMobile ? 14 : 16,
+              ),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: primary,
+              padding: EdgeInsets.symmetric(
+                  horizontal: isMobile ? 20 : 30, vertical: isMobile ? 12 : 15),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
             ),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildGoogleMap() {
+    if (kIsWeb) {
+      return HtmlElementView(
+        viewType: 'google-maps-iframe',
+      );
+    }
+    return Container(
+      color: Colors.grey.shade200,
+      child: const Center(
+        child: Text(
+          'Map not available on mobile',
+          style: TextStyle(fontFamily: 'Medium'),
+        ),
+      ),
     );
   }
 
@@ -536,12 +573,14 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
     required String value,
     required VoidCallback onTap,
   }) {
+    final isMobile = context.isMobile;
+
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.all(15),
+          padding: EdgeInsets.all(isMobile ? 12 : 15),
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.9),
             borderRadius: BorderRadius.circular(15),
@@ -549,7 +588,7 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: EdgeInsets.all(isMobile ? 8 : 10),
                 decoration: BoxDecoration(
                   color: primary,
                   shape: BoxShape.circle,
@@ -557,30 +596,32 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
                 child: Icon(
                   icon,
                   color: Colors.white,
-                  size: 24,
+                  size: isMobile ? 20 : 24,
                 ),
               ),
-              const SizedBox(width: 15),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       label,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.black54,
                         fontFamily: 'Medium',
-                        fontSize: 14,
+                        fontSize: isMobile ? 12 : 14,
                       ),
                     ),
-                    const SizedBox(height: 5),
+                    const SizedBox(height: 4),
                     Text(
                       value,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.black,
                         fontFamily: 'Bold',
-                        fontSize: 16,
+                        fontSize: isMobile ? 14 : 16,
                       ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
                   ],
                 ),
@@ -588,7 +629,7 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
               Icon(
                 Icons.arrow_forward_ios,
                 color: primary,
-                size: 16,
+                size: isMobile ? 14 : 16,
               ),
             ],
           ),

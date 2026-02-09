@@ -182,10 +182,10 @@ class _PrenatalDashboardScreenState extends State<PrenatalDashboardScreen> {
                       ),
                     ),
                   const SizedBox(height: 32),
-                  const Text(
+                  Text(
                     'Healthy Pregnancy, Healthy Baby: A Guide to\nPrenatal Care',
                     style: TextStyle(
-                      fontSize: 28,
+                      fontSize: isMobile ? 22 : 28,
                       fontFamily: 'Bold',
                       color: Colors.black,
                       height: 1.3,
@@ -193,6 +193,8 @@ class _PrenatalDashboardScreenState extends State<PrenatalDashboardScreen> {
                   ),
                   const SizedBox(height: 40),
                   _buildGuideGrid(),
+                  const SizedBox(height: 40),
+                  _buildPersonalizedEducationalSection(),
                 ],
               ),
             ),
@@ -606,6 +608,13 @@ class _PrenatalDashboardScreenState extends State<PrenatalDashboardScreen> {
   }
 
   Widget _buildGuideGrid() {
+    final isMobile = context.isMobile;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final sidebarWidth = isMobile ? 0 : 250;
+    final padding = isMobile ? 32 : 120; // 16*2 for mobile padding
+    final availableWidth = screenWidth - sidebarWidth - padding;
+    final cardWidth = isMobile ? screenWidth - 32 : (availableWidth / 2);
+
     final guides = [
       {
         'number': '1',
@@ -668,11 +677,11 @@ class _PrenatalDashboardScreenState extends State<PrenatalDashboardScreen> {
     ];
 
     return Wrap(
-      spacing: 30,
-      runSpacing: 30,
+      spacing: isMobile ? 16 : 30,
+      runSpacing: isMobile ? 16 : 30,
       children: guides.map((guide) {
         return SizedBox(
-          width: (MediaQuery.of(context).size.width - 250 - 120) / 2,
+          width: cardWidth,
           child: _buildGuideCard(
             guide['number']!,
             guide['title']!,

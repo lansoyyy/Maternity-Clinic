@@ -78,29 +78,33 @@ class _PostnatalDashboardScreenState extends State<PostnatalDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final isMobile = context.isMobile;
-    
+
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: isMobile ? AppBar(
-        backgroundColor: primary,
-        title: const Text(
-          'POSTNATAL DASHBOARD',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontFamily: 'Bold',
-          ),
-        ),
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
-      ) : null,
-      drawer: isMobile ? Drawer(
-        child: _buildSidebar(),
-      ) : null,
+      appBar: isMobile
+          ? AppBar(
+              backgroundColor: primary,
+              title: const Text(
+                'POSTNATAL DASHBOARD',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontFamily: 'Bold',
+                ),
+              ),
+              leading: Builder(
+                builder: (context) => IconButton(
+                  icon: const Icon(Icons.menu, color: Colors.white),
+                  onPressed: () => Scaffold.of(context).openDrawer(),
+                ),
+              ),
+            )
+          : null,
+      drawer: isMobile
+          ? Drawer(
+              child: _buildSidebar(),
+            )
+          : null,
       body: Row(
         children: [
           if (!isMobile) _buildSidebar(),
@@ -191,6 +195,8 @@ class _PostnatalDashboardScreenState extends State<PostnatalDashboardScreen> {
                   ),
                   SizedBox(height: isMobile ? 24 : 40),
                   _buildGuideGrid(),
+                  const SizedBox(height: 40),
+                  _buildPersonalizedEducationalSection(),
                 ],
               ),
             ),
@@ -588,6 +594,13 @@ class _PostnatalDashboardScreenState extends State<PostnatalDashboardScreen> {
   }
 
   Widget _buildGuideGrid() {
+    final isMobile = context.isMobile;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final sidebarWidth = isMobile ? 0 : 250;
+    final padding = isMobile ? 32 : 120;
+    final availableWidth = screenWidth - sidebarWidth - padding;
+    final cardWidth = isMobile ? screenWidth - 32 : (availableWidth / 2);
+
     final guides = [
       {
         'number': '1',
@@ -652,11 +665,11 @@ class _PostnatalDashboardScreenState extends State<PostnatalDashboardScreen> {
     ];
 
     return Wrap(
-      spacing: 30,
-      runSpacing: 30,
+      spacing: isMobile ? 16 : 30,
+      runSpacing: isMobile ? 16 : 30,
       children: guides.map((guide) {
         return SizedBox(
-          width: (MediaQuery.of(context).size.width - 250 - 120) / 2,
+          width: cardWidth,
           child: _buildGuideCard(
             guide['number']!,
             guide['title']!,

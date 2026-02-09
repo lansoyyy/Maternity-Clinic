@@ -77,13 +77,11 @@ class _AboutUsScreenState extends State<AboutUsScreen> {
 
   Widget _buildHeader() {
     final isMobile = context.isMobile;
-    
+
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 16 : 40, 
-        vertical: isMobile ? 16 : 20
-      ),
+          horizontal: isMobile ? 16 : 40, vertical: isMobile ? 16 : 20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [primary, secondary],
@@ -157,31 +155,48 @@ class _AboutUsScreenState extends State<AboutUsScreen> {
             children: [
               ListTile(
                 leading: const Icon(Icons.home, color: Colors.white70),
-                title: const Text('HOME', style: TextStyle(color: Colors.white70, fontFamily: 'Medium')),
+                title: const Text('HOME',
+                    style:
+                        TextStyle(color: Colors.white70, fontFamily: 'Medium')),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const HomeScreen()));
+                  Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const HomeScreen()));
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.info, color: Colors.white),
-                title: const Text('ABOUT US', style: TextStyle(color: Colors.white, fontFamily: 'Bold')),
+                title: const Text('ABOUT US',
+                    style: TextStyle(color: Colors.white, fontFamily: 'Bold')),
                 onTap: () => Navigator.pop(context),
               ),
               ListTile(
-                leading: const Icon(Icons.medical_services, color: Colors.white70),
-                title: const Text('SERVICES', style: TextStyle(color: Colors.white70, fontFamily: 'Medium')),
+                leading:
+                    const Icon(Icons.medical_services, color: Colors.white70),
+                title: const Text('SERVICES',
+                    style:
+                        TextStyle(color: Colors.white70, fontFamily: 'Medium')),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const ServicesScreen()));
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const ServicesScreen()));
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.contact_mail, color: Colors.white70),
-                title: const Text('CONTACT US', style: TextStyle(color: Colors.white70, fontFamily: 'Medium')),
+                title: const Text('CONTACT US',
+                    style:
+                        TextStyle(color: Colors.white70, fontFamily: 'Medium')),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const ContactUsScreen()));
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const ContactUsScreen()));
                 },
               ),
             ],
@@ -239,6 +254,8 @@ class _AboutUsScreenState extends State<AboutUsScreen> {
   }
 
   Widget _buildAboutSection() {
+    final isMobile = context.isMobile;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -247,15 +264,15 @@ class _AboutUsScreenState extends State<AboutUsScreen> {
             children: [
               Image.asset(
                 'assets/images/figure.png',
-                height: 220,
+                height: isMobile ? 180 : 220,
                 fit: BoxFit.contain,
               ),
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 'WELCOME TO VICTORY LYING-IN CENTER',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 22,
+                  fontSize: isMobile ? 18 : 22,
                   fontFamily: 'Bold',
                   color: Colors.black87,
                   letterSpacing: 0.5,
@@ -265,38 +282,38 @@ class _AboutUsScreenState extends State<AboutUsScreen> {
             ],
           ),
         ),
-        const Text(
+        Text(
           'OUR MISSION',
           style: TextStyle(
-            fontSize: 22,
+            fontSize: isMobile ? 20 : 22,
             fontFamily: 'Bold',
             color: Colors.black87,
           ),
         ),
         const SizedBox(height: 8),
-        const Text(
+        Text(
           'The Victory Lying-in Center is committed in serving the community by providing high quality care and medical services in a most affordable and compassionate manner.',
           style: TextStyle(
-            fontSize: 15,
+            fontSize: isMobile ? 14 : 15,
             fontFamily: 'Regular',
             color: Colors.black87,
             height: 1.6,
           ),
         ),
         const SizedBox(height: 24),
-        const Text(
+        Text(
           'OUR VISION',
           style: TextStyle(
-            fontSize: 22,
+            fontSize: isMobile ? 20 : 22,
             fontFamily: 'Bold',
             color: Colors.black87,
           ),
         ),
         const SizedBox(height: 8),
-        const Text(
+        Text(
           'The Victory Lying-in Center envisions to be a leading provider of excellent health care to achieve the highest level of quality in Maternal and Child Health care and promote the highest standard of obstetric, gynecologic and reproductive health through personalize clinical care to our patient',
           style: TextStyle(
-            fontSize: 15,
+            fontSize: isMobile ? 14 : 15,
             fontFamily: 'Regular',
             color: Colors.black87,
             height: 1.6,
@@ -304,10 +321,10 @@ class _AboutUsScreenState extends State<AboutUsScreen> {
         ),
         const SizedBox(height: 32),
         Wrap(
-          spacing: 30,
-          runSpacing: 20,
+          spacing: isMobile ? 15 : 30,
+          runSpacing: isMobile ? 15 : 20,
           alignment: WrapAlignment.center,
-          children: const [
+          children: [
             _StaffProfileCard(
               name: 'OB - Maureen R. Higoy MD',
               role: 'Obstetrician-Gynecologist',
@@ -327,103 +344,129 @@ class _AboutUsScreenState extends State<AboutUsScreen> {
   }
 
   Widget _buildServicesOverview() {
+    final isMobile = context.isMobile;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'OUR SERVICES',
           style: TextStyle(
-            fontSize: 32,
+            fontSize: isMobile ? 24 : 32,
             fontFamily: 'Bold',
             color: primary,
             letterSpacing: 0.5,
           ),
         ),
         const SizedBox(height: 30),
-        Row(
-          children: [
-            _buildServiceCard(
-              'assets/images/ob-gyne.png',
-              'OB-GYNE',
-              'Comprehensive obstetrics and gynecology services for women\'s health',
-            ),
-            const SizedBox(width: 30),
-            _buildServiceCard(
-              'assets/images/ultra sound.png',
-              'ULTRASOUND',
-              'Advanced ultrasound imaging for prenatal monitoring and diagnostics',
-            ),
-          ],
-        ),
+        if (isMobile)
+          Column(
+            children: [
+              _buildServiceCard(
+                'assets/images/ob-gyne.png',
+                'OB-GYNE',
+                'Comprehensive obstetrics and gynecology services for women\'s health',
+              ),
+              const SizedBox(height: 20),
+              _buildServiceCard(
+                'assets/images/ultra sound.png',
+                'ULTRASOUND',
+                'Advanced ultrasound imaging for prenatal monitoring and diagnostics',
+              ),
+            ],
+          )
+        else
+          Row(
+            children: [
+              Expanded(
+                child: _buildServiceCard(
+                  'assets/images/ob-gyne.png',
+                  'OB-GYNE',
+                  'Comprehensive obstetrics and gynecology services for women\'s health',
+                ),
+              ),
+              const SizedBox(width: 30),
+              Expanded(
+                child: _buildServiceCard(
+                  'assets/images/ultra sound.png',
+                  'ULTRASOUND',
+                  'Advanced ultrasound imaging for prenatal monitoring and diagnostics',
+                ),
+              ),
+            ],
+          ),
       ],
     );
   }
 
   Widget _buildServiceCard(String iconPath, String title, String description) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(30),
-        height: 280,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.grey.shade200, width: 2),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.shade200,
-              blurRadius: 15,
-              offset: const Offset(0, 5),
+    final isMobile = context.isMobile;
+
+    return Container(
+      padding: EdgeInsets.all(isMobile ? 20 : 30),
+      height: isMobile ? 240 : 280,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey.shade200, width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade200,
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: isMobile ? 60 : 80,
+            height: isMobile ? 60 : 80,
+            decoration: BoxDecoration(
+              color: orangePallete,
+              shape: BoxShape.circle,
             ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: orangePallete,
-                shape: BoxShape.circle,
-              ),
-              padding: const EdgeInsets.all(18),
-              child: Image.asset(
-                iconPath,
-                fit: BoxFit.contain,
-              ),
+            padding: EdgeInsets.all(isMobile ? 12 : 18),
+            child: Image.asset(
+              iconPath,
+              fit: BoxFit.contain,
             ),
-            const SizedBox(height: 20),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 20,
-                fontFamily: 'Bold',
-                color: primary,
-                letterSpacing: 0.5,
-              ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: isMobile ? 16 : 20,
+              fontFamily: 'Bold',
+              color: primary,
+              letterSpacing: 0.5,
             ),
-            const SizedBox(height: 15),
-            Text(
-              description,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 14,
-                fontFamily: 'Regular',
-                color: Colors.black87,
-                height: 1.5,
-              ),
+          ),
+          const SizedBox(height: 15),
+          Text(
+            description,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: isMobile ? 12 : 14,
+              fontFamily: 'Regular',
+              color: Colors.black87,
+              height: 1.5,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildFooter() {
+    final isMobile = context.isMobile;
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 30),
+      padding: EdgeInsets.symmetric(
+          horizontal: isMobile ? 20 : 40, vertical: isMobile ? 20 : 30),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [primary, secondary],
@@ -435,12 +478,12 @@ class _AboutUsScreenState extends State<AboutUsScreen> {
           topRight: Radius.circular(20),
         ),
       ),
-      child: const Text(
+      child: Text(
         'We care about your health\nand well - being',
         textAlign: TextAlign.center,
         style: TextStyle(
           color: Colors.white,
-          fontSize: 32,
+          fontSize: isMobile ? 24 : 32,
           fontFamily: 'Bold',
           height: 1.3,
           letterSpacing: 0.5,
@@ -461,21 +504,23 @@ class _StaffProfileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = context.isMobile;
+
     return SizedBox(
-      width: 230,
+      width: isMobile ? 140 : 230,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
-            width: 90,
-            height: 90,
+            width: isMobile ? 70 : 90,
+            height: isMobile ? 70 : 90,
             decoration: BoxDecoration(
               color: primary.withOpacity(0.15),
               shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.person,
-              size: 46,
+              size: isMobile ? 35 : 46,
               color: primary,
             ),
           ),
@@ -483,8 +528,8 @@ class _StaffProfileCard extends StatelessWidget {
           Text(
             name,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 15,
+            style: TextStyle(
+              fontSize: isMobile ? 13 : 15,
               fontFamily: 'Bold',
               color: Colors.black87,
             ),
@@ -494,7 +539,7 @@ class _StaffProfileCard extends StatelessWidget {
             role,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 13,
+              fontSize: isMobile ? 11 : 13,
               fontFamily: 'Regular',
               color: Colors.grey.shade700,
             ),

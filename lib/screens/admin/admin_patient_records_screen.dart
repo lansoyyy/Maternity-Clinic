@@ -3,11 +3,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import 'package:maternity_clinic/utils/colors.dart';
-import 'package:maternity_clinic/utils/responsive_utils.dart';
 import 'package:maternity_clinic/screens/admin/admin_dashboard_screen.dart';
 import 'package:maternity_clinic/screens/admin/admin_appointment_management_screen.dart';
 import 'package:maternity_clinic/screens/admin/admin_appointment_scheduling_screen.dart';
-import 'package:maternity_clinic/screens/admin/admin_staff_management_screen.dart';
 import 'package:maternity_clinic/screens/admin/admin_prenatal_patient_detail_screen.dart';
 import 'package:maternity_clinic/screens/admin/admin_postnatal_patient_detail_screen.dart';
 import '../auth/home_screen.dart';
@@ -70,7 +68,6 @@ class _AdminPatientRecordsScreenState extends State<AdminPatientRecordsScreen> {
 
         final Map<String, dynamic> patient = {
           'userId': doc.id,
-          'patientId': doc.id,
           'name': (data['name'] ?? '').toString(),
           'email': (data['email'] ?? '').toString(),
           'contact': (data['contactNumber'] ?? data['phone'] ?? '').toString(),
@@ -88,6 +85,14 @@ class _AdminPatientRecordsScreenState extends State<AdminPatientRecordsScreen> {
         final bn = (b['name'] ?? '').toString().toLowerCase();
         return an.compareTo(bn);
       });
+
+      // Assign formatted patient IDs based on type and position
+      final int currentYear = DateTime.now().year;
+      final String prefix = _selectedType == 'POSTNATAL' ? 'PN' : 'P';
+      for (int i = 0; i < patients.length; i++) {
+        final String sequence = (i + 1).toString().padLeft(3, '0');
+        patients[i]['patientId'] = '$prefix-$currentYear-$sequence';
+      }
 
       if (mounted) {
         setState(() {
@@ -133,45 +138,23 @@ class _AdminPatientRecordsScreenState extends State<AdminPatientRecordsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = context.isMobile;
-    
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
-      appBar: isMobile ? AppBar(
-        backgroundColor: primary,
-        title: Text(
-          'PATIENT RECORDS',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: context.responsiveFontSize(18),
-            fontFamily: 'Bold',
-          ),
-        ),
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
-      ) : null,
-      drawer: isMobile ? Drawer(
-        child: _buildSidebar(),
-      ) : null,
       body: Row(
         children: [
-          if (!isMobile) _buildSidebar(),
+          _buildSidebar(),
           Expanded(
             child: Padding(
-              padding: EdgeInsets.all(isMobile ? 16 : 30),
+              padding: const EdgeInsets.all(30),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (!isMobile) _buildHeader(),
-                  if (!isMobile) const SizedBox(height: 20),
+                  _buildHeader(),
+                  const SizedBox(height: 20),
                   _buildTypeToggle(),
-                  SizedBox(height: isMobile ? 16 : 20),
+                  const SizedBox(height: 20),
                   _buildSearchRow(),
-                  SizedBox(height: isMobile ? 16 : 20),
+                  const SizedBox(height: 20),
                   Expanded(
                     child: Container(
                       decoration: BoxDecoration(
@@ -915,6 +898,8 @@ class _AdminPatientRecordsScreenState extends State<AdminPatientRecordsScreen> {
           builder: (context) => AdminPrenatalPatientDetailScreen(
             patientData: patientData,
             initialView: initialView,
+            userRole: widget.userRole,
+            userName: widget.userName,
           ),
         ),
       );
@@ -925,6 +910,8 @@ class _AdminPatientRecordsScreenState extends State<AdminPatientRecordsScreen> {
           builder: (context) => AdminPostnatalPatientDetailScreen(
             patientData: patientData,
             initialView: initialView,
+            userRole: widget.userRole,
+            userName: widget.userName,
           ),
         ),
       );
@@ -977,11 +964,6 @@ class _AdminPatientRecordsScreenState extends State<AdminPatientRecordsScreen> {
           _buildMenuItem('APPOINTMENT MANAGEMENT', false),
           _buildMenuItem('APPROVE SCHEDULES', false),
           _buildMenuItem('PATIENT RECORDS', true),
-          if (widget.userRole == 'admin') _buildMenuItem('HISTORY LOGS', false),
-          if (widget.userRole == 'admin') ...[
-            _buildMenuItem('ADD NEW STAFF/NURSE', false),
-            _buildMenuItem('CHANGE PASSWORD', false),
-          ],
           _buildMenuItem('LOGOUT', false),
         ],
       ),
@@ -1060,9 +1042,10 @@ class _AdminPatientRecordsScreenState extends State<AdminPatientRecordsScreen> {
         );
         break;
       case 'ADD NEW STAFF/NURSE':
-        screen = AdminStaffManagementScreen(
+        screen = AdminDashboardScreen(
           userRole: widget.userRole,
           userName: widget.userName,
+          openAddStaffOnLoad: true,
         );
         break;
       case 'CHANGE PASSWORD':

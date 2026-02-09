@@ -3,7 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../utils/colors.dart';
-import '../../utils/responsive_utils.dart';
 import 'admin_dashboard_screen.dart';
 import 'admin_prenatal_records_screen.dart';
 import 'admin_postnatal_records_screen.dart';
@@ -113,84 +112,50 @@ class _AdminEducationalCmsScreenState extends State<AdminEducationalCmsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = context.isMobile;
-    
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
-      appBar: isMobile ? AppBar(
-        backgroundColor: primary,
-        title: Text(
-          'EDUCATIONAL CMS',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: context.responsiveFontSize(18),
-            fontFamily: 'Bold',
-          ),
-        ),
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
-      ) : null,
-      drawer: isMobile ? Drawer(
-        child: _buildSidebar(),
-      ) : null,
       body: Row(
         children: [
-          if (!isMobile) _buildSidebar(),
+          _buildSidebar(),
           Expanded(
             child: Padding(
-              padding: EdgeInsets.all(isMobile ? 16 : 30),
+              padding: const EdgeInsets.all(30),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (!isMobile) ...[
-                    const Text(
-                      'Educational Content Management',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontFamily: 'Bold',
-                        color: Colors.black87,
-                      ),
+                  const Text(
+                    'Educational Content Management',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontFamily: 'Bold',
+                      color: Colors.black87,
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Create and manage educational articles for prenatal and postnatal patients.',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontFamily: 'Regular',
-                        color: Colors.grey.shade700,
-                      ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Create and manage educational articles for prenatal and postnatal patients.',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontFamily: 'Regular',
+                      color: Colors.grey.shade700,
                     ),
-                    const SizedBox(height: 24),
-                  ],
+                  ),
+                  const SizedBox(height: 24),
                   Expanded(
-                    child: isMobile
-                      ? SingleChildScrollView(
-                          child: Column(
-                            children: [
-                              _buildArticleForm(),
-                              const SizedBox(height: 24),
-                              _buildArticleList(),
-                            ],
-                          ),
-                        )
-                      : Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              flex: 2,
-                              child: _buildArticleForm(),
-                            ),
-                            const SizedBox(width: 24),
-                            Expanded(
-                              flex: 3,
-                              child: _buildArticleList(),
-                            ),
-                          ],
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: _buildArticleForm(),
                         ),
+                        const SizedBox(width: 24),
+                        Expanded(
+                          flex: 3,
+                          child: _buildArticleList(),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),

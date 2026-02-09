@@ -1,19 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:maternity_clinic/services/audit_log_service.dart';
+import 'package:maternity_clinic/services/notification_service.dart';
 
 import 'admin_dashboard_screen.dart';
 import 'admin_appointment_scheduling_screen.dart';
 import 'admin_patient_records_screen.dart';
 import 'admin_prenatal_patient_detail_screen.dart';
 import 'admin_postnatal_patient_detail_screen.dart';
-import 'admin_staff_management_screen.dart';
 import '../auth/home_screen.dart';
 import '../../utils/colors.dart';
-import '../../utils/responsive_utils.dart';
-import '../../utils/history_logger.dart';
-import '../../services/audit_log_service.dart';
-import '../../services/notification_service.dart';
 
 class AdminAppointmentManagementScreen extends StatefulWidget {
   final String userRole;
@@ -132,6 +129,7 @@ class _AdminAppointmentManagementScreenState
           'patientId': userData?['userId']?.toString() ?? '',
           'name': userData?['name']?.toString() ?? 'Unknown',
           'email': userData?['email']?.toString() ?? '',
+          'contactNumber': userData?['contactNumber']?.toString() ?? '',
         };
 
         if (patientType == 'PRENATAL') {
@@ -232,48 +230,48 @@ class _AdminAppointmentManagementScreenState
     if (id.isEmpty) return;
 
     try {
-      String whenText = '';
-      final dynamic dateField = appointment['appointmentDate'];
-      final String timeSlot = (appointment['timeSlot'] ?? '').toString();
-      if (dateField is Timestamp) {
-        final d = dateField.toDate();
-        const days = [
-          'Monday',
-          'Tuesday',
-          'Wednesday',
-          'Thursday',
-          'Friday',
-          'Saturday',
-          'Sunday',
-        ];
-        final String dayName =
-            (d.weekday >= 1 && d.weekday <= 7) ? days[d.weekday - 1] : '';
-        final String dateText =
-            '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-        whenText = dayName.isNotEmpty
-            ? ' on $dayName ($dateText)${timeSlot.isNotEmpty ? ' at $timeSlot' : ''}'
-            : ' on $dateText${timeSlot.isNotEmpty ? ' at $timeSlot' : ''}';
-      }
-
       await _firestore.collection('appointments').doc(id).update({
         'status': 'Accepted',
         'acceptedAt': FieldValue.serverTimestamp(),
         'acceptedBy': widget.userName,
       });
 
-      await HistoryLogger.log(
+      final String email = (appointment['email'] ?? '').toString();
+      final String phone = (appointment['contactNumber'] ?? '').toString();
+      String dateText = '';
+      final dynamic dateField = appointment['appointmentDate'];
+      if (dateField is Timestamp) {
+        final d = dateField.toDate();
+        dateText =
+            '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+      }
+      final String timeSlot = (appointment['timeSlot'] ?? '').toString();
+
+      try {
+        final notification = NotificationService();
+        await notification.sendToUser(
+          subject: 'Your appointment has been accepted',
+          message:
+              'Dear $name, your appointment on $dateText at $timeSlot has been accepted.\n\nThank you,\nVictory Lying-in Center',
+          email: email,
+          phone: phone,
+          name: name,
+        );
+        await notification.sendToClinic(
+          subject: 'Appointment accepted',
+          message:
+              '${widget.userName} accepted $name\'s appointment on $dateText at $timeSlot.',
+        );
+      } catch (_) {}
+
+      await AuditLogService.log(
         role: widget.userRole,
         userName: widget.userName,
         action:
-            '${widget.userName} (${widget.userRole.toUpperCase()}) accepted $name\'s appointment$whenText',
-        metadata: {
-          'appointmentId': id,
-          'patientName': name,
-          'newStatus': 'Accepted',
-        },
+            '${widget.userName} accepted $name\'s appointment on $dateText at $timeSlot',
+        entityType: 'appointments',
+        entityId: id,
       );
-
-      await _sendAppointmentAcceptedEmail(appointment);
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -308,48 +306,48 @@ class _AdminAppointmentManagementScreenState
     if (id.isEmpty) return;
 
     try {
-      String whenText = '';
-      final dynamic dateField = appointment['appointmentDate'];
-      final String timeSlot = (appointment['timeSlot'] ?? '').toString();
-      if (dateField is Timestamp) {
-        final d = dateField.toDate();
-        const days = [
-          'Monday',
-          'Tuesday',
-          'Wednesday',
-          'Thursday',
-          'Friday',
-          'Saturday',
-          'Sunday',
-        ];
-        final String dayName =
-            (d.weekday >= 1 && d.weekday <= 7) ? days[d.weekday - 1] : '';
-        final String dateText =
-            '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-        whenText = dayName.isNotEmpty
-            ? ' on $dayName ($dateText)${timeSlot.isNotEmpty ? ' at $timeSlot' : ''}'
-            : ' on $dateText${timeSlot.isNotEmpty ? ' at $timeSlot' : ''}';
-      }
-
       await _firestore.collection('appointments').doc(id).update({
         'status': 'Cancelled',
         'cancelledAt': FieldValue.serverTimestamp(),
         'cancelledBy': widget.userName,
       });
 
-      await HistoryLogger.log(
+      final String email = (appointment['email'] ?? '').toString();
+      final String phone = (appointment['contactNumber'] ?? '').toString();
+      String dateText = '';
+      final dynamic dateField = appointment['appointmentDate'];
+      if (dateField is Timestamp) {
+        final d = dateField.toDate();
+        dateText =
+            '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+      }
+      final String timeSlot = (appointment['timeSlot'] ?? '').toString();
+
+      try {
+        final notification = NotificationService();
+        await notification.sendToUser(
+          subject: 'Your appointment has been cancelled',
+          message:
+              'Dear $name, your appointment on $dateText at $timeSlot has been cancelled.\n\nIf you have any questions, please contact the clinic.',
+          email: email,
+          phone: phone,
+          name: name,
+        );
+        await notification.sendToClinic(
+          subject: 'Appointment cancelled',
+          message:
+              '${widget.userName} cancelled $name\'s appointment on $dateText at $timeSlot.',
+        );
+      } catch (_) {}
+
+      await AuditLogService.log(
         role: widget.userRole,
         userName: widget.userName,
         action:
-            '${widget.userName} (${widget.userRole.toUpperCase()}) cancelled $name\'s appointment$whenText',
-        metadata: {
-          'appointmentId': id,
-          'patientName': name,
-          'newStatus': 'Cancelled',
-        },
+            '${widget.userName} cancelled $name\'s appointment on $dateText at $timeSlot',
+        entityType: 'appointments',
+        entityId: id,
       );
-
-      await _sendAppointmentCancelledEmail(appointment);
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -380,30 +378,62 @@ class _AdminAppointmentManagementScreenState
 
   Future<void> _updateTransferStatus(String requestId, String newStatus) async {
     try {
+      Map<String, dynamic>? requestData;
+      try {
+        final doc = await _firestore
+            .collection('transferRequests')
+            .doc(requestId)
+            .get();
+        requestData = doc.data();
+      } catch (_) {
+        requestData = null;
+      }
+
       await _firestore.collection('transferRequests').doc(requestId).update({
         'status': newStatus,
         'updatedAt': FieldValue.serverTimestamp(),
       });
 
-      String patientName = '';
-      for (final r in _transferRequests) {
-        if ((r['id'] ?? '').toString() == requestId) {
-          patientName = (r['userName'] ?? r['fullName'] ?? '').toString();
-          break;
-        }
+      final String userId = (requestData?['userId'] ?? '').toString();
+      final String userName = (requestData?['userName'] ?? '').toString();
+      final String transferTo = (requestData?['transferTo'] ?? '').toString();
+      String email = '';
+      String phone = '';
+      if (userId.isNotEmpty) {
+        try {
+          final userDoc =
+              await _firestore.collection('users').doc(userId).get();
+          final userData = userDoc.data();
+          email = (userData?['email'] ?? '').toString();
+          phone = (userData?['contactNumber'] ?? '').toString();
+        } catch (_) {}
       }
 
-      await HistoryLogger.log(
+      try {
+        final notification = NotificationService();
+        final String who = userName.isNotEmpty ? userName : 'Patient';
+        await notification.sendToUser(
+          subject: 'Transfer request status update',
+          message:
+              'Dear $who, your transfer of record request${transferTo.isNotEmpty ? ' to $transferTo' : ''} is now "$newStatus".',
+          email: email,
+          phone: phone,
+          name: who,
+        );
+        await notification.sendToClinic(
+          subject: 'Transfer request updated',
+          message:
+              '${widget.userName} updated a transfer request${userName.isNotEmpty ? " for $userName" : ''} to "$newStatus".',
+        );
+      } catch (_) {}
+
+      await AuditLogService.log(
         role: widget.userRole,
         userName: widget.userName,
-        action: patientName.isNotEmpty
-            ? '${widget.userName} (${widget.userRole.toUpperCase()}) updated ${patientName}\'s transfer request to $newStatus'
-            : '${widget.userName} (${widget.userRole.toUpperCase()}) updated a transfer request to $newStatus',
-        metadata: {
-          'requestId': requestId,
-          'newStatus': newStatus,
-          if (patientName.isNotEmpty) 'patientName': patientName,
-        },
+        action:
+            '${widget.userName} updated transfer request${userName.isNotEmpty ? " for $userName" : ''} to "$newStatus"',
+        entityType: 'transferRequests',
+        entityId: requestId,
       );
 
       if (!mounted) return;
@@ -427,78 +457,6 @@ class _AdminAppointmentManagementScreenState
     }
   }
 
-  Future<void> _sendAppointmentAcceptedEmail(
-      Map<String, dynamic> appointment) async {
-    try {
-      final String email = appointment['email']?.toString() ?? '';
-      final String phone = appointment['contactNumber']?.toString() ?? '';
-      if (email.isEmpty && phone.isEmpty) return;
-
-      final String name = appointment['name']?.toString() ?? 'Patient';
-      final dynamic dateField = appointment['appointmentDate'];
-      String dateText = '';
-      if (dateField is Timestamp) {
-        final d = dateField.toDate();
-        dateText =
-            '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-      }
-      final String timeSlot = appointment['timeSlot']?.toString() ?? '';
-
-      final notification = NotificationService();
-      await notification.sendToUser(
-        subject: 'Your appointment has been accepted',
-        message:
-            'Dear $name, your appointment on $dateText at $timeSlot has been accepted.\n\nThank you,\nVictory Lying-in Center',
-        email: email,
-        phone: phone,
-        name: name,
-      );
-      await notification.sendToClinic(
-        subject: 'Appointment accepted',
-        message:
-            '${widget.userName} accepted $name\'s appointment on $dateText at $timeSlot.',
-      );
-    } catch (_) {
-      // Fail silently for email queue
-    }
-  }
-
-  Future<void> _sendAppointmentCancelledEmail(
-      Map<String, dynamic> appointment) async {
-    try {
-      final String email = appointment['email']?.toString() ?? '';
-      final String phone = appointment['contactNumber']?.toString() ?? '';
-      if (email.isEmpty && phone.isEmpty) return;
-
-      final String name = appointment['name']?.toString() ?? 'Patient';
-      final dynamic dateField = appointment['appointmentDate'];
-      String dateText = '';
-      if (dateField is Timestamp) {
-        final d = dateField.toDate();
-        dateText =
-            '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-      }
-      final String timeSlot = appointment['timeSlot']?.toString() ?? '';
-
-      final notification = NotificationService();
-      await notification.sendToUser(
-        subject: 'Your appointment has been cancelled',
-        message:
-            'Dear $name, your appointment on $dateText at $timeSlot has been cancelled.\n\nIf you have any questions, please contact the clinic.\n\nThank you,\nVictory Lying-in Center',
-        email: email,
-        phone: phone,
-        name: name,
-      );
-      await notification.sendToClinic(
-        subject: 'Appointment cancelled',
-        message:
-            '${widget.userName} cancelled $name\'s appointment on $dateText at $timeSlot.',
-      );
-    } catch (_) {
-      // Fail silently for email queue
-    }
-  }
-
   void _openPatientDetail(Map<String, dynamic> appointment) {
     final String patientType =
         appointment['patientType']?.toString().toUpperCase() ?? '';
@@ -516,6 +474,8 @@ class _AdminAppointmentManagementScreenState
         MaterialPageRoute(
           builder: (context) => AdminPrenatalPatientDetailScreen(
             patientData: patientData,
+            userRole: widget.userRole,
+            userName: widget.userName,
           ),
         ),
       );
@@ -525,6 +485,8 @@ class _AdminAppointmentManagementScreenState
         MaterialPageRoute(
           builder: (context) => AdminPostnatalPatientDetailScreen(
             patientData: patientData,
+            userRole: widget.userRole,
+            userName: widget.userName,
           ),
         ),
       );
@@ -557,6 +519,8 @@ class _AdminAppointmentManagementScreenState
           MaterialPageRoute(
             builder: (context) => AdminPrenatalPatientDetailScreen(
               patientData: patientData,
+              userRole: widget.userRole,
+              userName: widget.userName,
             ),
           ),
         );
@@ -566,6 +530,8 @@ class _AdminAppointmentManagementScreenState
           MaterialPageRoute(
             builder: (context) => AdminPostnatalPatientDetailScreen(
               patientData: patientData,
+              userRole: widget.userRole,
+              userName: widget.userName,
             ),
           ),
         );
@@ -577,49 +543,23 @@ class _AdminAppointmentManagementScreenState
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = context.isMobile;
-
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
-      appBar: isMobile
-          ? AppBar(
-              backgroundColor: primary,
-              title: Text(
-                'APPOINTMENT MANAGEMENT',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: context.responsiveFontSize(18),
-                  fontFamily: 'Bold',
-                ),
-              ),
-              leading: Builder(
-                builder: (context) => IconButton(
-                  icon: const Icon(Icons.menu, color: Colors.white),
-                  onPressed: () => Scaffold.of(context).openDrawer(),
-                ),
-              ),
-            )
-          : null,
-      drawer: isMobile
-          ? Drawer(
-              child: _buildSidebar(),
-            )
-          : null,
       body: Row(
         children: [
-          if (!isMobile) _buildSidebar(),
+          _buildSidebar(),
           Expanded(
             child: _isLoading
                 ? Center(child: CircularProgressIndicator(color: primary))
                 : SingleChildScrollView(
-                    padding: EdgeInsets.all(isMobile ? 16 : 30),
+                    padding: const EdgeInsets.all(30),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (!isMobile) _buildHeader(),
-                        if (!isMobile) const SizedBox(height: 20),
+                        _buildHeader(),
+                        const SizedBox(height: 20),
                         _buildTabButtons(),
-                        SizedBox(height: isMobile ? 16 : 20),
+                        const SizedBox(height: 20),
                         if (_selectedTab == 'prenatal')
                           _buildPrenatalSection()
                         else if (_selectedTab == 'postnatal')
@@ -1430,11 +1370,6 @@ class _AdminAppointmentManagementScreenState
           _buildMenuItem('APPOINTMENT MANAGEMENT', true),
           _buildMenuItem('APPROVE SCHEDULES', false),
           _buildMenuItem('PATIENT RECORDS', false),
-          if (widget.userRole == 'admin') _buildMenuItem('HISTORY LOGS', false),
-          if (widget.userRole == 'admin') ...[
-            _buildMenuItem('ADD NEW STAFF/NURSE', false),
-            _buildMenuItem('CHANGE PASSWORD', false),
-          ],
           _buildMenuItem('LOGOUT', false),
         ],
       ),
@@ -1510,9 +1445,10 @@ class _AdminAppointmentManagementScreenState
         );
         break;
       case 'ADD NEW STAFF/NURSE':
-        screen = AdminStaffManagementScreen(
+        screen = AdminDashboardScreen(
           userRole: widget.userRole,
           userName: widget.userName,
+          openAddStaffOnLoad: true,
         );
         break;
       case 'CHANGE PASSWORD':

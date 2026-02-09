@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:maternity_clinic/services/audit_log_service.dart';
+import 'package:maternity_clinic/services/notification_service.dart';
 import '../../utils/colors.dart';
-import '../../utils/history_logger.dart';
-import '../../utils/responsive_utils.dart';
-import '../../services/audit_log_service.dart';
-import '../../services/notification_service.dart';
 import 'admin_dashboard_screen.dart';
-import 'admin_staff_management_screen.dart';
 import 'admin_patient_records_screen.dart';
 import 'admin_appointment_scheduling_screen.dart';
 import 'admin_appointment_management_screen.dart';
@@ -57,14 +54,14 @@ class _AdminTransferRequestsScreenState
 
   Future<void> _fetchTransferRequests() async {
     try {
-      QuerySnapshot snapshot = await _firestore
+      QuerySnapshot<Map<String, dynamic>> snapshot = await _firestore
           .collection('transferRequests')
           .orderBy('createdAt', descending: true)
           .get();
 
       List<Map<String, dynamic>> requests = [];
       for (var doc in snapshot.docs) {
-        Map<String, dynamic> request = doc.data() as Map<String, dynamic>;
+        Map<String, dynamic> request = doc.data();
         request['id'] = doc.id;
         requests.add(request);
       }
@@ -85,46 +82,54 @@ class _AdminTransferRequestsScreenState
     }
   }
 
-  Future<void> _updateRequestStatus(String requestId, String newStatus,
-      Map<String, dynamic> requestData) async {
+  Future<void> _updateRequestStatus(String requestId, String newStatus) async {
     try {
+      Map<String, dynamic>? requestData;
+      try {
+        final doc = await _firestore
+            .collection('transferRequests')
+            .doc(requestId)
+            .get();
+        requestData = doc.data();
+      } catch (_) {
+        requestData = null;
+      }
+
       await _firestore.collection('transferRequests').doc(requestId).update({
         'status': newStatus,
         'updatedAt': FieldValue.serverTimestamp(),
       });
 
-      // Launch email client for notification
-      final String userName = (requestData['userName'] ?? 'User').toString();
-      final String userId = (requestData['userId'] ?? '').toString();
+      final String userId = (requestData?['userId'] ?? '').toString();
+      final String userName = (requestData?['userName'] ?? '').toString();
+      final String transferTo = (requestData?['transferTo'] ?? '').toString();
       String email = '';
       String phone = '';
-      try {
-        if (userId.isNotEmpty) {
+      if (userId.isNotEmpty) {
+        try {
           final userDoc =
               await _firestore.collection('users').doc(userId).get();
-          if (userDoc.exists) {
-            Map<String, dynamic> userData =
-                userDoc.data() as Map<String, dynamic>;
-            email = (userData['email'] ?? '').toString();
-            phone = (userData['contactNumber'] ?? '').toString();
-          }
-        }
-      } catch (_) {}
+          final userData = userDoc.data();
+          email = (userData?['email'] ?? '').toString();
+          phone = (userData?['contactNumber'] ?? '').toString();
+        } catch (_) {}
+      }
 
       try {
         final notification = NotificationService();
+        final String who = userName.isNotEmpty ? userName : 'Patient';
         await notification.sendToUser(
           subject: 'Transfer request status update',
           message:
-              'Dear $userName, your transfer request status has been updated to $newStatus.\n\nThank you,\nVictory Lying-in Center',
+              'Dear $who, your transfer of record request${transferTo.isNotEmpty ? ' to $transferTo' : ''} is now "$newStatus".',
           email: email,
           phone: phone,
-          name: userName,
+          name: who,
         );
         await notification.sendToClinic(
           subject: 'Transfer request updated',
           message:
-              '${widget.userName} updated $userName\'s transfer request to $newStatus.',
+              '${widget.userName} updated a transfer request${userName.isNotEmpty ? " for $userName" : ''} to "$newStatus".',
         );
       } catch (_) {}
 
@@ -132,7 +137,7 @@ class _AdminTransferRequestsScreenState
         role: widget.userRole,
         userName: widget.userName,
         action:
-            '${widget.userName} updated $userName\'s transfer request to $newStatus',
+            '${widget.userName} updated transfer request${userName.isNotEmpty ? " for $userName" : ''} to "$newStatus"',
         entityType: 'transferRequests',
         entityId: requestId,
       );
@@ -177,41 +182,15 @@ class _AdminTransferRequestsScreenState
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = context.isMobile;
-
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
-      appBar: isMobile
-          ? AppBar(
-              backgroundColor: primary,
-              title: Text(
-                'TRANSFER REQUESTS',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: context.responsiveFontSize(18),
-                  fontFamily: 'Bold',
-                ),
-              ),
-              leading: Builder(
-                builder: (context) => IconButton(
-                  icon: const Icon(Icons.menu, color: Colors.white),
-                  onPressed: () => Scaffold.of(context).openDrawer(),
-                ),
-              ),
-            )
-          : null,
-      drawer: isMobile
-          ? Drawer(
-              child: _buildSidebar(),
-            )
-          : null,
       body: Row(
         children: [
-          if (!isMobile) _buildSidebar(),
+          _buildSidebar(),
           Expanded(
             child: Column(
               children: [
-                if (!isMobile) _buildHeader(),
+                _buildHeader(),
                 Expanded(
                   child: _isLoading
                       ? Center(child: CircularProgressIndicator(color: primary))
@@ -271,11 +250,6 @@ class _AdminTransferRequestsScreenState
           _buildMenuItem('APPOINTMENT MANAGEMENT', false),
           _buildMenuItem('APPROVE SCHEDULES', false),
           _buildMenuItem('PATIENT RECORDS', false),
-          if (widget.userRole == 'admin') _buildMenuItem('HISTORY LOGS', false),
-          if (widget.userRole == 'admin') ...[
-            _buildMenuItem('ADD NEW STAFF/NURSE', false),
-            _buildMenuItem('CHANGE PASSWORD', false),
-          ],
           _buildMenuItem('LOGOUT', false),
         ],
       ),
@@ -384,9 +358,10 @@ class _AdminTransferRequestsScreenState
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => AdminStaffManagementScreen(
+            builder: (context) => AdminDashboardScreen(
               userRole: widget.userRole,
               userName: widget.userName,
+              openAddStaffOnLoad: true,
             ),
           ),
         );
@@ -658,7 +633,7 @@ class _AdminTransferRequestsScreenState
                   PopupMenuButton<String>(
                     icon: const Icon(Icons.more_vert, size: 20),
                     onSelected: (value) {
-                      _updateRequestStatus(requestId, value, requestData);
+                      _updateRequestStatus(requestId, value);
                     },
                     itemBuilder: (context) => [
                       const PopupMenuItem(
@@ -679,7 +654,7 @@ class _AdminTransferRequestsScreenState
                   PopupMenuButton<String>(
                     icon: const Icon(Icons.more_vert, size: 20),
                     onSelected: (value) {
-                      _updateRequestStatus(requestId, value, requestData);
+                      _updateRequestStatus(requestId, value);
                     },
                     itemBuilder: (context) => [
                       const PopupMenuItem(

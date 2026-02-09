@@ -95,13 +95,11 @@ class _ServicesScreenState extends State<ServicesScreen> {
 
   Widget _buildHeader() {
     final isMobile = context.isMobile;
-    
+
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 16 : 40, 
-        vertical: isMobile ? 16 : 20
-      ),
+          horizontal: isMobile ? 16 : 40, vertical: isMobile ? 16 : 20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [primary, secondary],
@@ -175,31 +173,48 @@ class _ServicesScreenState extends State<ServicesScreen> {
             children: [
               ListTile(
                 leading: const Icon(Icons.home, color: Colors.white70),
-                title: const Text('HOME', style: TextStyle(color: Colors.white70, fontFamily: 'Medium')),
+                title: const Text('HOME',
+                    style:
+                        TextStyle(color: Colors.white70, fontFamily: 'Medium')),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const HomeScreen()));
+                  Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const HomeScreen()));
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.info, color: Colors.white70),
-                title: const Text('ABOUT US', style: TextStyle(color: Colors.white70, fontFamily: 'Medium')),
+                title: const Text('ABOUT US',
+                    style:
+                        TextStyle(color: Colors.white70, fontFamily: 'Medium')),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const AboutUsScreen()));
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const AboutUsScreen()));
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.medical_services, color: Colors.white),
-                title: const Text('SERVICES', style: TextStyle(color: Colors.white, fontFamily: 'Bold')),
+                leading:
+                    const Icon(Icons.medical_services, color: Colors.white),
+                title: const Text('SERVICES',
+                    style: TextStyle(color: Colors.white, fontFamily: 'Bold')),
                 onTap: () => Navigator.pop(context),
               ),
               ListTile(
                 leading: const Icon(Icons.contact_mail, color: Colors.white70),
-                title: const Text('CONTACT US', style: TextStyle(color: Colors.white70, fontFamily: 'Medium')),
+                title: const Text('CONTACT US',
+                    style:
+                        TextStyle(color: Colors.white70, fontFamily: 'Medium')),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const ContactUsScreen()));
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const ContactUsScreen()));
                 },
               ),
             ],
@@ -307,8 +322,10 @@ class _ServicesScreenState extends State<ServicesScreen> {
     String description,
     List<String> features,
   ) {
+    final isMobile = context.isMobile;
+
     return Container(
-      padding: const EdgeInsets.all(35),
+      padding: EdgeInsets.all(isMobile ? 20 : 35),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -321,53 +338,51 @@ class _ServicesScreenState extends State<ServicesScreen> {
           ),
         ],
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Icon
-          Container(
-            width: 100,
-            height: 100,
-            decoration: BoxDecoration(
-              color: orangePallete,
-              shape: BoxShape.circle,
-            ),
-            padding: const EdgeInsets.all(22),
-            child: Image.asset(
-              iconPath,
-              fit: BoxFit.contain,
-            ),
-          ),
-          const SizedBox(width: 30),
-
-          // Content
-          Expanded(
-            child: Column(
+      child: isMobile
+          ? Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Icon
+                Center(
+                  child: Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: orangePallete,
+                      shape: BoxShape.circle,
+                    ),
+                    padding: const EdgeInsets.all(18),
+                    child: Image.asset(
+                      iconPath,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // Content
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: 24,
+                    fontSize: 20,
                     fontFamily: 'Bold',
                     color: primary,
                     letterSpacing: 0.5,
                   ),
                 ),
-                const SizedBox(height: 15),
+                const SizedBox(height: 12),
                 Text(
                   description,
                   style: const TextStyle(
-                    fontSize: 15,
+                    fontSize: 14,
                     fontFamily: 'Regular',
                     color: Colors.black87,
-                    height: 1.7,
+                    height: 1.6,
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
                 Wrap(
-                  spacing: 15,
-                  runSpacing: 12,
+                  spacing: 12,
+                  runSpacing: 8,
                   children: features.map((feature) {
                     return Row(
                       mainAxisSize: MainAxisSize.min,
@@ -375,13 +390,13 @@ class _ServicesScreenState extends State<ServicesScreen> {
                         Icon(
                           Icons.check_circle,
                           color: primary,
-                          size: 20,
+                          size: 18,
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 6),
                         Text(
                           feature,
                           style: const TextStyle(
-                            fontSize: 14,
+                            fontSize: 13,
                             fontFamily: 'Regular',
                             color: Colors.black87,
                           ),
@@ -391,58 +406,186 @@ class _ServicesScreenState extends State<ServicesScreen> {
                   }).toList(),
                 ),
               ],
+            )
+          : Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Icon
+                Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: orangePallete,
+                    shape: BoxShape.circle,
+                  ),
+                  padding: const EdgeInsets.all(22),
+                  child: Image.asset(
+                    iconPath,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+                const SizedBox(width: 30),
+                // Content
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontFamily: 'Bold',
+                          color: primary,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 15),
+                      Text(
+                        description,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontFamily: 'Regular',
+                          color: Colors.black87,
+                          height: 1.7,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Wrap(
+                        spacing: 15,
+                        runSpacing: 12,
+                        children: features.map((feature) {
+                          return Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.check_circle,
+                                color: primary,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                feature,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontFamily: 'Regular',
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ],
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
     );
   }
 
   Widget _buildAdditionalServices() {
+    final isMobile = context.isMobile;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'ADDITIONAL SERVICES',
           style: TextStyle(
-            fontSize: 28,
+            fontSize: isMobile ? 24 : 28,
             fontFamily: 'Bold',
             color: primary,
             letterSpacing: 0.5,
           ),
         ),
         const SizedBox(height: 30),
-        Row(
-          children: [
-            _buildAdditionalServiceCard(
-              Icons.medical_services,
-              'Laboratory Services',
-              'Complete laboratory testing and diagnostic services',
-            ),
-            const SizedBox(width: 25),
-            _buildAdditionalServiceCard(
-              Icons.hotel,
-              'Comfortable Rooms',
-              'Clean and comfortable lying-in rooms for mothers',
-            ),
-            const SizedBox(width: 25),
-            _buildAdditionalServiceCard(
-              Icons.people,
-              'Lactation Support',
-              'Breastfeeding guidance and lactation consultation',
-            ),
-          ],
-        ),
-        const SizedBox(height: 25),
-        Row(
-          children: [
-            _buildAdditionalServiceCard(
-              Icons.school,
-              'Prenatal Classes',
-              'Educational sessions for expecting parents',
-            ),
-          ],
-        ),
+        if (isMobile) ...[
+          // Mobile: 2 cards per row
+          Row(
+            children: [
+              Expanded(
+                child: _buildAdditionalServiceCard(
+                  Icons.medical_services,
+                  'Laboratory Services',
+                  'Complete laboratory testing and diagnostic services',
+                ),
+              ),
+              const SizedBox(width: 15),
+              Expanded(
+                child: _buildAdditionalServiceCard(
+                  Icons.hotel,
+                  'Comfortable Rooms',
+                  'Clean and comfortable lying-in rooms for mothers',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 15),
+          Row(
+            children: [
+              Expanded(
+                child: _buildAdditionalServiceCard(
+                  Icons.people,
+                  'Lactation Support',
+                  'Breastfeeding guidance and lactation consultation',
+                ),
+              ),
+              const SizedBox(width: 15),
+              Expanded(
+                child: _buildAdditionalServiceCard(
+                  Icons.school,
+                  'Prenatal Classes',
+                  'Educational sessions for expecting parents',
+                ),
+              ),
+            ],
+          ),
+        ] else ...[
+          // Desktop: 3 cards + 1 card layout
+          Row(
+            children: [
+              Expanded(
+                child: _buildAdditionalServiceCard(
+                  Icons.medical_services,
+                  'Laboratory Services',
+                  'Complete laboratory testing and diagnostic services',
+                ),
+              ),
+              const SizedBox(width: 25),
+              Expanded(
+                child: _buildAdditionalServiceCard(
+                  Icons.hotel,
+                  'Comfortable Rooms',
+                  'Clean and comfortable lying-in rooms for mothers',
+                ),
+              ),
+              const SizedBox(width: 25),
+              Expanded(
+                child: _buildAdditionalServiceCard(
+                  Icons.people,
+                  'Lactation Support',
+                  'Breastfeeding guidance and lactation consultation',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 25),
+          Row(
+            children: [
+              Expanded(
+                child: _buildAdditionalServiceCard(
+                  Icons.school,
+                  'Prenatal Classes',
+                  'Educational sessions for expecting parents',
+                ),
+              ),
+              const SizedBox(width: 25),
+              Expanded(child: const SizedBox()),
+              const SizedBox(width: 25),
+              Expanded(child: const SizedBox()),
+            ],
+          ),
+        ],
       ],
     );
   }
@@ -452,62 +595,67 @@ class _ServicesScreenState extends State<ServicesScreen> {
     String title,
     String description,
   ) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(25),
-        height: 200,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [primary.withOpacity(0.1), secondary.withOpacity(0.05)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+    final isMobile = context.isMobile;
+
+    return Container(
+      padding: EdgeInsets.all(isMobile ? 16 : 25),
+      height: isMobile ? 160 : 200,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [primary.withOpacity(0.1), secondary.withOpacity(0.05)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: primary.withOpacity(0.2), width: 1.5),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: EdgeInsets.all(isMobile ? 10 : 15),
+            decoration: BoxDecoration(
+              color: primary,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              icon,
+              color: Colors.white,
+              size: isMobile ? 28 : 35,
+            ),
           ),
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: primary.withOpacity(0.2), width: 1.5),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(15),
-              decoration: BoxDecoration(
-                color: primary,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                icon,
-                color: Colors.white,
-                size: 35,
-              ),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: isMobile ? 13 : 16,
+              fontFamily: 'Bold',
+              color: primary,
             ),
-            const SizedBox(height: 15),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                fontFamily: 'Bold',
-                color: primary,
-              ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            description,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: isMobile ? 11 : 13,
+              fontFamily: 'Regular',
+              color: Colors.black87,
+              height: 1.3,
             ),
-            const SizedBox(height: 8),
-            Text(
-              description,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 13,
-                fontFamily: 'Regular',
-                color: Colors.black87,
-                height: 1.4,
-              ),
-            ),
-          ],
-        ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildServicesAndPackages() {
+    final isMobile = context.isMobile;
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Column(
@@ -516,7 +664,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
         Text(
           'SERVICES & PACKAGES',
           style: TextStyle(
-            fontSize: 28,
+            fontSize: isMobile ? 24 : 28,
             fontFamily: 'Bold',
             color: primary,
             letterSpacing: 0.5,
@@ -564,8 +712,10 @@ class _ServicesScreenState extends State<ServicesScreen> {
   }
 
   Widget _buildServicesOffered() {
+    final isMobile = context.isMobile;
+
     return Container(
-      padding: const EdgeInsets.all(30),
+      padding: EdgeInsets.all(isMobile ? 20 : 30),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -586,13 +736,13 @@ class _ServicesScreenState extends State<ServicesScreen> {
               Icon(
                 Icons.medical_services,
                 color: primary,
-                size: 28,
+                size: isMobile ? 24 : 28,
               ),
               const SizedBox(width: 10),
-              const Text(
+              Text(
                 '🩺 Services Offered',
                 style: TextStyle(
-                  fontSize: 22,
+                  fontSize: isMobile ? 18 : 22,
                   fontFamily: 'Bold',
                   color: Colors.black,
                 ),
@@ -600,10 +750,10 @@ class _ServicesScreenState extends State<ServicesScreen> {
             ],
           ),
           const SizedBox(height: 20),
-          const Text(
+          Text(
             'Effective from January 2025 unless modified or changed.',
             style: TextStyle(
-              fontSize: 14,
+              fontSize: isMobile ? 12 : 14,
               fontFamily: 'Regular',
               color: Colors.black54,
               fontStyle: FontStyle.italic,
@@ -627,25 +777,33 @@ class _ServicesScreenState extends State<ServicesScreen> {
   }
 
   Widget _buildServiceItem(String name, String price) {
+    final isMobile = context.isMobile;
+
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            name,
-            style: const TextStyle(
-              fontSize: 16,
-              fontFamily: 'Regular',
-              color: Colors.black87,
+          Expanded(
+            child: Text(
+              name,
+              style: TextStyle(
+                fontSize: isMobile ? 14 : 16,
+                fontFamily: 'Regular',
+                color: Colors.black87,
+              ),
             ),
           ),
-          Text(
-            price,
-            style: TextStyle(
-              fontSize: 16,
-              fontFamily: 'Bold',
-              color: primary,
+          const SizedBox(width: 16),
+          SizedBox(
+            width: isMobile ? 85 : 100,
+            child: Text(
+              price,
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontSize: isMobile ? 14 : 16,
+                fontFamily: 'Bold',
+                color: primary,
+              ),
             ),
           ),
         ],
@@ -749,8 +907,10 @@ class _ServicesScreenState extends State<ServicesScreen> {
     List<String> withPhilHealth, [
     String inclusions = '',
   ]) {
+    final isMobile = context.isMobile;
+
     return Container(
-      padding: const EdgeInsets.all(30),
+      padding: EdgeInsets.all(isMobile ? 20 : 30),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [primary.withOpacity(0.05), secondary.withOpacity(0.05)],
@@ -773,7 +933,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
           Text(
             title,
             style: TextStyle(
-              fontSize: 20,
+              fontSize: isMobile ? 18 : 20,
               fontFamily: 'Bold',
               color: primary,
             ),
@@ -794,7 +954,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
           if (inclusions.isNotEmpty) ...[
             const SizedBox(height: 20),
             Container(
-              padding: const EdgeInsets.all(15),
+              padding: EdgeInsets.all(isMobile ? 12 : 15),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(10),
@@ -802,8 +962,8 @@ class _ServicesScreenState extends State<ServicesScreen> {
               ),
               child: Text(
                 inclusions,
-                style: const TextStyle(
-                  fontSize: 14,
+                style: TextStyle(
+                  fontSize: isMobile ? 12 : 14,
                   fontFamily: 'Regular',
                   color: Colors.black87,
                   height: 1.5,
@@ -817,8 +977,10 @@ class _ServicesScreenState extends State<ServicesScreen> {
   }
 
   Widget _buildPackageSection(String title, List<String> items) {
+    final isMobile = context.isMobile;
+
     return Container(
-      padding: const EdgeInsets.all(15),
+      padding: EdgeInsets.all(isMobile ? 12 : 15),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.7),
         borderRadius: BorderRadius.circular(10),
@@ -829,7 +991,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
           Text(
             title,
             style: TextStyle(
-              fontSize: 16,
+              fontSize: isMobile ? 14 : 16,
               fontFamily: 'Bold',
               color: primary,
             ),
@@ -840,8 +1002,8 @@ class _ServicesScreenState extends State<ServicesScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 3),
                     child: Text(
                       item,
-                      style: const TextStyle(
-                        fontSize: 14,
+                      style: TextStyle(
+                        fontSize: isMobile ? 12 : 14,
                         fontFamily: 'Regular',
                         color: Colors.black87,
                       ),
@@ -854,8 +1016,10 @@ class _ServicesScreenState extends State<ServicesScreen> {
   }
 
   Widget _buildWhyChooseUs() {
+    final isMobile = context.isMobile;
+
     return Container(
-      padding: const EdgeInsets.all(40),
+      padding: EdgeInsets.all(isMobile ? 24 : 40),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [primary, secondary],
@@ -866,44 +1030,89 @@ class _ServicesScreenState extends State<ServicesScreen> {
       ),
       child: Column(
         children: [
-          const Text(
+          Text(
             'WHY CHOOSE VICTORY LYING IN?',
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 32,
+              fontSize: isMobile ? 24 : 32,
               fontFamily: 'Bold',
               color: Colors.white,
               letterSpacing: 0.5,
             ),
           ),
           const SizedBox(height: 40),
-          Row(
-            children: [
-              _buildWhyChooseUsItem(
-                Icons.verified,
-                'Experienced Staff',
-                'Highly qualified medical professionals',
-              ),
-              const SizedBox(width: 30),
-              _buildWhyChooseUsItem(
-                Icons.medical_information,
-                'Modern Equipment',
-                'State-of-the-art medical technology',
-              ),
-              const SizedBox(width: 30),
-              _buildWhyChooseUsItem(
-                Icons.favorite,
-                'Compassionate Care',
-                'Personalized attention for every patient',
-              ),
-              const SizedBox(width: 30),
-              _buildWhyChooseUsItem(
-                Icons.price_check,
-                'Affordable Rates',
-                'Quality healthcare at reasonable prices',
-              ),
-            ],
-          ),
+          if (isMobile)
+            Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildWhyChooseUsItem(
+                        Icons.verified,
+                        'Experienced Staff',
+                        'Highly qualified medical professionals',
+                      ),
+                    ),
+                    const SizedBox(width: 20),
+                    Expanded(
+                      child: _buildWhyChooseUsItem(
+                        Icons.medical_information,
+                        'Modern Equipment',
+                        'State-of-the-art medical technology',
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 30),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildWhyChooseUsItem(
+                        Icons.favorite,
+                        'Compassionate Care',
+                        'Personalized attention for every patient',
+                      ),
+                    ),
+                    const SizedBox(width: 20),
+                    Expanded(
+                      child: _buildWhyChooseUsItem(
+                        Icons.price_check,
+                        'Affordable Rates',
+                        'Quality healthcare at reasonable prices',
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            )
+          else
+            Row(
+              children: [
+                _buildWhyChooseUsItem(
+                  Icons.verified,
+                  'Experienced Staff',
+                  'Highly qualified medical professionals',
+                ),
+                const SizedBox(width: 30),
+                _buildWhyChooseUsItem(
+                  Icons.medical_information,
+                  'Modern Equipment',
+                  'State-of-the-art medical technology',
+                ),
+                const SizedBox(width: 30),
+                _buildWhyChooseUsItem(
+                  Icons.favorite,
+                  'Compassionate Care',
+                  'Personalized attention for every patient',
+                ),
+                const SizedBox(width: 30),
+                _buildWhyChooseUsItem(
+                  Icons.price_check,
+                  'Affordable Rates',
+                  'Quality healthcare at reasonable prices',
+                ),
+              ],
+            ),
         ],
       ),
     );
@@ -911,11 +1120,13 @@ class _ServicesScreenState extends State<ServicesScreen> {
 
   Widget _buildWhyChooseUsItem(
       IconData icon, String title, String description) {
+    final isMobile = context.isMobile;
+
     return Expanded(
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(isMobile ? 15 : 20),
             decoration: BoxDecoration(
               color: Colors.white,
               shape: BoxShape.circle,
@@ -923,15 +1134,15 @@ class _ServicesScreenState extends State<ServicesScreen> {
             child: Icon(
               icon,
               color: primary,
-              size: 45,
+              size: isMobile ? 35 : 45,
             ),
           ),
           const SizedBox(height: 15),
           Text(
             title,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 18,
+            style: TextStyle(
+              fontSize: isMobile ? 14 : 18,
               fontFamily: 'Bold',
               color: Colors.white,
             ),
@@ -940,8 +1151,8 @@ class _ServicesScreenState extends State<ServicesScreen> {
           Text(
             description,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 14,
+            style: TextStyle(
+              fontSize: isMobile ? 12 : 14,
               fontFamily: 'Regular',
               color: Colors.white,
               height: 1.4,
@@ -953,9 +1164,12 @@ class _ServicesScreenState extends State<ServicesScreen> {
   }
 
   Widget _buildFooter() {
+    final isMobile = context.isMobile;
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 30),
+      padding: EdgeInsets.symmetric(
+          horizontal: isMobile ? 20 : 40, vertical: isMobile ? 20 : 30),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [primary, secondary],
@@ -967,12 +1181,12 @@ class _ServicesScreenState extends State<ServicesScreen> {
           topRight: Radius.circular(20),
         ),
       ),
-      child: const Text(
+      child: Text(
         'We care about your health\nand well - being',
         textAlign: TextAlign.center,
         style: TextStyle(
           color: Colors.white,
-          fontSize: 32,
+          fontSize: isMobile ? 24 : 32,
           fontFamily: 'Bold',
           height: 1.3,
           letterSpacing: 0.5,

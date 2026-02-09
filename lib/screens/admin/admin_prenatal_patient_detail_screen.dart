@@ -1,16 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../utils/colors.dart';
-import '../../utils/responsive_utils.dart';
+import 'admin_dashboard_screen.dart';
+import 'admin_appointment_management_screen.dart';
+import 'admin_appointment_scheduling_screen.dart';
+import 'admin_patient_records_screen.dart';
+import '../auth/home_screen.dart';
 
 class AdminPrenatalPatientDetailScreen extends StatefulWidget {
   final Map<String, String> patientData;
-  final String initialView; // 'personal' or 'history'
+  final String initialView;
+  final String userRole;
+  final String userName;
 
   const AdminPrenatalPatientDetailScreen({
     super.key,
     required this.patientData,
     this.initialView = 'personal',
+    required this.userRole,
+    required this.userName,
   });
 
   @override
@@ -21,6 +30,7 @@ class AdminPrenatalPatientDetailScreen extends StatefulWidget {
 class _AdminPrenatalPatientDetailScreenState
     extends State<AdminPrenatalPatientDetailScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   List<Map<String, dynamic>> _appointments = [];
   bool _isLoading = true;
   Map<String, dynamic>? _userData;
@@ -469,38 +479,19 @@ class _AdminPrenatalPatientDetailScreenState
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = context.isMobile;
-    
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
-      appBar: isMobile ? AppBar(
-        backgroundColor: primary,
-        title: const Text(
-          'PATIENT DETAILS',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontFamily: 'Bold',
-          ),
-        ),
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
-      ) : null,
-      drawer: isMobile ? Drawer(
-        child: _buildSidebar(),
-      ) : null,
       body: Row(
         children: [
-          if (!isMobile) _buildSidebar(),
+          // Sidebar
+          _buildSidebar(),
+
+          // Main Content
           Expanded(
             child: _isLoading
                 ? Center(child: CircularProgressIndicator(color: primary))
                 : SingleChildScrollView(
-                    padding: EdgeInsets.all(isMobile ? 16 : 30),
+                    padding: const EdgeInsets.all(30),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -593,13 +584,23 @@ class _AdminPrenatalPatientDetailScreenState
             padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 Text(
-                  'ADMIN',
-                  style: TextStyle(
+                  widget.userName.toUpperCase(),
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                     fontFamily: 'Bold',
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  widget.userRole.toUpperCase(),
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                    fontFamily: 'Medium',
                     letterSpacing: 0.5,
                   ),
                 ),
@@ -610,9 +611,10 @@ class _AdminPrenatalPatientDetailScreenState
 
           // Menu Items
           _buildMenuItem('DATA GRAPHS', false),
-          _buildMenuItem('PRENATAL PATIENT\nRECORD', true),
-          _buildMenuItem('POSTNATAL PATIENT\nRECORD', false),
-          _buildMenuItem('APPOINTMENT\nSCHEDULING', false),
+          _buildMenuItem('APPOINTMENT MANAGEMENT', false),
+          _buildMenuItem('APPROVE SCHEDULES', false),
+          _buildMenuItem('PATIENT RECORDS', true),
+          _buildMenuItem('LOGOUT', false),
         ],
       ),
     );
@@ -623,9 +625,11 @@ class _AdminPrenatalPatientDetailScreenState
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
         onTap: () {
-          if (!isActive) {
-            Navigator.pop(context);
+          if (title == 'LOGOUT') {
+            _showLogoutConfirmationDialog();
+            return;
           }
+          _handleNavigation(title);
         },
         child: Container(
           width: double.infinity,
@@ -650,6 +654,82 @@ class _AdminPrenatalPatientDetailScreenState
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  void _handleNavigation(String title) {
+    Widget screen;
+    switch (title) {
+      case 'DATA GRAPHS':
+        screen = AdminDashboardScreen(
+          userRole: widget.userRole,
+          userName: widget.userName,
+        );
+        break;
+      case 'APPOINTMENT MANAGEMENT':
+        screen = AdminAppointmentManagementScreen(
+          userRole: widget.userRole,
+          userName: widget.userName,
+        );
+        break;
+      case 'APPROVE SCHEDULES':
+        screen = AdminAppointmentSchedulingScreen(
+          userRole: widget.userRole,
+          userName: widget.userName,
+        );
+        break;
+      case 'PATIENT RECORDS':
+        screen = AdminPatientRecordsScreen(
+          userRole: widget.userRole,
+          userName: widget.userName,
+        );
+        break;
+      default:
+        return;
+    }
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => screen),
+    );
+  }
+
+  void _showLogoutConfirmationDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+          'Logout Confirmation',
+          style: TextStyle(fontFamily: 'Bold'),
+        ),
+        content: const Text(
+          'Are you sure you want to logout?',
+          style: TextStyle(fontFamily: 'Regular'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancel',
+              style:
+                  TextStyle(color: Colors.grey.shade600, fontFamily: 'Medium'),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _auth.signOut();
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (context) => const HomeScreen()),
+                (route) => false,
+              );
+            },
+            child: Text(
+              'Logout',
+              style: TextStyle(color: Colors.red.shade600, fontFamily: 'Bold'),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -919,7 +999,7 @@ class _AdminPrenatalPatientDetailScreenState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'APPOINTMENT SUMMARY',
+            'COMPLETED APPOINTMENT SUMMARY',
             style: TextStyle(
               fontSize: 14,
               fontFamily: 'Bold',
@@ -1136,7 +1216,20 @@ class _AdminPrenatalPatientDetailScreenState
         border: Border.all(color: Colors.grey.shade300),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(15, 15, 15, 8),
+            child: const Text(
+              'APPOINTMENT HISTORY',
+              style: TextStyle(
+                fontSize: 14,
+                fontFamily: 'Bold',
+                color: Colors.black,
+              ),
+            ),
+          ),
+
           // Table Header
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),

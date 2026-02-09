@@ -7,7 +7,6 @@ import 'package:maternity_clinic/screens/admin/admin_appointment_management_scre
 import 'package:maternity_clinic/screens/admin/admin_prenatal_patient_detail_screen.dart';
 import 'package:maternity_clinic/screens/admin/admin_educational_cms_screen.dart';
 import 'package:maternity_clinic/utils/colors.dart';
-import 'package:maternity_clinic/utils/responsive_utils.dart';
 import '../auth/home_screen.dart';
 
 class AdminPrenatalRecordsScreen extends StatefulWidget {
@@ -324,36 +323,17 @@ class _AdminPrenatalRecordsScreenState
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = context.isMobile;
-    
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
-      appBar: isMobile ? AppBar(
-        backgroundColor: primary,
-        title: const Text(
-          'PRENATAL RECORDS',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontFamily: 'Bold',
-          ),
-        ),
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
-      ) : null,
-      drawer: isMobile ? Drawer(
-        child: _buildSidebar(),
-      ) : null,
       body: Row(
         children: [
-          if (!isMobile) _buildSidebar(),
+          // Sidebar
+          _buildSidebar(),
+
+          // Main Content
           Expanded(
             child: Padding(
-              padding: EdgeInsets.all(isMobile ? 16 : 30),
+              padding: const EdgeInsets.all(30),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -703,6 +683,8 @@ class _AdminPrenatalRecordsScreenState
               builder: (context) => AdminPrenatalPatientDetailScreen(
                 patientData: patient
                     .map((key, value) => MapEntry(key, value.toString())),
+                userRole: widget.userRole,
+                userName: widget.userName,
               ),
             ),
           );

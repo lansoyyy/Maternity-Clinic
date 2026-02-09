@@ -122,29 +122,33 @@ class _PostnatalHistoryCheckupScreenState
   @override
   Widget build(BuildContext context) {
     final isMobile = context.isMobile;
-    
+
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: isMobile ? AppBar(
-        backgroundColor: primary,
-        title: const Text(
-          'CHECKUP HISTORY',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontFamily: 'Bold',
-          ),
-        ),
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
-      ) : null,
-      drawer: isMobile ? Drawer(
-        child: _buildSidebar(),
-      ) : null,
+      appBar: isMobile
+          ? AppBar(
+              backgroundColor: primary,
+              title: const Text(
+                'CHECKUP HISTORY',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontFamily: 'Bold',
+                ),
+              ),
+              leading: Builder(
+                builder: (context) => IconButton(
+                  icon: const Icon(Icons.menu, color: Colors.white),
+                  onPressed: () => Scaffold.of(context).openDrawer(),
+                ),
+              ),
+            )
+          : null,
+      drawer: isMobile
+          ? Drawer(
+              child: _buildSidebar(),
+            )
+          : null,
       body: Row(
         children: [
           if (!isMobile) _buildSidebar(),
@@ -762,67 +766,276 @@ class _PostnatalHistoryCheckupScreenState
   }
 
   Widget _buildCheckupHistoryTable() {
+    final isMobile = context.isMobile;
+
+    if (isMobile) {
+      // Mobile: Show cards instead of table for better readability
+      if (_isLoading) {
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.all(40),
+            child: CircularProgressIndicator(color: primary),
+          ),
+        );
+      }
+      if (_completedAppointments.isEmpty) {
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.all(40),
+            child: Text(
+              'No completed checkups yet',
+              style: TextStyle(
+                fontSize: 14,
+                fontFamily: 'Regular',
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ),
+        );
+      }
+
+      return Column(
+        children: _completedAppointments.asMap().entries.map((entry) {
+          int index = entry.key;
+          Map<String, dynamic> appointment = entry.value;
+          return _buildMobileHistoryCard((index + 1).toString(), appointment);
+        }).toList(),
+      );
+    }
+
+    // Desktop: Original table with horizontal scroll
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: Colors.grey.shade300),
       ),
-      child: Column(
-        children: [
-          // Table Header
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade200,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(10),
-                topRight: Radius.circular(10),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minWidth: 800),
+          child: Column(
+            children: [
+              // Table Header
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade200,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(10),
+                    topRight: Radius.circular(10),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    _buildTableHeaderCell('Visit No.', flex: 1),
+                    _buildTableHeaderCell('Date', flex: 2),
+                    _buildTableHeaderCell('Weight (kg)', flex: 2),
+                    _buildTableHeaderCell('Blood Pressure (mmHg)', flex: 3),
+                    _buildTableHeaderCell('Remarks / Observation', flex: 3),
+                    _buildTableHeaderCell('Risk Classification', flex: 3),
+                  ],
+                ),
               ),
-            ),
-            child: Row(
-              children: [
-                _buildTableHeaderCell('Visit No.', flex: 1),
-                _buildTableHeaderCell('Date', flex: 2),
-                _buildTableHeaderCell('Weight (kg)', flex: 2),
-                _buildTableHeaderCell('Blood Pressure (mmHg)', flex: 3),
-                _buildTableHeaderCell('Remarks / Observation', flex: 3),
-                _buildTableHeaderCell('Risk Classification', flex: 3),
-              ],
-            ),
-          ),
 
-          // Table Rows - Dynamic from Firestore
-          if (_isLoading)
-            Padding(
-              padding: const EdgeInsets.all(40),
-              child: Center(
-                child: CircularProgressIndicator(color: primary),
-              ),
-            )
-          else if (_completedAppointments.isEmpty)
-            Padding(
-              padding: const EdgeInsets.all(40),
-              child: Center(
+              // Table Rows - Dynamic from Firestore
+              if (_isLoading)
+                Padding(
+                  padding: const EdgeInsets.all(40),
+                  child: Center(
+                    child: CircularProgressIndicator(color: primary),
+                  ),
+                )
+              else if (_completedAppointments.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.all(40),
+                  child: Center(
+                    child: Text(
+                      'No completed checkups yet',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontFamily: 'Regular',
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ),
+                )
+              else
+                ..._completedAppointments.asMap().entries.map((entry) {
+                  int index = entry.key;
+                  Map<String, dynamic> appointment = entry.value;
+                  return _buildTableRowFromAppointment(
+                    (index + 1).toString(),
+                    appointment,
+                  );
+                }).toList(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMobileHistoryCard(
+      String visitNo, Map<String, dynamic> appointment) {
+    String date = 'N/A';
+    DateTime? dateTime;
+    if (appointment['appointmentDate'] is Timestamp) {
+      try {
+        dateTime = (appointment['appointmentDate'] as Timestamp).toDate();
+      } catch (_) {}
+    } else if (appointment['createdAt'] is Timestamp) {
+      try {
+        dateTime = (appointment['createdAt'] as Timestamp).toDate();
+      } catch (_) {}
+    }
+    if (dateTime != null) {
+      date = '${dateTime.day}/${dateTime.month}/${dateTime.year}';
+    }
+
+    String weightText = 'N/A';
+    final weightValue = appointment['checkupWeightKg'];
+    if (weightValue != null) {
+      if (weightValue is num) {
+        weightText = weightValue.toStringAsFixed(weightValue is int ? 0 : 1);
+      } else {
+        final parsed = double.tryParse(weightValue.toString());
+        if (parsed != null) {
+          weightText = parsed.toStringAsFixed(1);
+        } else {
+          weightText = weightValue.toString();
+        }
+      }
+    }
+
+    String bpText = '';
+    final bpValue = appointment['checkupBloodPressure'];
+    if (bpValue != null && bpValue.toString().trim().isNotEmpty) {
+      bpText = bpValue.toString();
+    } else {
+      final sys = appointment['checkupBP_Systolic'];
+      final dia = appointment['checkupBP_Diastolic'];
+      if (sys != null && dia != null) {
+        bpText = '${sys.toString()}/${dia.toString()}';
+      }
+    }
+    if (bpText.isEmpty) {
+      bpText = 'N/A';
+    }
+
+    String remarksText =
+        appointment['checkupRemarks']?.toString().trim().isNotEmpty == true
+            ? appointment['checkupRemarks'].toString()
+            : (appointment['notes']?.toString() ?? '-');
+
+    String riskText =
+        appointment['visitRiskStatus']?.toString().trim().isNotEmpty == true
+            ? appointment['visitRiskStatus'].toString()
+            : (appointment['riskStatus']?.toString() ?? 'N/A');
+
+    Color riskColor = Colors.grey;
+    if (riskText.toUpperCase().contains('HIGH')) {
+      riskColor = Colors.red;
+    } else if (riskText.toUpperCase().contains('MODERATE')) {
+      riskColor = Colors.orange;
+    } else if (riskText.toUpperCase().contains('LOW')) {
+      riskColor = Colors.green;
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade200,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: primary,
+                  borderRadius: BorderRadius.circular(8),
+                ),
                 child: Text(
-                  'No completed checkups yet',
-                  style: TextStyle(
+                  'Visit #$visitNo',
+                  style: const TextStyle(
                     fontSize: 14,
-                    fontFamily: 'Regular',
-                    color: Colors.grey.shade600,
+                    fontFamily: 'Bold',
+                    color: Colors.white,
                   ),
                 ),
               ),
-            )
-          else
-            ..._completedAppointments.asMap().entries.map((entry) {
-              int index = entry.key;
-              Map<String, dynamic> appointment = entry.value;
-              return _buildTableRowFromAppointment(
-                (index + 1).toString(),
-                appointment,
-              );
-            }).toList(),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: riskColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: riskColor),
+                ),
+                child: Text(
+                  riskText,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontFamily: 'Bold',
+                    color: riskColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _buildMobileInfoRow('Date', date),
+          _buildMobileInfoRow('Weight', '$weightText kg'),
+          _buildMobileInfoRow('Blood Pressure', bpText),
+          _buildMobileInfoRow('Remarks', remarksText),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMobileInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(
+              '$label:',
+              style: const TextStyle(
+                fontSize: 12,
+                fontFamily: 'Medium',
+                color: Colors.black54,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 12,
+                fontFamily: 'Regular',
+                color: Colors.black87,
+              ),
+            ),
+          ),
         ],
       ),
     );
