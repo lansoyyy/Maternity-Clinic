@@ -214,6 +214,11 @@ class _AdminEducationalCmsScreenState extends State<AdminEducationalCmsScreen> {
           _buildMenuItem('APPOINTMENT\nSCHEDULING', false),
           _buildMenuItem('TRANSFER\nREQUESTS', false),
           _buildMenuItem('EDUCATIONAL CMS', true),
+          if (widget.userRole == 'admin') ...[
+            _buildMenuItem('HISTORY LOGS', false),
+            _buildMenuItem('ADD NEW STAFF/NURSE', false),
+            _buildMenuItem('CHANGE PASSWORD', false),
+          ],
           _buildMenuItem('LOGOUT', false),
         ],
       ),
@@ -313,6 +318,42 @@ class _AdminEducationalCmsScreenState extends State<AdminEducationalCmsScreen> {
             builder: (context) => AdminTransferRequestsScreen(
               userRole: widget.userRole,
               userName: widget.userName,
+            ),
+          ),
+        );
+        break;
+      case 'HISTORY LOGS':
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AdminDashboardScreen(
+              userRole: widget.userRole,
+              userName: widget.userName,
+              openHistoryLogsOnLoad: true,
+            ),
+          ),
+        );
+        break;
+      case 'ADD NEW STAFF/NURSE':
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AdminDashboardScreen(
+              userRole: widget.userRole,
+              userName: widget.userName,
+              openAddStaffOnLoad: true,
+            ),
+          ),
+        );
+        break;
+      case 'CHANGE PASSWORD':
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AdminDashboardScreen(
+              userRole: widget.userRole,
+              userName: widget.userName,
+              openChangePasswordOnLoad: true,
             ),
           ),
         );

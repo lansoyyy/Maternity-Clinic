@@ -1370,6 +1370,11 @@ class _AdminAppointmentManagementScreenState
           _buildMenuItem('APPOINTMENT MANAGEMENT', true),
           _buildMenuItem('APPROVE SCHEDULES', false),
           _buildMenuItem('PATIENT RECORDS', false),
+          if (widget.userRole == 'admin') ...[
+            _buildMenuItem('HISTORY LOGS', false),
+            _buildMenuItem('ADD NEW STAFF/NURSE', false),
+            _buildMenuItem('CHANGE PASSWORD', false),
+          ],
           _buildMenuItem('LOGOUT', false),
         ],
       ),

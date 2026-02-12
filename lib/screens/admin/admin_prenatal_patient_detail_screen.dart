@@ -614,6 +614,11 @@ class _AdminPrenatalPatientDetailScreenState
           _buildMenuItem('APPOINTMENT MANAGEMENT', false),
           _buildMenuItem('APPROVE SCHEDULES', false),
           _buildMenuItem('PATIENT RECORDS', true),
+          if (widget.userRole == 'admin') ...[
+            _buildMenuItem('HISTORY LOGS', false),
+            _buildMenuItem('ADD NEW STAFF/NURSE', false),
+            _buildMenuItem('CHANGE PASSWORD', false),
+          ],
           _buildMenuItem('LOGOUT', false),
         ],
       ),
@@ -683,6 +688,27 @@ class _AdminPrenatalPatientDetailScreenState
         screen = AdminPatientRecordsScreen(
           userRole: widget.userRole,
           userName: widget.userName,
+        );
+        break;
+      case 'HISTORY LOGS':
+        screen = AdminDashboardScreen(
+          userRole: widget.userRole,
+          userName: widget.userName,
+          openHistoryLogsOnLoad: true,
+        );
+        break;
+      case 'ADD NEW STAFF/NURSE':
+        screen = AdminDashboardScreen(
+          userRole: widget.userRole,
+          userName: widget.userName,
+          openAddStaffOnLoad: true,
+        );
+        break;
+      case 'CHANGE PASSWORD':
+        screen = AdminDashboardScreen(
+          userRole: widget.userRole,
+          userName: widget.userName,
+          openChangePasswordOnLoad: true,
         );
         break;
       default:

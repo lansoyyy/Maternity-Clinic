@@ -636,6 +636,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         _buildHistoryCountingChart(),
                         const SizedBox(height: 30),
 
+                        // History Logs (admin only)
+                        if (_isAdmin) ...[
+                          _buildHistoryLogsSection(),
+                          const SizedBox(height: 30),
+                        ],
+
                         // Nurse Dashboard - Transfer Requests
                         if (_isNurse) ...[
                           _buildNurseTransferRequestsSection(),
@@ -1924,6 +1930,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           _buildMenuItem('APPOINTMENT MANAGEMENT', false),
           _buildMenuItem('APPROVE SCHEDULES', false),
           _buildMenuItem('PATIENT RECORDS', false),
+          if (_isAdmin) ...[
+            _buildMenuItem('HISTORY LOGS', false),
+            _buildMenuItem('ADD NEW STAFF/NURSE', false),
+            _buildMenuItem('CHANGE PASSWORD', false),
+          ],
 
           // Logout Menu Item
           Padding(

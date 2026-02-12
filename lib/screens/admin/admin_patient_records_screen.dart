@@ -964,6 +964,11 @@ class _AdminPatientRecordsScreenState extends State<AdminPatientRecordsScreen> {
           _buildMenuItem('APPOINTMENT MANAGEMENT', false),
           _buildMenuItem('APPROVE SCHEDULES', false),
           _buildMenuItem('PATIENT RECORDS', true),
+          if (widget.userRole == 'admin') ...[
+            _buildMenuItem('HISTORY LOGS', false),
+            _buildMenuItem('ADD NEW STAFF/NURSE', false),
+            _buildMenuItem('CHANGE PASSWORD', false),
+          ],
           _buildMenuItem('LOGOUT', false),
         ],
       ),
