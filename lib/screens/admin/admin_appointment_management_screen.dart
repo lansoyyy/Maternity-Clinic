@@ -126,7 +126,7 @@ class _AdminAppointmentManagementScreenState
           'createdAt': data['createdAt'],
           'timeSlot': data['timeSlot'],
           'patientType': patientType,
-          'patientId': userData?['userId']?.toString() ?? '',
+          'patientId': userId,
           'name': userData?['name']?.toString() ?? 'Unknown',
           'email': userData?['email']?.toString() ?? '',
           'contactNumber': userData?['contactNumber']?.toString() ?? '',
@@ -1370,7 +1370,7 @@ class _AdminAppointmentManagementScreenState
           _buildMenuItem('APPOINTMENT MANAGEMENT', true),
           _buildMenuItem('APPROVE SCHEDULES', false),
           _buildMenuItem('PATIENT RECORDS', false),
-          if (widget.userRole == 'admin') ...[
+          if (widget.userRole.toLowerCase().trim() == 'admin') ...[
             _buildMenuItem('HISTORY LOGS', false),
             _buildMenuItem('ADD NEW STAFF/NURSE', false),
             _buildMenuItem('CHANGE PASSWORD', false),

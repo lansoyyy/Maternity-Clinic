@@ -70,13 +70,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildHeader() {
     final isMobile = context.isMobile;
-    
+
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 16 : 40, 
-        vertical: isMobile ? 16 : 20
-      ),
+          horizontal: isMobile ? 16 : 40, vertical: isMobile ? 16 : 20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [primary, secondary],
@@ -150,31 +148,48 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               ListTile(
                 leading: const Icon(Icons.home, color: Colors.white),
-                title: const Text('HOME', style: TextStyle(color: Colors.white, fontFamily: 'Bold')),
+                title: const Text('HOME',
+                    style: TextStyle(color: Colors.white, fontFamily: 'Bold')),
                 onTap: () => Navigator.pop(context),
               ),
               ListTile(
                 leading: const Icon(Icons.info, color: Colors.white70),
-                title: const Text('ABOUT US', style: TextStyle(color: Colors.white70, fontFamily: 'Medium')),
+                title: const Text('ABOUT US',
+                    style:
+                        TextStyle(color: Colors.white70, fontFamily: 'Medium')),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const AboutUsScreen()));
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const AboutUsScreen()));
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.medical_services, color: Colors.white70),
-                title: const Text('SERVICES', style: TextStyle(color: Colors.white70, fontFamily: 'Medium')),
+                leading:
+                    const Icon(Icons.medical_services, color: Colors.white70),
+                title: const Text('SERVICES',
+                    style:
+                        TextStyle(color: Colors.white70, fontFamily: 'Medium')),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const ServicesScreen()));
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const ServicesScreen()));
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.contact_mail, color: Colors.white70),
-                title: const Text('CONTACT US', style: TextStyle(color: Colors.white70, fontFamily: 'Medium')),
+                title: const Text('CONTACT US',
+                    style:
+                        TextStyle(color: Colors.white70, fontFamily: 'Medium')),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const ContactUsScreen()));
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const ContactUsScreen()));
                 },
               ),
             ],
@@ -948,9 +963,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(
-        horizontal: isMobile ? 20 : 40, 
-        vertical: isMobile ? 20 : 30
-      ),
+          horizontal: isMobile ? 20 : 40, vertical: isMobile ? 20 : 30),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [primary, secondary],
@@ -963,11 +976,11 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       child: Text(
-        'We care about your health\nand well - being',
+        'We care about your health and well-being',
         textAlign: TextAlign.center,
         style: TextStyle(
           color: Colors.white,
-          fontSize: isMobile ? 24 : 32,
+          fontSize: isMobile ? 20 : 32,
           fontFamily: 'Bold',
           height: 1.3,
           letterSpacing: 0.5,

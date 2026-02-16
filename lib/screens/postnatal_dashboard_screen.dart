@@ -267,11 +267,23 @@ class _PostnatalDashboardScreenState extends State<PostnatalDashboardScreen> {
               return _articleMatchesPostnatalPatient(data);
             }).toList();
 
-            if (docs.isEmpty) {
+            // If no personalized matches, show general articles (those without specific tags)
+            final articlesToShow = docs.isEmpty
+                ? snapshot.data!.docs.where((doc) {
+                    final data = doc.data() as Map<String, dynamic>;
+                    final rawTags = data['targetTags'];
+                    final List<String> tags = rawTags is List
+                        ? rawTags.map((e) => e.toString()).toList()
+                        : <String>[];
+                    return tags.isEmpty; // Show articles without specific tags
+                  }).toList()
+                : docs;
+
+            if (articlesToShow.isEmpty) {
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Text(
-                  'No personalized tips match your current profile.',
+                  'No health tips available yet. Please complete your profile to get personalized tips.',
                   style: TextStyle(
                     fontSize: 13,
                     fontFamily: 'Regular',
@@ -282,7 +294,7 @@ class _PostnatalDashboardScreenState extends State<PostnatalDashboardScreen> {
             }
 
             return Column(
-              children: docs.map((doc) {
+              children: articlesToShow.map((doc) {
                 final data = doc.data() as Map<String, dynamic>;
                 final title = data['title']?.toString() ?? '';
                 final body = data['body']?.toString() ?? '';

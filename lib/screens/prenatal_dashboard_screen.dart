@@ -265,11 +265,23 @@ class _PrenatalDashboardScreenState extends State<PrenatalDashboardScreen> {
               return _articleMatchesPrenatalPatient(data);
             }).toList();
 
-            if (docs.isEmpty) {
+            // If no personalized matches, show general articles (those without specific tags)
+            final articlesToShow = docs.isEmpty
+                ? snapshot.data!.docs.where((doc) {
+                    final data = doc.data() as Map<String, dynamic>;
+                    final rawTags = data['targetTags'];
+                    final List<String> tags = rawTags is List
+                        ? rawTags.map((e) => e.toString()).toList()
+                        : <String>[];
+                    return tags.isEmpty; // Show articles without specific tags
+                  }).toList()
+                : docs;
+
+            if (articlesToShow.isEmpty) {
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Text(
-                  'No personalized tips match your current profile.',
+                  'No health tips available yet. Please complete your profile with LMP date to get personalized tips.',
                   style: TextStyle(
                     fontSize: 13,
                     fontFamily: 'Regular',
@@ -280,7 +292,7 @@ class _PrenatalDashboardScreenState extends State<PrenatalDashboardScreen> {
             }
 
             return Column(
-              children: docs.map((doc) {
+              children: articlesToShow.map((doc) {
                 final data = doc.data() as Map<String, dynamic>;
                 final title = data['title']?.toString() ?? '';
                 final body = data['body']?.toString() ?? '';
@@ -514,6 +526,13 @@ class _PrenatalDashboardScreenState extends State<PrenatalDashboardScreen> {
               MaterialPageRoute(
                 builder: (context) => const PrenatalUpdateProfileScreen(),
               ),
+            );
+          } else if (title == 'EDUCATIONAL\nLEARNERS') {
+            // Scroll to educational section
+            Scrollable.ensureVisible(
+              context,
+              duration: const Duration(milliseconds: 500),
+              curve: Curves.easeInOut,
             );
           } else if (title == 'HISTORY OF\nCHECK UP') {
             Navigator.push(

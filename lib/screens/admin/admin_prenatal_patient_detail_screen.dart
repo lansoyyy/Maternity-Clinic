@@ -613,8 +613,8 @@ class _AdminPrenatalPatientDetailScreenState
           _buildMenuItem('DATA GRAPHS', false),
           _buildMenuItem('APPOINTMENT MANAGEMENT', false),
           _buildMenuItem('APPROVE SCHEDULES', false),
-          _buildMenuItem('PATIENT RECORDS', true),
-          if (widget.userRole == 'admin') ...[
+          _buildMenuItem('PATIENT RECORDS', false),
+          if (widget.userRole.toLowerCase().trim() == 'admin') ...[
             _buildMenuItem('HISTORY LOGS', false),
             _buildMenuItem('ADD NEW STAFF/NURSE', false),
             _buildMenuItem('CHANGE PASSWORD', false),
@@ -1454,6 +1454,15 @@ class _AdminPrenatalPatientDetailScreenState
               'Diabetes:', appointment['diabetes'] == true ? 'Yes' : 'No'),
 
           const SizedBox(height: 10),
+          const Text(
+            'Vital Signs & Measurements:',
+            style: TextStyle(
+              fontSize: 14,
+              fontFamily: 'Bold',
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 5),
           Row(
             children: [
               Expanded(
@@ -1467,6 +1476,122 @@ class _AdminPrenatalPatientDetailScreenState
               ),
             ],
           ),
+          Row(
+            children: [
+              Expanded(
+                child: _buildDetailRow('Fetal Heart Rate:',
+                    '${appointment['fetalHeartRate'] ?? 'N/A'} bpm'),
+              ),
+              const SizedBox(width: 20),
+              Expanded(
+                child: _buildDetailRow('Fundal Height:',
+                    '${appointment['fundalHeight'] ?? 'N/A'} cm'),
+              ),
+            ],
+          ),
+          _buildDetailRow('Gestational Age:',
+              '${appointment['gestationalAge'] ?? 'N/A'} weeks'),
+
+          const SizedBox(height: 10),
+          const Text(
+            'Risk Assessment:',
+            style: TextStyle(
+              fontSize: 14,
+              fontFamily: 'Bold',
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 5),
+          _buildDetailRow('Risk Level:',
+              appointment['riskLevel']?.toString().toUpperCase() ?? 'N/A'),
+
+          if (appointment['laboratoryResults'] != null &&
+              appointment['laboratoryResults'].toString().isNotEmpty) ...[
+            const SizedBox(height: 10),
+            const Text(
+              'Laboratory Results:',
+              style: TextStyle(
+                fontSize: 14,
+                fontFamily: 'Bold',
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              appointment['laboratoryResults']?.toString() ?? 'N/A',
+              style: TextStyle(
+                fontSize: 12,
+                fontFamily: 'Regular',
+                color: Colors.grey.shade700,
+              ),
+            ),
+          ],
+
+          if (appointment['clinicalFindings'] != null &&
+              appointment['clinicalFindings'].toString().isNotEmpty) ...[
+            const SizedBox(height: 10),
+            const Text(
+              'Clinical Findings:',
+              style: TextStyle(
+                fontSize: 14,
+                fontFamily: 'Bold',
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              appointment['clinicalFindings']?.toString() ?? 'N/A',
+              style: TextStyle(
+                fontSize: 12,
+                fontFamily: 'Regular',
+                color: Colors.grey.shade700,
+              ),
+            ),
+          ],
+
+          if (appointment['recommendations'] != null &&
+              appointment['recommendations'].toString().isNotEmpty) ...[
+            const SizedBox(height: 10),
+            const Text(
+              'Recommendations:',
+              style: TextStyle(
+                fontSize: 14,
+                fontFamily: 'Bold',
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              appointment['recommendations']?.toString() ?? 'N/A',
+              style: TextStyle(
+                fontSize: 12,
+                fontFamily: 'Regular',
+                color: Colors.grey.shade700,
+              ),
+            ),
+          ],
+
+          if (appointment['remarks'] != null &&
+              appointment['remarks'].toString().isNotEmpty) ...[
+            const SizedBox(height: 10),
+            const Text(
+              'Remarks/Observations:',
+              style: TextStyle(
+                fontSize: 14,
+                fontFamily: 'Bold',
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              appointment['remarks']?.toString() ?? 'N/A',
+              style: TextStyle(
+                fontSize: 12,
+                fontFamily: 'Regular',
+                color: Colors.grey.shade700,
+              ),
+            ),
+          ],
         ],
       ),
     );

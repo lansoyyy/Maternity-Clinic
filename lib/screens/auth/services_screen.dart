@@ -599,7 +599,9 @@ class _ServicesScreenState extends State<ServicesScreen> {
 
     return Container(
       padding: EdgeInsets.all(isMobile ? 16 : 25),
-      height: isMobile ? 160 : 200,
+      constraints: BoxConstraints(
+        minHeight: isMobile ? 140 : 180,
+      ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [primary.withOpacity(0.1), secondary.withOpacity(0.05)],
@@ -676,12 +678,12 @@ class _ServicesScreenState extends State<ServicesScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                flex: 3,
+                flex: 1,
                 child: _buildServicesOffered(),
               ),
               const SizedBox(width: 30),
               Expanded(
-                flex: 5,
+                flex: 1,
                 child: Column(
                   children: [
                     Row(
@@ -1040,48 +1042,32 @@ class _ServicesScreenState extends State<ServicesScreen> {
               letterSpacing: 0.5,
             ),
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height: 30),
           if (isMobile)
             Column(
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildWhyChooseUsItem(
-                        Icons.verified,
-                        'Experienced Staff',
-                        'Highly qualified medical professionals',
-                      ),
-                    ),
-                    const SizedBox(width: 20),
-                    Expanded(
-                      child: _buildWhyChooseUsItem(
-                        Icons.medical_information,
-                        'Modern Equipment',
-                        'State-of-the-art medical technology',
-                      ),
-                    ),
-                  ],
+                _buildWhyChooseUsItem(
+                  Icons.verified,
+                  'Experienced Staff',
+                  'Highly qualified medical professionals',
                 ),
-                const SizedBox(height: 30),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildWhyChooseUsItem(
-                        Icons.favorite,
-                        'Compassionate Care',
-                        'Personalized attention for every patient',
-                      ),
-                    ),
-                    const SizedBox(width: 20),
-                    Expanded(
-                      child: _buildWhyChooseUsItem(
-                        Icons.price_check,
-                        'Affordable Rates',
-                        'Quality healthcare at reasonable prices',
-                      ),
-                    ),
-                  ],
+                const SizedBox(height: 25),
+                _buildWhyChooseUsItem(
+                  Icons.medical_information,
+                  'Modern Equipment',
+                  'State-of-the-art medical technology',
+                ),
+                const SizedBox(height: 25),
+                _buildWhyChooseUsItem(
+                  Icons.favorite,
+                  'Compassionate Care',
+                  'Personalized attention for every patient',
+                ),
+                const SizedBox(height: 25),
+                _buildWhyChooseUsItem(
+                  Icons.price_check,
+                  'Affordable Rates',
+                  'Quality healthcare at reasonable prices',
                 ),
               ],
             )
@@ -1123,42 +1109,46 @@ class _ServicesScreenState extends State<ServicesScreen> {
     final isMobile = context.isMobile;
 
     return Expanded(
-      child: Column(
-        children: [
-          Container(
-            padding: EdgeInsets.all(isMobile ? 15 : 20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: EdgeInsets.all(isMobile ? 15 : 20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: primary,
+                size: isMobile ? 28 : 45,
+              ),
             ),
-            child: Icon(
-              icon,
-              color: primary,
-              size: isMobile ? 35 : 45,
+            const SizedBox(height: 15),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: isMobile ? 18 : 20,
+                fontFamily: 'Bold',
+                color: Colors.white,
+              ),
             ),
-          ),
-          const SizedBox(height: 15),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: isMobile ? 14 : 18,
-              fontFamily: 'Bold',
-              color: Colors.white,
+            const SizedBox(height: 8),
+            Text(
+              description,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: isMobile ? 12 : 14,
+                fontFamily: 'Regular',
+                color: Colors.white,
+                height: 1.4,
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            description,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: isMobile ? 12 : 14,
-              fontFamily: 'Regular',
-              color: Colors.white,
-              height: 1.4,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1182,11 +1172,11 @@ class _ServicesScreenState extends State<ServicesScreen> {
         ),
       ),
       child: Text(
-        'We care about your health\nand well - being',
+        'We care about your health and well-being',
         textAlign: TextAlign.center,
         style: TextStyle(
           color: Colors.white,
-          fontSize: isMobile ? 24 : 32,
+          fontSize: isMobile ? 20 : 32,
           fontFamily: 'Bold',
           height: 1.3,
           letterSpacing: 0.5,

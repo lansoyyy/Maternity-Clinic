@@ -77,10 +77,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   bool _isLoading = true;
 
   // Check if current user is admin
-  bool get _isAdmin => widget.userRole == 'admin';
+  bool get _isAdmin => widget.userRole.toLowerCase().trim() == 'admin';
 
   // Check if current user is nurse
-  bool get _isNurse => widget.userRole == 'nurse';
+  bool get _isNurse => widget.userRole.toLowerCase().trim() == 'nurse';
 
   @override
   void initState() {
@@ -553,6 +553,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
                         // Home Quick Stats Cards
                         Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             Expanded(
                               child: _buildStatCard(
@@ -615,7 +616,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
                         // Top Row - Charts (Admin and Nurse)
                         Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             Expanded(
                               child: _buildPrenatalPostnatalChart(),
@@ -997,8 +998,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ],
           ),
           const SizedBox(height: 20),
-          SizedBox(
-            height: 220,
+          Expanded(
             child: LineChart(
               LineChartData(
                 gridData: FlGridData(
@@ -3159,8 +3159,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ],
           ),
           const SizedBox(height: 10),
-          SizedBox(
-            height: total > 0 ? 200 : 0,
+          Expanded(
             child: total > 0
                 ? PieChart(
                     PieChartData(
@@ -3196,7 +3195,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       ],
                     ),
                   )
-                : null,
+                : const Center(
+                    child: Text(
+                      'No patient data yet',
+                      style: TextStyle(fontSize: 14, color: Colors.grey),
+                    ),
+                  ),
           ),
         ],
       ),
@@ -3313,8 +3317,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ],
           ),
           const SizedBox(height: 20),
-          SizedBox(
-            height: 200,
+          Expanded(
             child: totalPatients > 0
                 ? PieChart(
                     PieChartData(

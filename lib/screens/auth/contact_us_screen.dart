@@ -554,6 +554,7 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
     if (kIsWeb) {
       return HtmlElementView(
         viewType: 'google-maps-iframe',
+        key: UniqueKey(),
       );
     }
     return Container(

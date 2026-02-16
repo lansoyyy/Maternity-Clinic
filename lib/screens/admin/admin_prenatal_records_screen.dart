@@ -490,7 +490,7 @@ class _AdminPrenatalRecordsScreenState
           _buildMenuItem('APPROVE SCHEDULES', false),
           _buildMenuItem('PATIENT RECORDS', true),
           _buildMenuItem('CONTENT MANAGEMENT', false),
-          if (widget.userRole == 'admin') ...[
+          if (widget.userRole.toLowerCase().trim() == 'admin') ...[
             _buildMenuItem('HISTORY LOGS', false),
             _buildMenuItem('ADD NEW STAFF/NURSE', false),
             _buildMenuItem('CHANGE PASSWORD', false),

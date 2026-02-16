@@ -250,7 +250,7 @@ class _AdminTransferRequestsScreenState
           _buildMenuItem('APPOINTMENT MANAGEMENT', false),
           _buildMenuItem('APPROVE SCHEDULES', false),
           _buildMenuItem('PATIENT RECORDS', false),
-          if (widget.userRole == 'admin') ...[
+          if (widget.userRole.toLowerCase().trim() == 'admin') ...[
             _buildMenuItem('HISTORY LOGS', false),
             _buildMenuItem('ADD NEW STAFF/NURSE', false),
             _buildMenuItem('CHANGE PASSWORD', false),

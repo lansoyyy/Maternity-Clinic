@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 /// Responsive breakpoints for the app
 class Breakpoints {
-  static const double mobile = 600;
-  static const double tablet = 900;
+  static const double mobile = 768; // Changed from 600 to catch tablets
+  static const double tablet = 1024; // Changed from 900
   static const double desktop = 1200;
 }
 
@@ -236,13 +236,11 @@ class ResponsiveTableConfig {
     if (context.isMobile) {
       // On mobile, use fixed width for all columns (horizontal scroll)
       return {
-        for (int i = 0; i < columnCount; i++)
-          i: const FixedColumnWidth(120),
+        for (int i = 0; i < columnCount; i++) i: const FixedColumnWidth(120),
       };
     }
     return {
-      for (int i = 0; i < columnCount; i++)
-        i: const FlexColumnWidth(),
+      for (int i = 0; i < columnCount; i++) i: const FlexColumnWidth(),
     };
   }
 
@@ -260,9 +258,10 @@ class ResponsiveTableConfig {
 extension ResponsiveTextStyle on TextStyle {
   TextStyle responsive(BuildContext context) {
     double scale = 1.0;
-    if (context.isMobile) scale = 0.85;
+    if (context.isMobile)
+      scale = 0.85;
     else if (context.isTablet) scale = 0.95;
-    
+
     return copyWith(
       fontSize: fontSize != null ? fontSize! * scale : null,
     );
@@ -271,7 +270,8 @@ extension ResponsiveTextStyle on TextStyle {
 
 /// Extension for responsive container constraints
 extension ResponsiveConstraints on BoxConstraints {
-  static BoxConstraints maxWidthResponsive(BuildContext context, double maxWidth) {
+  static BoxConstraints maxWidthResponsive(
+      BuildContext context, double maxWidth) {
     if (context.isMobile) {
       return BoxConstraints(maxWidth: context.screenWidth - 32);
     }

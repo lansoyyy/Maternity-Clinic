@@ -214,7 +214,7 @@ class _AdminEducationalCmsScreenState extends State<AdminEducationalCmsScreen> {
           _buildMenuItem('APPOINTMENT\nSCHEDULING', false),
           _buildMenuItem('TRANSFER\nREQUESTS', false),
           _buildMenuItem('EDUCATIONAL CMS', true),
-          if (widget.userRole == 'admin') ...[
+          if (widget.userRole.toLowerCase().trim() == 'admin') ...[
             _buildMenuItem('HISTORY LOGS', false),
             _buildMenuItem('ADD NEW STAFF/NURSE', false),
             _buildMenuItem('CHANGE PASSWORD', false),

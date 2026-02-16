@@ -404,7 +404,9 @@ class _AboutUsScreenState extends State<AboutUsScreen> {
 
     return Container(
       padding: EdgeInsets.all(isMobile ? 20 : 30),
-      height: isMobile ? 240 : 280,
+      constraints: BoxConstraints(
+        minHeight: isMobile ? 200 : 240,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -479,11 +481,11 @@ class _AboutUsScreenState extends State<AboutUsScreen> {
         ),
       ),
       child: Text(
-        'We care about your health\nand well - being',
+        'We care about your health and well-being',
         textAlign: TextAlign.center,
         style: TextStyle(
           color: Colors.white,
-          fontSize: isMobile ? 24 : 32,
+          fontSize: isMobile ? 20 : 32,
           fontFamily: 'Bold',
           height: 1.3,
           letterSpacing: 0.5,
@@ -506,8 +508,10 @@ class _StaffProfileCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isMobile = context.isMobile;
 
-    return SizedBox(
-      width: isMobile ? 140 : 230,
+    return Container(
+      constraints: BoxConstraints(
+        maxWidth: isMobile ? 160 : 260,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
