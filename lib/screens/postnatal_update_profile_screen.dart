@@ -4,6 +4,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../utils/colors.dart';
 import '../utils/responsive_utils.dart';
+import '../widgets/forgot_password_dialog.dart';
+import 'postnatal_dashboard_screen.dart';
+import 'postnatal_history_checkup_screen.dart';
+import 'notification_appointment_screen.dart';
+import 'transfer_record_request_screen.dart';
+import 'auth/home_screen.dart';
 
 class PostnatalUpdateProfileScreen extends StatefulWidget {
   const PostnatalUpdateProfileScreen({super.key});
@@ -363,22 +369,16 @@ class _PostnatalUpdateProfileScreenState
     final isMobile = context.isMobile;
     
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: primary,
-        title: const Text(
-          'UPDATE PROFILE',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontFamily: 'Bold',
-          ),
-        ),
-      ),
-      body: _isLoading
-          ? Center(
-              child: CircularProgressIndicator(color: primary),
-            )
-          : SingleChildScrollView(
+      backgroundColor: Colors.white,
+      body: Row(
+        children: [
+          _buildSidebar(),
+          Expanded(
+            child: _isLoading
+                ? Center(
+                    child: CircularProgressIndicator(color: primary),
+                  )
+                : SingleChildScrollView(
               padding: EdgeInsets.all(isMobile ? 16 : 32),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -461,6 +461,9 @@ class _PostnatalUpdateProfileScreenState
                 ],
               ),
             ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1097,6 +1100,175 @@ class _PostnatalUpdateProfileScreenState
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildSidebar() {
+    return Container(
+      width: 250,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [primary, secondary],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 30),
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  'POSTNATAL PATIENT',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12,
+                    fontFamily: 'Regular',
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          _buildMenuItem('PERSONAL DETAILS', true),
+          _buildMenuItem('EDUCATIONAL\nLEARNERS', false),
+          _buildMenuItem('HISTORY OF\nCHECK UP', false),
+          _buildMenuItem('REQUEST &\nNOTIFICATION APPOINTMENT', false),
+          _buildMenuItem('TRANSFER OF\nRECORD REQUEST', false),
+          _buildMenuItem('CHANGE PASSWORD', false),
+          _buildMenuItem('LOGOUT', false),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMenuItem(String title, bool isActive) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: () {
+          if (title == 'LOGOUT') {
+            _showLogoutConfirmationDialog();
+            return;
+          }
+          if (title == 'CHANGE PASSWORD') {
+            showDialog(
+              context: context,
+              builder: (context) => const ForgotPasswordDialog(),
+            );
+            return;
+          }
+
+          if (isActive) {
+            return;
+          }
+
+          if (title == 'EDUCATIONAL\nLEARNERS') {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const PostnatalDashboardScreen(),
+              ),
+            );
+          } else if (title == 'HISTORY OF\nCHECK UP') {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const PostnatalHistoryCheckupScreen(),
+              ),
+            );
+          } else if (title == 'REQUEST &\nNOTIFICATION APPOINTMENT') {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const NotificationAppointmentScreen(
+                  patientType: 'POSTNATAL',
+                ),
+              ),
+            );
+          } else if (title == 'TRANSFER OF\nRECORD REQUEST') {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const TransferRecordRequestScreen(
+                  patientType: 'POSTNATAL',
+                ),
+              ),
+            );
+          }
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+          decoration: BoxDecoration(
+            color: isActive ? Colors.white.withOpacity(0.2) : Colors.transparent,
+            border: isActive
+                ? Border(
+                    left: BorderSide(color: Colors.white, width: 4),
+                  )
+                : null,
+          ),
+          child: Text(
+            title,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 13,
+              fontFamily: isActive ? 'Bold' : 'Regular',
+              height: 1.4,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showLogoutConfirmationDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+          'Logout',
+          style: TextStyle(fontFamily: 'Bold'),
+        ),
+        content: const Text(
+          'Are you sure you want to logout?',
+          style: TextStyle(fontFamily: 'Regular'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(fontFamily: 'Regular'),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _auth.signOut();
+              if (mounted) {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const HomeScreen(),
+                  ),
+                );
+              }
+            },
+            child: const Text(
+              'Logout',
+              style: TextStyle(
+                fontFamily: 'Bold',
+                color: Colors.red,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

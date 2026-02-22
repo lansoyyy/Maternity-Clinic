@@ -880,12 +880,14 @@ class _AdminPatientRecordsScreenState extends State<AdminPatientRecordsScreen> {
   void _openPatientDetail(Map<String, dynamic> patient,
       {required String initialView}) {
     final String userId = patient['userId']?.toString() ?? '';
+    final String formattedPatientId = patient['patientId']?.toString() ?? '';
     final String name = patient['name']?.toString() ?? '';
     final String email = patient['email']?.toString() ?? '';
     final String status = patient['status']?.toString() ?? 'Active';
 
     final Map<String, String> patientData = {
-      'patientId': patient['patientId']?.toString() ?? userId,
+      'patientId': userId, // Use actual Firebase userId for data fetching
+      'formattedPatientId': formattedPatientId, // Keep formatted ID for display
       'name': name,
       'email': email,
       'status': status,

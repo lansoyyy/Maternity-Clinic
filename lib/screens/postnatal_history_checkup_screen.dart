@@ -580,12 +580,13 @@ class _PostnatalHistoryCheckupScreenState
           ),
           const SizedBox(height: 20),
 
-          // Details in 3 columns
+          // Details in 2 columns
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Column 1: Next Visit Recommendation
-              Expanded(
+              Flexible(
+                flex: 1,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -611,40 +612,10 @@ class _PostnatalHistoryCheckupScreenState
                   ],
                 ),
               ),
-              // Column 2: Reason
+              const SizedBox(width: 20),
+              // Column 2: Findings and Notes
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.medical_services, size: 16, color: primary),
-                        const SizedBox(width: 6),
-                        const Text(
-                          'Reason',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontFamily: 'Bold',
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      appointment['reason'] ?? 'Not specified',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontFamily: 'Regular',
-                        color: Colors.grey.shade700,
-                        height: 1.4,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // Column 3: Findings and Notes
-              Expanded(
+                flex: 2,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

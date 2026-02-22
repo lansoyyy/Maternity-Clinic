@@ -965,9 +965,9 @@ class _AdminPostnatalPatientDetailScreenState
             ),
           ),
           const SizedBox(height: 15),
-          if (widget.patientData['patientId'] != null &&
-              widget.patientData['patientId']!.isNotEmpty)
-            _buildInfoRow('Patient ID:', widget.patientData['patientId']!),
+          if (widget.patientData['formattedPatientId'] != null &&
+              widget.patientData['formattedPatientId']!.isNotEmpty)
+            _buildInfoRow('Patient ID:', widget.patientData['formattedPatientId']!),
           if (widget.patientData['name'] != null &&
               widget.patientData['name']!.isNotEmpty)
             _buildInfoRow('Name:', widget.patientData['name']!),
@@ -1522,50 +1522,6 @@ class _AdminPostnatalPatientDetailScreenState
           _buildDetailRow('Risk Level:',
               appointment['riskLevel']?.toString().toUpperCase() ?? 'N/A'),
 
-          if (appointment['clinicalFindings'] != null &&
-              appointment['clinicalFindings'].toString().isNotEmpty) ...[
-            const SizedBox(height: 10),
-            const Text(
-              'Clinical Findings:',
-              style: TextStyle(
-                fontSize: 14,
-                fontFamily: 'Bold',
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 5),
-            Text(
-              appointment['clinicalFindings']?.toString() ?? 'N/A',
-              style: TextStyle(
-                fontSize: 12,
-                fontFamily: 'Regular',
-                color: Colors.grey.shade700,
-              ),
-            ),
-          ],
-
-          if (appointment['recommendations'] != null &&
-              appointment['recommendations'].toString().isNotEmpty) ...[
-            const SizedBox(height: 10),
-            const Text(
-              'Recommendations:',
-              style: TextStyle(
-                fontSize: 14,
-                fontFamily: 'Bold',
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 5),
-            Text(
-              appointment['recommendations']?.toString() ?? 'N/A',
-              style: TextStyle(
-                fontSize: 12,
-                fontFamily: 'Regular',
-                color: Colors.grey.shade700,
-              ),
-            ),
-          ],
-
           if (appointment['remarks'] != null &&
               appointment['remarks'].toString().isNotEmpty) ...[
             const SizedBox(height: 10),
@@ -1587,6 +1543,74 @@ class _AdminPostnatalPatientDetailScreenState
               ),
             ),
           ],
+
+          // Doctor's Diagnosis & Advice Section
+          const SizedBox(height: 15),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.purple.shade300),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Doctor's Diagnosis & Advice",
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontFamily: 'Bold',
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 10),
+
+                if (appointment['clinicalFindings'] != null &&
+                    appointment['clinicalFindings'].toString().isNotEmpty) ...[
+                  const Text(
+                    'Findings:',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontFamily: 'Bold',
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    appointment['clinicalFindings']?.toString() ?? 'N/A',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontFamily: 'Regular',
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                ],
+
+                if (appointment['recommendations'] != null &&
+                    appointment['recommendations'].toString().isNotEmpty) ...[
+                  const Text(
+                    'Personalized Recommendations:',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontFamily: 'Bold',
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    appointment['recommendations']?.toString() ?? 'N/A',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontFamily: 'Regular',
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
         ],
       ),
     );

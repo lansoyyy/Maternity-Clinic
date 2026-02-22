@@ -1029,9 +1029,6 @@ class _AdminAppointmentSchedulingScreenState
     String visitRiskStatus = 'LOW RISK';
     String riskExplanation = '';
 
-    String? lochiaType = 'Rubra';
-    String? lochiaAmount = 'Light';
-    String? lochiaSmell = 'Normal';
     String? woundStatus = 'Clean';
 
     void evaluateRisk() {
@@ -1069,15 +1066,6 @@ class _AdminAppointmentSchedulingScreenState
           uiText.contains('not firm')) {
         highRisk = true;
         reasons.add('Uterus soft / not well contracted');
-      }
-
-      if (lochiaAmount == 'Heavy') {
-        highRisk = true;
-        reasons.add('Heavy lochia');
-      }
-      if (lochiaSmell == 'Foul') {
-        highRisk = true;
-        reasons.add('Foul-smelling lochia');
       }
 
       if (woundStatus != null) {
@@ -1241,86 +1229,6 @@ class _AdminAppointmentSchedulingScreenState
                         ),
                         onChanged: (_) {
                           setStateDialog(() {
-                            evaluateRisk();
-                          });
-                        },
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        'Lochia Assessment',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontFamily: 'Bold',
-                          color: Colors.grey.shade900,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: DropdownButtonFormField<String>(
-                              value: lochiaType,
-                              decoration: const InputDecoration(
-                                labelText: 'Type',
-                                border: OutlineInputBorder(),
-                              ),
-                              items: const [
-                                DropdownMenuItem(
-                                    value: 'Rubra', child: Text('Rubra')),
-                                DropdownMenuItem(
-                                    value: 'Serosa', child: Text('Serosa')),
-                                DropdownMenuItem(
-                                    value: 'Alba', child: Text('Alba')),
-                              ],
-                              onChanged: (value) {
-                                setStateDialog(() {
-                                  lochiaType = value;
-                                  evaluateRisk();
-                                });
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: DropdownButtonFormField<String>(
-                              value: lochiaAmount,
-                              decoration: const InputDecoration(
-                                labelText: 'Amount',
-                                border: OutlineInputBorder(),
-                              ),
-                              items: const [
-                                DropdownMenuItem(
-                                    value: 'Light', child: Text('Light')),
-                                DropdownMenuItem(
-                                    value: 'Moderate', child: Text('Moderate')),
-                                DropdownMenuItem(
-                                    value: 'Heavy', child: Text('Heavy')),
-                              ],
-                              onChanged: (value) {
-                                setStateDialog(() {
-                                  lochiaAmount = value;
-                                  evaluateRisk();
-                                });
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      DropdownButtonFormField<String>(
-                        value: lochiaSmell,
-                        decoration: const InputDecoration(
-                          labelText: 'Smell',
-                          border: OutlineInputBorder(),
-                        ),
-                        items: const [
-                          DropdownMenuItem(
-                              value: 'Normal', child: Text('Normal')),
-                          DropdownMenuItem(value: 'Foul', child: Text('Foul')),
-                        ],
-                        onChanged: (value) {
-                          setStateDialog(() {
-                            lochiaSmell = value;
                             evaluateRisk();
                           });
                         },
@@ -1560,9 +1468,6 @@ class _AdminAppointmentSchedulingScreenState
                             '${systolic ?? ''}/${diastolic ?? ''}',
                         'postnatalUterineInvolution':
                             uterineInvolutionController.text.trim(),
-                        'postnatalLochiaType': lochiaType,
-                        'postnatalLochiaAmount': lochiaAmount,
-                        'postnatalLochiaSmell': lochiaSmell,
                         'postnatalWoundStatus': woundStatus,
                         'postnatalRemarks': remarksController.text.trim(),
                         'visitRiskStatus': visitRiskStatus,

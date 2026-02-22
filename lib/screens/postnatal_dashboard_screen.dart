@@ -196,7 +196,7 @@ class _PostnatalDashboardScreenState extends State<PostnatalDashboardScreen> {
                   SizedBox(height: isMobile ? 24 : 40),
                   _buildGuideGrid(),
                   const SizedBox(height: 40),
-                  _buildPersonalizedEducationalSection(),
+               
                 ],
               ),
             ),
