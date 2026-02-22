@@ -370,9 +370,20 @@ class _PostnatalUpdateProfileScreenState
     
     return Scaffold(
       backgroundColor: Colors.white,
+      appBar: isMobile
+          ? AppBar(
+              title: const Text(
+                'Update Profile',
+                style: TextStyle(fontFamily: 'Bold', color: Colors.white),
+              ),
+              backgroundColor: primary,
+              iconTheme: const IconThemeData(color: Colors.white),
+            )
+          : null,
+      drawer: isMobile ? _buildMobileDrawer() : null,
       body: Row(
         children: [
-          _buildSidebar(),
+          if (!isMobile) _buildSidebar(),
           Expanded(
             child: _isLoading
                 ? Center(
@@ -1143,6 +1154,51 @@ class _PostnatalUpdateProfileScreenState
           _buildMenuItem('CHANGE PASSWORD', false),
           _buildMenuItem('LOGOUT', false),
         ],
+      ),
+    );
+  }
+
+  Widget _buildMobileDrawer() {
+    return Drawer(
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [primary, secondary],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 50),
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  Text(
+                    'POSTNATAL PATIENT',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 12,
+                      fontFamily: 'Regular',
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            _buildMenuItem('PERSONAL DETAILS', true),
+            _buildMenuItem('EDUCATIONAL\nLEARNERS', false),
+            _buildMenuItem('HISTORY OF\nCHECK UP', false),
+            _buildMenuItem('REQUEST &\nNOTIFICATION APPOINTMENT', false),
+            _buildMenuItem('TRANSFER OF\nRECORD REQUEST', false),
+            _buildMenuItem('CHANGE PASSWORD', false),
+            _buildMenuItem('LOGOUT', false),
+          ],
+        ),
       ),
     );
   }

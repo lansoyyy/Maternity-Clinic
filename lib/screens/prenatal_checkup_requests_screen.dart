@@ -3,6 +3,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../utils/colors.dart';
+import '../utils/responsive_utils.dart';
+import 'prenatal_dashboard_screen.dart';
+import 'notification_appointment_screen.dart';
+import 'transfer_record_request_screen.dart';
+import 'auth/home_screen.dart';
 
 class PrenatalCheckupRequestsScreen extends StatefulWidget {
   const PrenatalCheckupRequestsScreen({super.key});
@@ -162,6 +167,8 @@ class _PrenatalCheckupRequestsScreenState
   }
 
   Widget _buildOutstandingTab() {
+    final isMobile = context.isMobile;
+    
     if (_outstandingRequests.isEmpty) {
       return Center(
         child: Text(
@@ -176,14 +183,17 @@ class _PrenatalCheckupRequestsScreenState
     }
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.grey.shade300),
-        ),
-        child: Column(
+      padding: EdgeInsets.all(isMobile ? 16 : 24),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: IntrinsicWidth(
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: Column(
           children: [
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -233,6 +243,8 @@ class _PrenatalCheckupRequestsScreenState
                 .map((r) => _buildOutstandingRow(r))
                 .toList(),
           ],
+            ),
+          ),
         ),
       ),
     );
@@ -346,6 +358,8 @@ class _PrenatalCheckupRequestsScreenState
   }
 
   Widget _buildPastTab() {
+    final isMobile = context.isMobile;
+    
     if (_pastRequests.isEmpty) {
       return Center(
         child: Text(
@@ -360,14 +374,17 @@ class _PrenatalCheckupRequestsScreenState
     }
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.grey.shade300),
-        ),
-        child: Column(
+      padding: EdgeInsets.all(isMobile ? 16 : 24),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: IntrinsicWidth(
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: Column(
           children: [
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -415,6 +432,8 @@ class _PrenatalCheckupRequestsScreenState
             ),
             ..._pastRequests.map((r) => _buildPastRow(r)).toList(),
           ],
+            ),
+          ),
         ),
       ),
     );

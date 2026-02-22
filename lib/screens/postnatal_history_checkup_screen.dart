@@ -338,8 +338,10 @@ class _PostnatalHistoryCheckupScreenState
   }
 
   Widget _buildPatientInfoCard() {
+    final isMobile = context.isMobile;
+    
     return Container(
-      padding: const EdgeInsets.all(25),
+      padding: EdgeInsets.all(isMobile ? 16 : 25),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [primary.withOpacity(0.1), secondary.withOpacity(0.05)],
@@ -353,18 +355,18 @@ class _PostnatalHistoryCheckupScreenState
         children: [
           // Icon
           Container(
-            padding: const EdgeInsets.all(15),
+            padding: EdgeInsets.all(isMobile ? 12 : 15),
             decoration: BoxDecoration(
               color: primary,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.person,
               color: Colors.white,
-              size: 32,
+              size: isMobile ? 28 : 32,
             ),
           ),
-          const SizedBox(width: 20),
+          SizedBox(width: isMobile ? 12 : 20),
           // Info
           Expanded(
             child: Column(
@@ -372,44 +374,87 @@ class _PostnatalHistoryCheckupScreenState
               children: [
                 Text(
                   _userData?['name'] ?? 'Loading...',
-                  style: const TextStyle(
-                    fontSize: 22,
+                  style: TextStyle(
+                    fontSize: isMobile ? 18 : 22,
                     fontFamily: 'Bold',
                     color: Colors.black,
                   ),
                 ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(Icons.email, size: 16, color: Colors.grey.shade600),
-                    const SizedBox(width: 6),
-                    Text(
-                      _userData?['email'] ?? 'N/A',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontFamily: 'Regular',
-                        color: Colors.grey.shade700,
+                SizedBox(height: isMobile ? 6 : 8),
+                if (isMobile) ...[
+                  // Mobile: Stack email and phone vertically
+                  Row(
+                    children: [
+                      Icon(Icons.email, size: 14, color: Colors.grey.shade600),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          _userData?['email'] ?? 'N/A',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontFamily: 'Regular',
+                            color: Colors.grey.shade700,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 20),
-                    Icon(Icons.phone, size: 16, color: Colors.grey.shade600),
-                    const SizedBox(width: 6),
-                    Text(
-                      _userData?['contact'] ?? 'N/A',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontFamily: 'Regular',
-                        color: Colors.grey.shade700,
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(Icons.phone, size: 14, color: Colors.grey.shade600),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          _userData?['contact'] ?? 'N/A',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontFamily: 'Regular',
+                            color: Colors.grey.shade700,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+                ] else ...[
+                  // Desktop: Email and phone in same row
+                  Row(
+                    children: [
+                      Icon(Icons.email, size: 16, color: Colors.grey.shade600),
+                      const SizedBox(width: 6),
+                      Text(
+                        _userData?['email'] ?? 'N/A',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontFamily: 'Regular',
+                          color: Colors.grey.shade700,
+                        ),
+                      ),
+                      const SizedBox(width: 20),
+                      Icon(Icons.phone, size: 16, color: Colors.grey.shade600),
+                      const SizedBox(width: 6),
+                      Text(
+                        _userData?['contact'] ?? 'N/A',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontFamily: 'Regular',
+                          color: Colors.grey.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
           // Stats
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            padding: EdgeInsets.symmetric(
+              horizontal: isMobile ? 12 : 20,
+              vertical: isMobile ? 8 : 12,
+            ),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(10),
@@ -419,7 +464,7 @@ class _PostnatalHistoryCheckupScreenState
                 Text(
                   '${_completedAppointments.length}',
                   style: TextStyle(
-                    fontSize: 28,
+                    fontSize: isMobile ? 24 : 28,
                     fontFamily: 'Bold',
                     color: primary,
                   ),
@@ -427,7 +472,7 @@ class _PostnatalHistoryCheckupScreenState
                 Text(
                   'Completed',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: isMobile ? 10 : 12,
                     fontFamily: 'Regular',
                     color: Colors.grey.shade600,
                   ),
@@ -497,8 +542,10 @@ class _PostnatalHistoryCheckupScreenState
       notesText = 'No prescription / recommendation';
     }
 
+    final isMobile = context.isMobile;
+    
     return Container(
-      padding: const EdgeInsets.all(25),
+      padding: EdgeInsets.all(isMobile ? 16 : 25),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(15),
@@ -518,29 +565,29 @@ class _PostnatalHistoryCheckupScreenState
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: EdgeInsets.all(isMobile ? 8 : 10),
                 decoration: BoxDecoration(
                   color: primary,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(isMobile ? 8 : 10),
                 ),
                 child: Text(
                   '#$visitNumber',
-                  style: const TextStyle(
-                    fontSize: 16,
+                  style: TextStyle(
+                    fontSize: isMobile ? 14 : 16,
                     fontFamily: 'Bold',
                     color: Colors.white,
                   ),
                 ),
               ),
-              const SizedBox(width: 15),
+              SizedBox(width: isMobile ? 10 : 15),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       appointment['appointmentType'] ?? 'Clinic',
-                      style: const TextStyle(
-                        fontSize: 18,
+                      style: TextStyle(
+                        fontSize: isMobile ? 16 : 18,
                         fontFamily: 'Bold',
                         color: Colors.black,
                       ),
@@ -548,7 +595,7 @@ class _PostnatalHistoryCheckupScreenState
                     Text(
                       'Completed on $completedDate',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: isMobile ? 11 : 12,
                         fontFamily: 'Regular',
                         color: Colors.grey.shade600,
                       ),
@@ -557,8 +604,10 @@ class _PostnatalHistoryCheckupScreenState
                 ),
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: EdgeInsets.symmetric(
+                  horizontal: isMobile ? 10 : 12,
+                  vertical: isMobile ? 4 : 6,
+                ),
                 decoration: BoxDecoration(
                   color: appointment['status'] == 'Rescheduled'
                       ? Colors.blue.shade100
@@ -568,7 +617,7 @@ class _PostnatalHistoryCheckupScreenState
                 child: Text(
                   appointment['status'] ?? 'Completed',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: isMobile ? 10 : 12,
                     fontFamily: 'Bold',
                     color: appointment['status'] == 'Rescheduled'
                         ? Colors.blue.shade700
@@ -578,12 +627,86 @@ class _PostnatalHistoryCheckupScreenState
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: isMobile ? 12 : 20),
 
-          // Details in 2 columns
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+          // Details in 2 columns (stack on mobile)
+          if (isMobile) ...[
+            // Mobile: Stack columns vertically
+            // Column 1: Next Visit Recommendation
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.calendar_today, size: 14, color: primary),
+                    const SizedBox(width: 6),
+                    const Text(
+                      'Next Visit Recommendation',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontFamily: 'Bold',
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                _buildInfoRow('Date:', scheduleDate),
+                if (appointment['rescheduledAt'] != null)
+                  _buildInfoRow('Rescheduled on:',
+                      _formatDate(appointment['rescheduledAt'])),
+                const SizedBox(height: 12),
+                // Column 2: Findings and Notes
+                Row(
+                  children: [
+                    Icon(Icons.note_alt, size: 14, color: primary),
+                    const SizedBox(width: 6),
+                    const Text(
+                      'Findings',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontFamily: 'Bold',
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  findingsText,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontFamily: 'Regular',
+                    color: Colors.grey.shade700,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'Notes (Prescription / Recommendation)',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontFamily: 'Bold',
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  notesText,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontFamily: 'Regular',
+                    color: Colors.grey.shade700,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ] else ...[
+            // Desktop: Details in 2 columns
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
               // Column 1: Next Visit Recommendation
               Flexible(
                 flex: 1,
@@ -665,8 +788,9 @@ class _PostnatalHistoryCheckupScreenState
                   ],
                 ),
               ),
-            ],
-          ),
+              ],
+            ),
+          ],
         ],
       ),
     );

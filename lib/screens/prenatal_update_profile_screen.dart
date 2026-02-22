@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../utils/colors.dart';
+import '../utils/responsive_utils.dart';
 import '../widgets/forgot_password_dialog.dart';
 import 'prenatal_dashboard_screen.dart';
 import 'prenatal_history_checkup_screen.dart';
@@ -315,18 +316,31 @@ class _PrenatalUpdateProfileScreenState
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = context.isMobile;
+    
     return Scaffold(
       backgroundColor: Colors.white,
+      appBar: isMobile
+          ? AppBar(
+              title: const Text(
+                'Update Profile',
+                style: TextStyle(fontFamily: 'Bold', color: Colors.white),
+              ),
+              backgroundColor: primary,
+              iconTheme: const IconThemeData(color: Colors.white),
+            )
+          : null,
+      drawer: isMobile ? _buildMobileDrawer() : null,
       body: Row(
         children: [
-          _buildSidebar(),
+          if (!isMobile) _buildSidebar(),
           Expanded(
             child: _isLoading
                 ? Center(
                     child: CircularProgressIndicator(color: primary),
                   )
                 : SingleChildScrollView(
-                    padding: const EdgeInsets.all(32),
+                    padding: context.responsivePadding,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -946,6 +960,51 @@ class _PrenatalUpdateProfileScreenState
           _buildMenuItem('CHANGE PASSWORD', false),
           _buildMenuItem('LOGOUT', false),
         ],
+      ),
+    );
+  }
+
+  Widget _buildMobileDrawer() {
+    return Drawer(
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [primary, secondary],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 50),
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  Text(
+                    'PRENATAL PATIENT',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 12,
+                      fontFamily: 'Regular',
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            _buildMenuItem('PERSONAL DETAILS', true),
+            _buildMenuItem('EDUCATIONAL\nLEARNERS', false),
+            _buildMenuItem('HISTORY OF\nCHECK UP', false),
+            _buildMenuItem('REQUEST &\nNOTIFICATION APPOINTMENT', false),
+            _buildMenuItem('TRANSFER OF\nRECORD REQUEST', false),
+            _buildMenuItem('CHANGE PASSWORD', false),
+            _buildMenuItem('LOGOUT', false),
+          ],
+        ),
       ),
     );
   }
