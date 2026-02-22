@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import 'package:maternity_clinic/utils/colors.dart';
+import 'package:maternity_clinic/utils/responsive_utils.dart';
 import 'package:maternity_clinic/screens/admin/admin_dashboard_screen.dart';
 import 'package:maternity_clinic/screens/admin/admin_appointment_management_screen.dart';
 import 'package:maternity_clinic/screens/admin/admin_appointment_scheduling_screen.dart';
@@ -138,23 +139,76 @@ class _AdminPatientRecordsScreenState extends State<AdminPatientRecordsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = context.isMobile;
+
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
+      appBar: isMobile ? AppBar(
+        backgroundColor: primary,
+        title: Text(
+          'PATIENT RECORDS',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: context.responsiveFontSize(16),
+            fontFamily: 'Bold',
+          ),
+        ),
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu, color: Colors.white),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
+      ) : null,
+      drawer: isMobile ? Drawer(
+        child: _buildSidebar(),
+      ) : null,
       body: Row(
         children: [
-          _buildSidebar(),
+          // Sidebar
+          if (!isMobile) _buildSidebar(),
+
+          // Main Content
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.all(30),
+              padding: context.responsivePadding,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildHeader(),
-                  const SizedBox(height: 20),
-                  _buildTypeToggle(),
-                  const SizedBox(height: 20),
-                  _buildSearchRow(),
-                  const SizedBox(height: 20),
+                  if (!isMobile) ...[
+                    // Desktop Header
+                    _buildHeader(),
+                    const SizedBox(height: 20),
+                    // Desktop Type Toggle
+                    _buildTypeToggle(),
+                    const SizedBox(height: 20),
+                    // Desktop Search Row
+                    _buildSearchRow(),
+                    const SizedBox(height: 20),
+                  ] else ...[
+                    // Mobile Header
+                    Text(
+                      'Patient Records',
+                      style: TextStyle(
+                        fontSize: context.responsiveFontSize(18),
+                        fontFamily: 'Bold',
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    // Mobile Type Toggle
+                    Column(
+                      children: [
+                        _buildToggleButton('PRENATAL PATIENT RECORD', 'PRENATAL'),
+                        const SizedBox(height: 8),
+                        _buildToggleButton('POSTNATAL PATIENT RECORD', 'POSTNATAL'),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    // Mobile Search Row
+                    _buildSearchRow(),
+                    const SizedBox(height: 12),
+                  ],
                   Expanded(
                     child: Container(
                       decoration: BoxDecoration(
@@ -277,8 +331,10 @@ class _AdminPatientRecordsScreenState extends State<AdminPatientRecordsScreen> {
   }
 
   Widget _buildPatientTable() {
-    return Column(
-      children: [
+    return IntrinsicWidth(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
           decoration: BoxDecoration(
@@ -371,7 +427,8 @@ class _AdminPatientRecordsScreenState extends State<AdminPatientRecordsScreen> {
         ..._filteredPatients
             .map((patient) => _buildPatientRow(patient))
             .toList(),
-      ],
+        ],
+      ),
     );
   }
 

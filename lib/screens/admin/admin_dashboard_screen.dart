@@ -11,6 +11,7 @@ import 'package:maternity_clinic/screens/admin/admin_patient_records_screen.dart
 import 'package:maternity_clinic/screens/admin/admin_transfer_requests_screen.dart';
 import 'package:maternity_clinic/services/audit_log_service.dart';
 import '../../utils/colors.dart';
+import '../../utils/responsive_utils.dart';
 import '../auth/home_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
@@ -390,12 +391,34 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = context.isMobile;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
+      appBar: isMobile ? AppBar(
+        backgroundColor: primary,
+        title: Text(
+          'ADMIN DASHBOARD',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: context.responsiveFontSize(18),
+            fontFamily: 'Bold',
+          ),
+        ),
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu, color: Colors.white),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
+      ) : null,
+      drawer: isMobile ? Drawer(
+        child: _buildSidebar(),
+      ) : null,
       body: Row(
         children: [
           // Sidebar
-          _buildSidebar(),
+          if (!isMobile) _buildSidebar(),
 
           // Main Content
           Expanded(
@@ -403,68 +426,122 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 ? Center(child: CircularProgressIndicator(color: primary))
                 : SingleChildScrollView(
                     controller: _scrollController,
-                    padding: const EdgeInsets.all(30),
+                    padding: context.responsivePadding,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Dashboard Header
-                        Container(
-                          margin: const EdgeInsets.only(bottom: 30),
-                          padding: const EdgeInsets.all(25),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                primary.withOpacity(0.9),
-                                secondary.withOpacity(0.9)
-                              ],
-                              begin: Alignment.centerLeft,
-                              end: Alignment.centerRight,
-                            ),
-                            borderRadius: BorderRadius.circular(15),
-                            boxShadow: [
-                              BoxShadow(
-                                color: primary.withOpacity(0.2),
-                                blurRadius: 15,
-                                offset: const Offset(0, 5),
+                        if (!isMobile) ...[
+                          // Dashboard Header (Desktop)
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 30),
+                            padding: const EdgeInsets.all(25),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  primary.withOpacity(0.9),
+                                  secondary.withOpacity(0.9)
+                                ],
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
                               ),
-                            ],
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.dashboard_rounded,
-                                color: Colors.white,
-                                size: 40,
-                              ),
-                              const SizedBox(width: 20),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'ADMIN DASHBOARD',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 28,
-                                        fontFamily: 'Bold',
-                                        letterSpacing: 1,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 5),
-                                    Text(
-                                      'Welcome back, ${widget.userName}',
-                                      style: const TextStyle(
-                                        color: Colors.white70,
-                                        fontSize: 16,
-                                        fontFamily: 'Medium',
-                                      ),
-                                    ),
-                                  ],
+                              borderRadius: BorderRadius.circular(15),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: primary.withOpacity(0.2),
+                                  blurRadius: 15,
+                                  offset: const Offset(0, 5),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.dashboard_rounded,
+                                  color: Colors.white,
+                                  size: 40,
+                                ),
+                                const SizedBox(width: 20),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'ADMIN DASHBOARD',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 28,
+                                          fontFamily: 'Bold',
+                                          letterSpacing: 1,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 5),
+                                      Text(
+                                        'Welcome back, ${widget.userName}',
+                                        style: const TextStyle(
+                                          color: Colors.white70,
+                                          fontSize: 16,
+                                          fontFamily: 'Medium',
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
+                        ] else ...[
+                          // Mobile Header
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 20),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  primary.withOpacity(0.9),
+                                  secondary.withOpacity(0.9)
+                                ],
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.dashboard_rounded,
+                                  color: Colors.white,
+                                  size: 28,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'ADMIN DASHBOARD',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 18,
+                                          fontFamily: 'Bold',
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Welcome, ${widget.userName}',
+                                        style: const TextStyle(
+                                          color: Colors.white70,
+                                          fontSize: 12,
+                                          fontFamily: 'Medium',
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
 
                         if (_isAdmin && !_dummyDataSeeded)
                           Align(
@@ -552,86 +629,150 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           ),
 
                         // Home Quick Stats Cards
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Expanded(
-                              child: _buildStatCard(
-                                'Pending Requests',
-                                '$_pendingAppointments',
-                                Icons.pending_actions_rounded,
-                                Colors.orange,
-                                onTap: () {
-                                  _handleMenuNavigation(
-                                      'APPOINTMENT\nSCHEDULING');
-                                },
-                                onPdf: () {
-                                  _exportPendingRequestsPdf();
-                                },
+                        if (isMobile) ...[
+                          // Mobile: Stacked cards
+                          _buildStatCard(
+                            'Pending Requests',
+                            '$_pendingAppointments',
+                            Icons.pending_actions_rounded,
+                            Colors.orange,
+                            onTap: () {
+                              _handleMenuNavigation(
+                                  'APPOINTMENT\nSCHEDULING');
+                            },
+                            onPdf: () {
+                              _exportPendingRequestsPdf();
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          _buildStatCard(
+                            "Today's Appointments",
+                            '$_todaysAppointments',
+                            Icons.today_rounded,
+                            Colors.blue,
+                            onTap: () {
+                              _handleMenuNavigation(
+                                  'APPOINTMENT\nSCHEDULING');
+                            },
+                            onPdf: () {
+                              _exportTodaysAppointmentsPdf();
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          _buildStatCard(
+                            'High Risk Patients',
+                            '$_highRiskPatients',
+                            Icons.warning_amber_rounded,
+                            Colors.red,
+                            onPdf: () {
+                              _exportHighRiskPatientsPdf();
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          _buildStatCard(
+                            'Total Active Patients',
+                            '${_prenatalCount + _postnatalCount}',
+                            Icons.people_rounded,
+                            const Color(0xFF5DCED9),
+                            onPdf: () {
+                              _exportTotalActivePatientsPdf();
+                            },
+                          ),
+                          const SizedBox(height: 20),
+                        ] else ...[
+                          // Desktop: Row of cards
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Expanded(
+                                child: _buildStatCard(
+                                  'Pending Requests',
+                                  '$_pendingAppointments',
+                                  Icons.pending_actions_rounded,
+                                  Colors.orange,
+                                  onTap: () {
+                                    _handleMenuNavigation(
+                                        'APPOINTMENT\nSCHEDULING');
+                                  },
+                                  onPdf: () {
+                                    _exportPendingRequestsPdf();
+                                  },
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 20),
-                            Expanded(
-                              child: _buildStatCard(
-                                "Today's Appointments",
-                                '$_todaysAppointments',
-                                Icons.today_rounded,
-                                Colors.blue,
-                                onTap: () {
-                                  _handleMenuNavigation(
-                                      'APPOINTMENT\nSCHEDULING');
-                                },
-                                onPdf: () {
-                                  _exportTodaysAppointmentsPdf();
-                                },
+                              const SizedBox(width: 20),
+                              Expanded(
+                                child: _buildStatCard(
+                                  "Today's Appointments",
+                                  '$_todaysAppointments',
+                                  Icons.today_rounded,
+                                  Colors.blue,
+                                  onTap: () {
+                                    _handleMenuNavigation(
+                                        'APPOINTMENT\nSCHEDULING');
+                                  },
+                                  onPdf: () {
+                                    _exportTodaysAppointmentsPdf();
+                                  },
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 20),
-                            Expanded(
-                              child: _buildStatCard(
-                                'High Risk Patients',
-                                '$_highRiskPatients',
-                                Icons.warning_amber_rounded,
-                                Colors.red,
-                                onPdf: () {
-                                  _exportHighRiskPatientsPdf();
-                                },
+                              const SizedBox(width: 20),
+                              Expanded(
+                                child: _buildStatCard(
+                                  'High Risk Patients',
+                                  '$_highRiskPatients',
+                                  Icons.warning_amber_rounded,
+                                  Colors.red,
+                                  onPdf: () {
+                                    _exportHighRiskPatientsPdf();
+                                  },
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 20),
-                            Expanded(
-                              child: _buildStatCard(
-                                'Total Active Patients',
-                                '${_prenatalCount + _postnatalCount}',
-                                Icons.people_rounded,
-                                const Color(0xFF5DCED9),
-                                onPdf: () {
-                                  _exportTotalActivePatientsPdf();
-                                },
+                              const SizedBox(width: 20),
+                              Expanded(
+                                child: _buildStatCard(
+                                  'Total Active Patients',
+                                  '${_prenatalCount + _postnatalCount}',
+                                  Icons.people_rounded,
+                                  const Color(0xFF5DCED9),
+                                  onPdf: () {
+                                    _exportTotalActivePatientsPdf();
+                                  },
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 30),
+                            ],
+                          ),
+                          const SizedBox(height: 30),
+                        ],
 
                         // Top Row - Charts (Admin and Nurse)
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Expanded(
-                              child: _buildPrenatalPostnatalChart(),
-                            ),
-                            const SizedBox(width: 20),
-                            Expanded(
-                              child: _buildAgeGroupChart(),
-                            ),
-                            const SizedBox(width: 20),
-                            Expanded(
-                              child: _buildDailyPatientChart(),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 30),
+                        if (isMobile) ...[
+                          // Mobile: Stacked charts
+                          _buildPrenatalPostnatalChart(),
+                          const SizedBox(height: 16),
+                          _buildAgeGroupChart(),
+                          const SizedBox(height: 16),
+                          _buildDailyPatientChart(),
+                          const SizedBox(height: 20),
+                        ] else ...[
+                          // Desktop: Row of charts
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Expanded(
+                                child: _buildPrenatalPostnatalChart(),
+                              ),
+                              const SizedBox(width: 20),
+                              Expanded(
+                                child: _buildAgeGroupChart(),
+                              ),
+                              const SizedBox(width: 20),
+                              Expanded(
+                                child: _buildDailyPatientChart(),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 30),
+                        ],
 
                         // Bottom - Line Chart
                         _buildHistoryCountingChart(),

@@ -587,13 +587,16 @@ class _AdminStaffManagementScreenState extends State<AdminStaffManagementScreen>
   }
 
   Widget _buildStaffTable() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: StreamBuilder<QuerySnapshot>(
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: IntrinsicWidth(
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: StreamBuilder<QuerySnapshot>(
         stream: _firestore
             .collection('staffAccounts')
             .orderBy('createdAt', descending: true)
@@ -762,6 +765,8 @@ class _AdminStaffManagementScreenState extends State<AdminStaffManagementScreen>
             ],
           );
         },
+      ),
+        ),
       ),
     );
   }

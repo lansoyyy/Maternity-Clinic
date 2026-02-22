@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:maternity_clinic/utils/colors.dart';
+import 'package:maternity_clinic/utils/responsive_utils.dart';
 import 'package:maternity_clinic/services/notification_service.dart';
 import 'package:maternity_clinic/services/audit_log_service.dart';
 
@@ -2201,77 +2202,180 @@ class _AdminAppointmentSchedulingScreenState
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = context.isMobile;
+
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
+      appBar: isMobile ? AppBar(
+        backgroundColor: primary,
+        title: Text(
+          'APPROVE SCHEDULES',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: context.responsiveFontSize(18),
+            fontFamily: 'Bold',
+          ),
+        ),
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu, color: Colors.white),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
+      ) : null,
+      drawer: isMobile ? Drawer(
+        child: _buildSidebar(),
+      ) : null,
       body: Row(
         children: [
           // Sidebar
-          _buildSidebar(),
+          if (!isMobile) _buildSidebar(),
 
           // Main Content
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.all(30),
+              padding: context.responsivePadding,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header
-                  Row(
-                    children: const [
-                      Icon(Icons.event_available,
-                          size: 28, color: Colors.black87),
-                      SizedBox(width: 12),
-                      Text(
-                        'Approve Schedules',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontFamily: 'Bold',
-                          color: Colors.black87,
+                  if (!isMobile) ...[
+                    // Header (Desktop)
+                    Row(
+                      children: const [
+                        Icon(Icons.event_available,
+                            size: 28, color: Colors.black87),
+                        SizedBox(width: 12),
+                        Text(
+                          'Approve Schedules',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontFamily: 'Bold',
+                            color: Colors.black87,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
 
-                  // Filters: Prenatal/Postnatal + Search
-                  Row(
-                    children: [
-                      ToggleButtons(
-                        isSelected: [
-                          _selectedMaternityFilter == 'PRENATAL',
-                          _selectedMaternityFilter == 'POSTNATAL',
-                        ],
-                        onPressed: (index) {
-                          setState(() {
-                            _selectedMaternityFilter =
-                                index == 0 ? 'PRENATAL' : 'POSTNATAL';
-                          });
-                        },
-                        borderRadius: BorderRadius.circular(20),
-                        selectedColor: Colors.white,
-                        color: Colors.black87,
-                        fillColor: primary,
-                        constraints: const BoxConstraints(
-                          minHeight: 36,
-                          minWidth: 140,
+                    // Filters: Prenatal/Postnatal + Search (Desktop)
+                    Row(
+                      children: [
+                        ToggleButtons(
+                          isSelected: [
+                            _selectedMaternityFilter == 'PRENATAL',
+                            _selectedMaternityFilter == 'POSTNATAL',
+                          ],
+                          onPressed: (index) {
+                            setState(() {
+                              _selectedMaternityFilter =
+                                    index == 0 ? 'PRENATAL' : 'POSTNATAL';
+                            });
+                          },
+                          borderRadius: BorderRadius.circular(20),
+                          selectedColor: Colors.white,
+                          color: Colors.black87,
+                          fillColor: primary,
+                          constraints: const BoxConstraints(
+                            minHeight: 36,
+                            minWidth: 140,
+                          ),
+                          children: const [
+                            Text(
+                              'Prenatal Approved',
+                              style:
+                                  TextStyle(fontFamily: 'Medium', fontSize: 12),
+                            ),
+                            Text(
+                              'Postnatal Approved',
+                              style:
+                                  TextStyle(fontFamily: 'Medium', fontSize: 12),
+                            ),
+                          ],
                         ),
-                        children: const [
-                          Text(
-                            'Prenatal Approved',
-                            style:
-                                TextStyle(fontFamily: 'Medium', fontSize: 12),
+                        const Spacer(),
+                        SizedBox(
+                          width: 260,
+                          child: TextField(
+                            controller: _searchController,
+                            onChanged: (value) {
+                              setState(() {
+                                _searchQuery = value.trim().toLowerCase();
+                              });
+                            },
+                            decoration: InputDecoration(
+                              hintText: 'Search name...',
+                              prefixIcon: const Icon(Icons.search, size: 18),
+                              isDense: true,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 10,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                            ),
                           ),
-                          Text(
-                            'Postnatal Approved',
-                            style:
-                                TextStyle(fontFamily: 'Medium', fontSize: 12),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                  ] else ...[
+                    // Mobile Header
+                    Row(
+                      children: [
+                        Icon(Icons.event_available,
+                            size: 24, color: Colors.black87),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Approve Schedules',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontFamily: 'Bold',
+                            color: Colors.black87,
                           ),
-                        ],
-                      ),
-                      const Spacer(),
-                      SizedBox(
-                        width: 260,
-                        child: TextField(
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Mobile Filters
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        ToggleButtons(
+                          isSelected: [
+                            _selectedMaternityFilter == 'PRENATAL',
+                            _selectedMaternityFilter == 'POSTNATAL',
+                          ],
+                          onPressed: (index) {
+                            setState(() {
+                              _selectedMaternityFilter =
+                                    index == 0 ? 'PRENATAL' : 'POSTNATAL';
+                            });
+                          },
+                          borderRadius: BorderRadius.circular(20),
+                          selectedColor: Colors.white,
+                          color: Colors.black87,
+                          fillColor: primary,
+                          constraints: const BoxConstraints(
+                            minHeight: 36,
+                            minWidth: 140,
+                          ),
+                          children: const [
+                            Text(
+                              'Prenatal Approved',
+                              style:
+                                  TextStyle(fontFamily: 'Medium', fontSize: 12),
+                            ),
+                            Text(
+                              'Postnatal Approved',
+                              style:
+                                  TextStyle(fontFamily: 'Medium', fontSize: 12),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
                           controller: _searchController,
                           onChanged: (value) {
                             setState(() {
@@ -2283,7 +2387,7 @@ class _AdminAppointmentSchedulingScreenState
                             prefixIcon: const Icon(Icons.search, size: 18),
                             isDense: true,
                             contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 10,
+                              horizontal: 12,
                               vertical: 10,
                             ),
                             border: OutlineInputBorder(
@@ -2291,10 +2395,10 @@ class _AdminAppointmentSchedulingScreenState
                             ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                  ],
 
                   // Appointments Table
                   Expanded(
@@ -2635,8 +2739,10 @@ class _AdminAppointmentSchedulingScreenState
     }).toList();
 
     return SingleChildScrollView(
-      child: Column(
-        children: [
+      child: IntrinsicWidth(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
           // Table Header
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
@@ -2692,6 +2798,7 @@ class _AdminAppointmentSchedulingScreenState
           }).toList(),
         ],
       ),
+        ),
     );
   }
 

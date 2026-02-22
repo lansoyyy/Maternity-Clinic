@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:maternity_clinic/screens/admin/admin_postnatal_patient_detail_screen.dart';
 import 'package:maternity_clinic/screens/transfer_record_request_screen.dart';
 import 'package:maternity_clinic/utils/colors.dart';
+import 'package:maternity_clinic/utils/responsive_utils.dart';
 
 import 'admin_prenatal_records_screen.dart';
 import 'admin_appointment_management_screen.dart';
@@ -575,56 +576,141 @@ class _AdminPostnatalRecordsScreenState
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = context.isMobile;
+
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
+      appBar: isMobile ? AppBar(
+        backgroundColor: primary,
+        title: Text(
+          'POSTNATAL RECORDS',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: context.responsiveFontSize(16),
+            fontFamily: 'Bold',
+          ),
+        ),
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu, color: Colors.white),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
+      ) : null,
+      drawer: isMobile ? Drawer(
+        child: _buildSidebar(),
+      ) : null,
       body: Row(
         children: [
           // Sidebar
-          _buildSidebar(),
+          if (!isMobile) _buildSidebar(),
 
           // Main Content
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.all(30),
+              padding: context.responsivePadding,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Search and Filter Row
-                  Row(
-                    children: [
-                      // Search Field
-                      Container(
-                        width: 250,
-                        child: TextField(
-                          controller: _searchController,
-                          decoration: InputDecoration(
-                            hintText: 'SEARCH NAME OR ID',
-                            hintStyle: TextStyle(
+                  if (!isMobile) ...[
+                    // Desktop Search and Filter Row
+                    Row(
+                      children: [
+                        // Search Field
+                        Container(
+                          width: 250,
+                          child: TextField(
+                            controller: _searchController,
+                            decoration: InputDecoration(
+                              hintText: 'SEARCH NAME OR ID',
+                              hintStyle: TextStyle(
+                                fontSize: 12,
+                                fontFamily: 'Regular',
+                                color: Colors.grey.shade600,
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey.shade200,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 15,
+                                vertical: 12,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide.none,
+                              ),
+                            ),
+                            style: const TextStyle(
                               fontSize: 12,
                               fontFamily: 'Regular',
-                              color: Colors.grey.shade600,
                             ),
-                            filled: true,
-                            fillColor: Colors.grey.shade200,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 15,
-                              vertical: 12,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide.none,
-                            ),
-                          ),
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontFamily: 'Regular',
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 20),
+                        const SizedBox(width: 20),
 
-                      // Active Filter Button
-                      ElevatedButton(
+                        // Active Filter Button
+                        ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              _selectedFilter = 'ACTIVE';
+                            });
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _selectedFilter == 'ACTIVE'
+                                ? Colors.grey.shade300
+                                : Colors.grey.shade200,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 25,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: const Text(
+                            'ACTIVE',
+                            style: TextStyle(
+                              color: Colors.black,
+                              fontSize: 12,
+                              fontFamily: 'Bold',
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 30),
+                  ] else ...[
+                    // Mobile Search Field
+                    TextField(
+                      controller: _searchController,
+                      decoration: InputDecoration(
+                        hintText: 'SEARCH NAME OR ID',
+                        hintStyle: TextStyle(
+                          fontSize: 12,
+                          fontFamily: 'Regular',
+                          color: Colors.grey.shade600,
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey.shade200,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 15,
+                          vertical: 12,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontFamily: 'Regular',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    // Mobile Active Filter Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
                         onPressed: () {
                           setState(() {
                             _selectedFilter = 'ACTIVE';
@@ -652,9 +738,9 @@ class _AdminPostnatalRecordsScreenState
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 30),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
 
                   // Table
                   Expanded(
@@ -878,8 +964,10 @@ class _AdminPostnatalRecordsScreenState
   }
 
   Widget _buildPatientTable() {
-    return Column(
-      children: [
+    return IntrinsicWidth(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
         // Table Header
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
@@ -913,7 +1001,8 @@ class _AdminPostnatalRecordsScreenState
         ..._filteredPatients.map((patient) {
           return _buildTableRow(patient);
         }).toList(),
-      ],
+        ],
+      ),
     );
   }
 

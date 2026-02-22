@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:maternity_clinic/services/audit_log_service.dart';
 import 'package:maternity_clinic/services/notification_service.dart';
 import '../../utils/colors.dart';
+import '../../utils/responsive_utils.dart';
 import 'admin_dashboard_screen.dart';
 import 'admin_patient_records_screen.dart';
 import 'admin_appointment_scheduling_screen.dart';
@@ -182,21 +183,49 @@ class _AdminTransferRequestsScreenState
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = context.isMobile;
+
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
+      appBar: isMobile ? AppBar(
+        backgroundColor: primary,
+        title: Text(
+          'TRANSFER REQUESTS',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: context.responsiveFontSize(16),
+            fontFamily: 'Bold',
+          ),
+        ),
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu, color: Colors.white),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
+      ) : null,
+      drawer: isMobile ? Drawer(
+        child: _buildSidebar(),
+      ) : null,
       body: Row(
         children: [
-          _buildSidebar(),
+          // Sidebar
+          if (!isMobile) _buildSidebar(),
+
+          // Main Content
           Expanded(
-            child: Column(
-              children: [
-                _buildHeader(),
-                Expanded(
-                  child: _isLoading
-                      ? Center(child: CircularProgressIndicator(color: primary))
-                      : _buildRequestsTable(),
-                ),
-              ],
+            child: Padding(
+              padding: context.responsivePadding,
+              child: Column(
+                children: [
+                  _buildHeader(),
+                  Expanded(
+                    child: _isLoading
+                        ? Center(child: CircularProgressIndicator(color: primary))
+                        : _buildRequestsTable(),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -513,8 +542,10 @@ class _AdminTransferRequestsScreenState
           borderRadius: BorderRadius.circular(10),
           border: Border.all(color: Colors.grey.shade300),
         ),
-        child: Column(
-          children: [
+        child: IntrinsicWidth(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
             // Table Header
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
@@ -554,6 +585,7 @@ class _AdminTransferRequestsScreenState
               );
             }).toList(),
           ],
+          ),
         ),
       ),
     );

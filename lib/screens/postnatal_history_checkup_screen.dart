@@ -783,9 +783,9 @@ class _PostnatalHistoryCheckupScreenState
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minWidth: 800),
+        child: IntrinsicWidth(
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Table Header
               Container(

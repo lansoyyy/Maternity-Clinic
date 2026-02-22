@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:maternity_clinic/services/audit_log_service.dart';
 import 'package:maternity_clinic/services/notification_service.dart';
+import 'package:maternity_clinic/utils/responsive_utils.dart';
 
 import 'admin_dashboard_screen.dart';
 import 'admin_appointment_scheduling_screen.dart';
@@ -543,23 +544,96 @@ class _AdminAppointmentManagementScreenState
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = context.isMobile;
+
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
+      appBar: isMobile ? AppBar(
+        backgroundColor: primary,
+        title: Text(
+          'APPOINTMENT MANAGEMENT',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: context.responsiveFontSize(16),
+            fontFamily: 'Bold',
+          ),
+        ),
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu, color: Colors.white),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
+      ) : null,
+      drawer: isMobile ? Drawer(
+        child: _buildSidebar(),
+      ) : null,
       body: Row(
         children: [
-          _buildSidebar(),
+          // Sidebar
+          if (!isMobile) _buildSidebar(),
+
+          // Main Content
           Expanded(
             child: _isLoading
                 ? Center(child: CircularProgressIndicator(color: primary))
                 : SingleChildScrollView(
-                    padding: const EdgeInsets.all(30),
+                    padding: context.responsivePadding,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildHeader(),
-                        const SizedBox(height: 20),
-                        _buildTabButtons(),
-                        const SizedBox(height: 20),
+                        if (!isMobile) ...[
+                          // Desktop Header
+                          _buildHeader(),
+                          const SizedBox(height: 20),
+                          // Desktop Tab Buttons
+                          _buildTabButtons(),
+                          const SizedBox(height: 20),
+                        ] else ...[
+                          // Mobile Header
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.shade200,
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.event_note, size: 24, color: Colors.black87),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Appointment Management',
+                                    style: TextStyle(
+                                      fontSize: context.responsiveFontSize(16),
+                                      fontFamily: 'Bold',
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          // Mobile Tab Buttons
+                          Column(
+                            children: [
+                              _buildTabButton('Prenatal Appointments', 'prenatal'),
+                              const SizedBox(height: 8),
+                              _buildTabButton('Postnatal Appointments', 'postnatal'),
+                              const SizedBox(height: 8),
+                              _buildTabButton('Transfer of Record Request', 'transfer'),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                        ],
                         if (_selectedTab == 'prenatal')
                           _buildPrenatalSection()
                         else if (_selectedTab == 'postnatal')
@@ -753,36 +827,46 @@ class _AdminAppointmentManagementScreenState
               ),
             )
           else ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              child: Row(
-                children: const [
-                  Expanded(
-                      flex: 1, child: Text('No.', textAlign: TextAlign.center)),
-                  Expanded(
-                      flex: 3,
-                      child: Text('Name', textAlign: TextAlign.center)),
-                  Expanded(
-                      flex: 2,
-                      child: Text('Status', textAlign: TextAlign.center)),
-                  Expanded(
-                      flex: 3,
-                      child: Text('Appointment Request Date',
-                          textAlign: TextAlign.center)),
-                  Expanded(
-                      flex: 3,
-                      child: Text('Action', textAlign: TextAlign.center)),
-                  Expanded(
-                      flex: 1, child: Text('', textAlign: TextAlign.center)),
-                ],
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: IntrinsicWidth(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      child: Row(
+                        children: const [
+                          Expanded(
+                              flex: 1, child: Text('No.', textAlign: TextAlign.center)),
+                          Expanded(
+                              flex: 3,
+                              child: Text('Name', textAlign: TextAlign.center)),
+                          Expanded(
+                              flex: 2,
+                              child: Text('Status', textAlign: TextAlign.center)),
+                          Expanded(
+                              flex: 3,
+                              child: Text('Appointment Request Date',
+                                  textAlign: TextAlign.center)),
+                          Expanded(
+                              flex: 3,
+                              child: Text('Action', textAlign: TextAlign.center)),
+                          Expanded(
+                              flex: 1, child: Text('', textAlign: TextAlign.center)),
+                        ],
+                      ),
+                    ),
+                    const Divider(height: 1),
+                    ...appointments.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final appt = entry.value;
+                      return _buildAppointmentRow(index + 1, appt);
+                    }).toList(),
+                  ],
+                ),
               ),
             ),
-            const Divider(height: 1),
-            ...appointments.asMap().entries.map((entry) {
-              final index = entry.key;
-              final appt = entry.value;
-              return _buildAppointmentRow(index + 1, appt);
-            }).toList(),
           ],
         ],
       ),
@@ -981,39 +1065,49 @@ class _AdminAppointmentManagementScreenState
               ),
             )
           else ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              child: Row(
-                children: const [
-                  Expanded(
-                      flex: 1, child: Text('No.', textAlign: TextAlign.center)),
-                  Expanded(
-                      flex: 3,
-                      child: Text('Patient Name', textAlign: TextAlign.center)),
-                  Expanded(
-                      flex: 2,
-                      child: Text('Patient Type', textAlign: TextAlign.center)),
-                  Expanded(
-                      flex: 3,
-                      child: Text('Transfer To', textAlign: TextAlign.center)),
-                  Expanded(
-                      flex: 3,
-                      child: Text('Date Request', textAlign: TextAlign.center)),
-                  Expanded(
-                      flex: 2,
-                      child: Text('Status', textAlign: TextAlign.center)),
-                  Expanded(
-                      flex: 2,
-                      child: Text('Action', textAlign: TextAlign.center)),
-                ],
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: IntrinsicWidth(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      child: Row(
+                        children: const [
+                          Expanded(
+                              flex: 1, child: Text('No.', textAlign: TextAlign.center)),
+                          Expanded(
+                              flex: 3,
+                              child: Text('Patient Name', textAlign: TextAlign.center)),
+                          Expanded(
+                              flex: 2,
+                              child: Text('Patient Type', textAlign: TextAlign.center)),
+                          Expanded(
+                              flex: 3,
+                              child: Text('Transfer To', textAlign: TextAlign.center)),
+                          Expanded(
+                              flex: 3,
+                              child: Text('Date Request', textAlign: TextAlign.center)),
+                          Expanded(
+                              flex: 2,
+                              child: Text('Status', textAlign: TextAlign.center)),
+                          Expanded(
+                              flex: 2,
+                              child: Text('Action', textAlign: TextAlign.center)),
+                        ],
+                      ),
+                    ),
+                    const Divider(height: 1),
+                    ..._filteredTransferRequests.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final req = entry.value;
+                      return _buildTransferRow(index + 1, req);
+                    }).toList(),
+                  ],
+                ),
               ),
             ),
-            const Divider(height: 1),
-            ..._filteredTransferRequests.asMap().entries.map((entry) {
-              final index = entry.key;
-              final req = entry.value;
-              return _buildTransferRow(index + 1, req);
-            }).toList(),
           ],
         ],
       ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../utils/colors.dart';
+import '../../utils/responsive_utils.dart';
 import 'admin_dashboard_screen.dart';
 import 'admin_appointment_management_screen.dart';
 import 'admin_appointment_scheduling_screen.dart';
@@ -484,24 +485,52 @@ class _AdminPostnatalPatientDetailScreenState
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = context.isMobile;
+    
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
+      appBar: isMobile ? AppBar(
+        backgroundColor: primary,
+        title: Text(
+          'PATIENT DETAILS',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: context.responsiveFontSize(16),
+            fontFamily: 'Bold',
+          ),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        actions: [
+          Builder(
+            builder: (context) => IconButton(
+              icon: const Icon(Icons.menu, color: Colors.white),
+              onPressed: () => Scaffold.of(context).openDrawer(),
+            ),
+          ),
+        ],
+      ) : null,
+      drawer: isMobile ? Drawer(
+        child: _buildSidebar(),
+      ) : null,
       body: Row(
         children: [
           // Sidebar
-          _buildSidebar(),
+          if (!isMobile) _buildSidebar(),
 
           // Main Content
           Expanded(
             child: _isLoading
                 ? Center(child: CircularProgressIndicator(color: primary))
                 : SingleChildScrollView(
-                    padding: const EdgeInsets.all(30),
+                    padding: EdgeInsets.all(isMobile ? 16 : 30),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Back Button
-                        Row(
+                        if (!isMobile) Row(
                           children: [
                             IconButton(
                               onPressed: () {
@@ -522,22 +551,33 @@ class _AdminPostnatalPatientDetailScreenState
                             ),
                           ],
                         ),
-                        const SizedBox(height: 20),
+                        if (!isMobile) const SizedBox(height: 20),
 
                         // View Toggle
-                        Row(
-                          children: [
-                            _buildViewToggleButton(
-                                'Personal Details', 'personal'),
-                            const SizedBox(width: 10),
-                            _buildViewToggleButton(
-                                'History Checkup', 'history'),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
+                        isMobile
+                          ? Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                _buildViewToggleButton(
+                                    'Personal Details', 'personal'),
+                                const SizedBox(height: 8),
+                                _buildViewToggleButton(
+                                    'History Checkup', 'history'),
+                              ],
+                            )
+                          : Row(
+                              children: [
+                                _buildViewToggleButton(
+                                    'Personal Details', 'personal'),
+                                const SizedBox(width: 10),
+                                _buildViewToggleButton(
+                                    'History Checkup', 'history'),
+                              ],
+                            ),
+                        SizedBox(height: isMobile ? 16 : 20),
 
                         if (_activeView == 'personal') ...[
-                          Row(
+                          if (!isMobile) Row(
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
                               TextButton.icon(
@@ -550,15 +590,15 @@ class _AdminPostnatalPatientDetailScreenState
                               ),
                             ],
                           ),
-                          const SizedBox(height: 10),
+                          if (!isMobile) const SizedBox(height: 10),
                           _buildBasicInformationSection(),
-                          const SizedBox(height: 20),
+                          SizedBox(height: isMobile ? 16 : 20),
                           _buildRequiredProfileSection(),
-                          const SizedBox(height: 20),
+                          SizedBox(height: isMobile ? 16 : 20),
                           _buildDeliveryAndInfantSection(),
                         ] else ...[
                           _buildObstetricHistoryCard(),
-                          const SizedBox(height: 30),
+                          SizedBox(height: isMobile ? 20 : 30),
                           _buildCheckupHistoryTable(),
                         ],
                       ],
@@ -1218,13 +1258,16 @@ class _AdminPostnatalPatientDetailScreenState
       );
     }
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: Column(
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: IntrinsicWidth(
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
@@ -1285,6 +1328,8 @@ class _AdminPostnatalPatientDetailScreenState
             );
           }).toList(),
         ],
+          ),
+        ),
       ),
     );
   }
