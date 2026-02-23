@@ -395,26 +395,30 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
-      appBar: isMobile ? AppBar(
-        backgroundColor: primary,
-        title: Text(
-          'ADMIN DASHBOARD',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: context.responsiveFontSize(18),
-            fontFamily: 'Bold',
-          ),
-        ),
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
-      ) : null,
-      drawer: isMobile ? Drawer(
-        child: _buildSidebar(),
-      ) : null,
+      appBar: isMobile
+          ? AppBar(
+              backgroundColor: primary,
+              title: Text(
+                'ADMIN DASHBOARD',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: context.responsiveFontSize(18),
+                  fontFamily: 'Bold',
+                ),
+              ),
+              leading: Builder(
+                builder: (context) => IconButton(
+                  icon: const Icon(Icons.menu, color: Colors.white),
+                  onPressed: () => Scaffold.of(context).openDrawer(),
+                ),
+              ),
+            )
+          : null,
+      drawer: isMobile
+          ? Drawer(
+              child: _buildSidebar(),
+            )
+          : null,
       body: Row(
         children: [
           // Sidebar
@@ -463,7 +467,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                 const SizedBox(width: 20),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       const Text(
                                         'ADMIN DASHBOARD',
@@ -515,7 +520,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       const Text(
                                         'ADMIN DASHBOARD',
@@ -637,8 +643,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             Icons.pending_actions_rounded,
                             Colors.orange,
                             onTap: () {
-                              _handleMenuNavigation(
-                                  'APPOINTMENT\nSCHEDULING');
+                              _handleMenuNavigation('APPOINTMENT\nSCHEDULING');
                             },
                             onPdf: () {
                               _exportPendingRequestsPdf();
@@ -651,8 +656,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             Icons.today_rounded,
                             Colors.blue,
                             onTap: () {
-                              _handleMenuNavigation(
-                                  'APPOINTMENT\nSCHEDULING');
+                              _handleMenuNavigation('APPOINTMENT\nSCHEDULING');
                             },
                             onPdf: () {
                               _exportTodaysAppointmentsPdf();
@@ -1139,7 +1143,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ],
           ),
           const SizedBox(height: 20),
-          Expanded(
+          SizedBox(
+            height: 200,
             child: LineChart(
               LineChartData(
                 gridData: FlGridData(
@@ -3300,7 +3305,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ],
           ),
           const SizedBox(height: 10),
-          Expanded(
+          SizedBox(
+            height: 250,
             child: total > 0
                 ? PieChart(
                     PieChartData(
@@ -3458,7 +3464,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ],
           ),
           const SizedBox(height: 20),
-          Expanded(
+          SizedBox(
+            height: 200,
             child: totalPatients > 0
                 ? PieChart(
                     PieChartData(
