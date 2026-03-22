@@ -231,7 +231,22 @@ class _AdminPatientRecordsScreenState extends State<AdminPatientRecordsScreen> {
                                   ),
                                 )
                               : SingleChildScrollView(
-                                  child: _buildPatientTable(),
+                                  scrollDirection: Axis.horizontal,
+                                  child: LayoutBuilder(
+                                    builder: (context, constraints) {
+                                      final minWidth = constraints.maxWidth < 1040
+                                          ? 1040.0
+                                          : constraints.maxWidth;
+
+                                      return ConstrainedBox(
+                                        constraints:
+                                            BoxConstraints(minWidth: minWidth),
+                                        child: SingleChildScrollView(
+                                          child: _buildPatientTable(),
+                                        ),
+                                      );
+                                    },
+                                  ),
                                 ),
                     ),
                   ),
@@ -331,10 +346,9 @@ class _AdminPatientRecordsScreenState extends State<AdminPatientRecordsScreen> {
   }
 
   Widget _buildPatientTable() {
-    return IntrinsicWidth(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
           decoration: BoxDecoration(
@@ -427,8 +441,7 @@ class _AdminPatientRecordsScreenState extends State<AdminPatientRecordsScreen> {
         ..._filteredPatients
             .map((patient) => _buildPatientRow(patient))
             .toList(),
-        ],
-      ),
+      ],
     );
   }
 
@@ -979,7 +992,7 @@ class _AdminPatientRecordsScreenState extends State<AdminPatientRecordsScreen> {
 
   Widget _buildSidebar() {
     return Container(
-      width: 250,
+      width: context.isTablet ? 220 : 250,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [primary, secondary],
@@ -987,49 +1000,54 @@ class _AdminPatientRecordsScreenState extends State<AdminPatientRecordsScreen> {
           end: Alignment.bottomCenter,
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 30),
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.userName.toUpperCase(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontFamily: 'Bold',
-                    letterSpacing: 0.5,
-                  ),
+      child: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.only(top: 10, bottom: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.userName.toUpperCase(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontFamily: 'Bold',
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      widget.userRole.toUpperCase(),
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                        fontFamily: 'Medium',
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 5),
-                Text(
-                  widget.userRole.toUpperCase(),
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                    fontFamily: 'Medium',
-                    letterSpacing: 0.5,
-                  ),
-                ),
+              ),
+              const SizedBox(height: 12),
+              _buildMenuItem('DATA GRAPHS', false),
+              _buildMenuItem('APPOINTMENT MANAGEMENT', false),
+              _buildMenuItem('APPROVE SCHEDULES', false),
+              _buildMenuItem('PATIENT RECORDS', true),
+              if (widget.userRole.toLowerCase().trim() == 'admin') ...[
+                _buildMenuItem('HISTORY LOGS', false),
+                _buildMenuItem('ADD NEW STAFF/NURSE', false),
+                _buildMenuItem('CHANGE PASSWORD', false),
               ],
-            ),
+              _buildMenuItem('LOGOUT', false),
+            ],
           ),
-          const SizedBox(height: 20),
-          _buildMenuItem('DATA GRAPHS', false),
-          _buildMenuItem('APPOINTMENT MANAGEMENT', false),
-          _buildMenuItem('APPROVE SCHEDULES', false),
-          _buildMenuItem('PATIENT RECORDS', true),
-          if (widget.userRole.toLowerCase().trim() == 'admin') ...[
-            _buildMenuItem('HISTORY LOGS', false),
-            _buildMenuItem('ADD NEW STAFF/NURSE', false),
-            _buildMenuItem('CHANGE PASSWORD', false),
-          ],
-          _buildMenuItem('LOGOUT', false),
-        ],
+        ),
       ),
     );
   }
@@ -1049,7 +1067,7 @@ class _AdminPatientRecordsScreenState extends State<AdminPatientRecordsScreen> {
         },
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           decoration: BoxDecoration(
             color:
                 isActive ? Colors.white.withOpacity(0.2) : Colors.transparent,
@@ -1064,10 +1082,12 @@ class _AdminPatientRecordsScreenState extends State<AdminPatientRecordsScreen> {
             title,
             style: TextStyle(
               color: Colors.white,
-              fontSize: 14,
+              fontSize: context.responsiveFontSize(14),
               fontFamily: isActive ? 'Bold' : 'Medium',
               height: 1.3,
             ),
+            softWrap: true,
+            maxLines: 2,
           ),
         ),
       ),

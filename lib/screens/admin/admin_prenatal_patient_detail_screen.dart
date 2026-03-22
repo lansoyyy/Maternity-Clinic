@@ -607,7 +607,7 @@ class _AdminPrenatalPatientDetailScreenState
 
   Widget _buildSidebar() {
     return Container(
-      width: 250,
+      width: context.isTablet ? 220 : 250,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [primary, secondary],
@@ -615,52 +615,57 @@ class _AdminPrenatalPatientDetailScreenState
           end: Alignment.bottomCenter,
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 30),
-          // User Info
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.userName.toUpperCase(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontFamily: 'Bold',
-                    letterSpacing: 0.5,
-                  ),
+      child: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.only(top: 10, bottom: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // User Info
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.userName.toUpperCase(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontFamily: 'Bold',
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      widget.userRole.toUpperCase(),
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                        fontFamily: 'Medium',
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 5),
-                Text(
-                  widget.userRole.toUpperCase(),
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                    fontFamily: 'Medium',
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
+              ),
+              const SizedBox(height: 12),
 
-          // Menu Items
-          _buildMenuItem('DATA GRAPHS', false),
-          _buildMenuItem('APPOINTMENT MANAGEMENT', false),
-          _buildMenuItem('APPROVE SCHEDULES', false),
-          _buildMenuItem('PATIENT RECORDS', false),
-          if (widget.userRole.toLowerCase().trim() == 'admin') ...[
-            _buildMenuItem('HISTORY LOGS', false),
-            _buildMenuItem('ADD NEW STAFF/NURSE', false),
-            _buildMenuItem('CHANGE PASSWORD', false),
-          ],
-          _buildMenuItem('LOGOUT', false),
-        ],
+              // Menu Items
+              _buildMenuItem('DATA GRAPHS', false),
+              _buildMenuItem('APPOINTMENT MANAGEMENT', false),
+              _buildMenuItem('APPROVE SCHEDULES', false),
+              _buildMenuItem('PATIENT RECORDS', false),
+              if (widget.userRole.toLowerCase().trim() == 'admin') ...[
+                _buildMenuItem('HISTORY LOGS', false),
+                _buildMenuItem('ADD NEW STAFF/NURSE', false),
+                _buildMenuItem('CHANGE PASSWORD', false),
+              ],
+              _buildMenuItem('LOGOUT', false),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -678,7 +683,7 @@ class _AdminPrenatalPatientDetailScreenState
         },
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           decoration: BoxDecoration(
             color:
                 isActive ? Colors.white.withOpacity(0.2) : Colors.transparent,
@@ -693,10 +698,12 @@ class _AdminPrenatalPatientDetailScreenState
             title,
             style: TextStyle(
               color: Colors.white,
-              fontSize: 14,
+              fontSize: context.responsiveFontSize(14),
               fontFamily: isActive ? 'Bold' : 'Medium',
               height: 1.3,
             ),
+            softWrap: true,
+            maxLines: 2,
           ),
         ),
       ),
@@ -1275,10 +1282,17 @@ class _AdminPrenatalPatientDetailScreenState
       );
     }
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: IntrinsicWidth(
-        child: Container(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final minWidth = constraints.maxWidth < 860
+            ? 860.0
+            : constraints.maxWidth;
+
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minWidth: minWidth),
+            child: Container(
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(10),
@@ -1346,8 +1360,10 @@ class _AdminPrenatalPatientDetailScreenState
           }).toList(),
         ],
           ),
-        ),
-      ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -1448,6 +1464,9 @@ class _AdminPrenatalPatientDetailScreenState
     // Handle blood pressure - try to get systolic and diastolic separately
     String systolicBP = appointment['systolicBP']?.toString() ?? 'N/A';
     String diastolicBP = appointment['diastolicBP']?.toString() ?? 'N/A';
+    final String findings =
+      (appointment['clinicalFindings'] ?? appointment['findings'] ?? 'N/A')
+        .toString();
     
     // If separate fields are not available, try to parse from combined bloodPressure field
     if ((systolicBP == 'N/A' || diastolicBP == 'N/A') &&
@@ -1497,21 +1516,6 @@ class _AdminPrenatalPatientDetailScreenState
               appointment['firstPregnancy'] == true
                   ? 'First Pregnancy'
                   : '${appointment['pregnancyCount'] ?? 'N/A'}'),
-
-          const SizedBox(height: 10),
-          const Text(
-            'Medical Conditions:',
-            style: TextStyle(
-              fontSize: 14,
-              fontFamily: 'Bold',
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 5),
-          _buildDetailRow('High Blood Pressure:',
-              appointment['highBloodPressure'] == true ? 'Yes' : 'No'),
-          _buildDetailRow(
-              'Diabetes:', appointment['diabetes'] == true ? 'Yes' : 'No'),
 
           const SizedBox(height: 10),
           const Text(
@@ -1631,8 +1635,7 @@ class _AdminPrenatalPatientDetailScreenState
                 ),
                 const SizedBox(height: 10),
 
-                if (appointment['clinicalFindings'] != null &&
-                    appointment['clinicalFindings'].toString().isNotEmpty) ...[
+                if (findings.trim().isNotEmpty && findings != 'N/A') ...[
                   const Text(
                     'Findings:',
                     style: TextStyle(
@@ -1643,7 +1646,7 @@ class _AdminPrenatalPatientDetailScreenState
                   ),
                   const SizedBox(height: 5),
                   Text(
-                    appointment['clinicalFindings']?.toString() ?? 'N/A',
+                    findings,
                     style: TextStyle(
                       fontSize: 12,
                       fontFamily: 'Regular',
@@ -1682,34 +1685,59 @@ class _AdminPrenatalPatientDetailScreenState
   }
 
   Widget _buildDetailRow(String label, String value) {
+    final bool shouldStack = context.isMobile || context.isTablet;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 140,
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontSize: 12,
-                fontFamily: 'Bold',
-                color: Colors.black87,
-              ),
+      child: shouldStack
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontFamily: 'Bold',
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontFamily: 'Regular',
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+              ],
+            )
+          : Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 140,
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontFamily: 'Bold',
+                      color: Colors.black87,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontFamily: 'Regular',
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: TextStyle(
-                fontSize: 12,
-                fontFamily: 'Regular',
-                color: Colors.grey.shade700,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

@@ -2029,7 +2029,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   Widget _buildSidebar() {
     return Container(
-      width: 250,
+      width: context.isTablet ? 220 : 250,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [primary, secondary],
@@ -2037,57 +2037,62 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           end: Alignment.bottomCenter,
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 30),
-          // User Info
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.userName.toUpperCase(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontFamily: 'Bold',
-                    letterSpacing: 0.5,
-                  ),
+      child: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.only(top: 10, bottom: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // User Info
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.userName.toUpperCase(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontFamily: 'Bold',
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      widget.userRole.toUpperCase(),
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                        fontFamily: 'Medium',
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 5),
-                Text(
-                  widget.userRole.toUpperCase(),
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                    fontFamily: 'Medium',
-                    letterSpacing: 0.5,
-                  ),
-                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Menu Items
+              _buildMenuItem('DATA GRAPHS', true),
+              _buildMenuItem('APPOINTMENT MANAGEMENT', false),
+              _buildMenuItem('APPROVE SCHEDULES', false),
+              _buildMenuItem('PATIENT RECORDS', false),
+              if (_isAdmin) ...[
+                _buildMenuItem('HISTORY LOGS', false),
+                _buildMenuItem('ADD NEW STAFF/NURSE', false),
+                _buildMenuItem('CHANGE PASSWORD', false),
               ],
-            ),
-          ),
-          const SizedBox(height: 20),
 
-          // Menu Items
-          _buildMenuItem('DATA GRAPHS', true),
-          _buildMenuItem('APPOINTMENT MANAGEMENT', false),
-          _buildMenuItem('APPROVE SCHEDULES', false),
-          _buildMenuItem('PATIENT RECORDS', false),
-          if (_isAdmin) ...[
-            _buildMenuItem('HISTORY LOGS', false),
-            _buildMenuItem('ADD NEW STAFF/NURSE', false),
-            _buildMenuItem('CHANGE PASSWORD', false),
-          ],
-
-          // Logout Menu Item
-          Padding(
-            padding: const EdgeInsets.only(bottom: 20),
-            child: _buildLogoutMenuItem(),
+              // Logout Menu Item
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: _buildLogoutMenuItem(),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -2101,7 +2106,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         },
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           decoration: BoxDecoration(
             color:
                 isActive ? Colors.white.withOpacity(0.2) : Colors.transparent,
@@ -2116,10 +2121,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             title,
             style: TextStyle(
               color: Colors.white,
-              fontSize: 14,
+              fontSize: context.responsiveFontSize(14),
               fontFamily: isActive ? 'Bold' : 'Medium',
               height: 1.3,
             ),
+            softWrap: true,
+            maxLines: 2,
           ),
         ),
       ),
