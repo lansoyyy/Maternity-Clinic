@@ -16,6 +16,7 @@ class _AboutUsScreenState extends State<AboutUsScreen> {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = context.isMobile;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -28,42 +29,47 @@ class _AboutUsScreenState extends State<AboutUsScreen> {
             // Main Content
             Container(
               padding: EdgeInsets.symmetric(
-                horizontal: screenWidth * 0.08,
-                vertical: 60,
+                horizontal: isMobile ? 20 : screenWidth * 0.08,
+                vertical: isMobile ? 32 : 60,
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Page Title
-                  const Text(
-                    'ABOUT US',
-                    style: TextStyle(
-                      fontSize: 42,
-                      fontFamily: 'Bold',
-                      color: Colors.black,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Container(
-                    width: 100,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [primary, secondary],
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1180),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Page Title
+                      Text(
+                        'ABOUT US',
+                        style: TextStyle(
+                          fontSize: isMobile ? 30 : 42,
+                          fontFamily: 'Bold',
+                          color: Colors.black,
+                          letterSpacing: 1,
+                        ),
                       ),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
+                      const SizedBox(height: 10),
+                      Container(
+                        width: 100,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [primary, secondary],
+                          ),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      SizedBox(height: isMobile ? 28 : 40),
+
+                      // Staff Profiles + Mission & Vision
+                      _buildAboutSection(),
+                      SizedBox(height: isMobile ? 40 : 60),
+
+                      // Services Overview
+                      _buildServicesOverview(),
+                    ],
                   ),
-                  const SizedBox(height: 40),
-
-                  // Staff Profiles + Mission & Vision
-                  _buildAboutSection(),
-                  const SizedBox(height: 60),
-
-                  // Services Overview
-                  _buildServicesOverview(),
-                ],
+                ),
               ),
             ),
 
@@ -256,90 +262,117 @@ class _AboutUsScreenState extends State<AboutUsScreen> {
   Widget _buildAboutSection() {
     final isMobile = context.isMobile;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Center(
-          child: Column(
-            children: [
-              Image.asset(
-                'assets/images/figure.png',
-                height: isMobile ? 180 : 220,
-                fit: BoxFit.contain,
-              ),
-              const SizedBox(height: 20),
-              Text(
-                'WELCOME TO VICTORY LYING-IN CENTER',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: isMobile ? 18 : 22,
-                  fontFamily: 'Bold',
-                  color: Colors.black87,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              const SizedBox(height: 30),
-            ],
-          ),
-        ),
-        Text(
-          'OUR MISSION',
-          style: TextStyle(
-            fontSize: isMobile ? 20 : 22,
-            fontFamily: 'Bold',
-            color: Colors.black87,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'The Victory Lying-in Center is committed in serving the community by providing high quality care and medical services in a most affordable and compassionate manner.',
-          style: TextStyle(
-            fontSize: isMobile ? 14 : 15,
-            fontFamily: 'Regular',
-            color: Colors.black87,
-            height: 1.6,
-          ),
-        ),
-        const SizedBox(height: 24),
-        Text(
-          'OUR VISION',
-          style: TextStyle(
-            fontSize: isMobile ? 20 : 22,
-            fontFamily: 'Bold',
-            color: Colors.black87,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'The Victory Lying-in Center envisions to be a leading provider of excellent health care to achieve the highest level of quality in Maternal and Child Health care and promote the highest standard of obstetric, gynecologic and reproductive health through personalize clinical care to our patient',
-          style: TextStyle(
-            fontSize: isMobile ? 14 : 15,
-            fontFamily: 'Regular',
-            color: Colors.black87,
-            height: 1.6,
-          ),
-        ),
-        const SizedBox(height: 32),
-        Wrap(
-          spacing: isMobile ? 15 : 30,
-          runSpacing: isMobile ? 15 : 20,
-          alignment: WrapAlignment.center,
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 980),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            _StaffProfileCard(
-              name: 'OB - Maureen R. Higoy MD',
-              role: 'Obstetrician-Gynecologist',
+            Column(
+              children: [
+                Image.asset(
+                  'assets/images/figure.png',
+                  height: isMobile ? 180 : 220,
+                  fit: BoxFit.contain,
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'WELCOME TO VICTORY LYING-IN CENTER',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: isMobile ? 18 : 22,
+                    fontFamily: 'Bold',
+                    color: Colors.black87,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                SizedBox(height: isMobile ? 24 : 30),
+              ],
             ),
-            _StaffProfileCard(
-              name: 'Girlie Hagos',
-              role: 'Staff',
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(isMobile ? 20 : 28),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: primary.withOpacity(0.12)),
+                boxShadow: [
+                  BoxShadow(
+                    color: primary.withOpacity(0.08),
+                    blurRadius: 24,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'OUR MISSION',
+                    style: TextStyle(
+                      fontSize: isMobile ? 20 : 22,
+                      fontFamily: 'Bold',
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'The Victory Lying-in Center is committed in serving the community by providing high quality care and medical services in a most affordable and compassionate manner.',
+                    style: TextStyle(
+                      fontSize: isMobile ? 14 : 15,
+                      fontFamily: 'Regular',
+                      color: Colors.black87,
+                      height: 1.6,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'OUR VISION',
+                    style: TextStyle(
+                      fontSize: isMobile ? 20 : 22,
+                      fontFamily: 'Bold',
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'The Victory Lying-in Center envisions to be a leading provider of excellent health care to achieve the highest level of quality in Maternal and Child Health care and promote the highest standard of obstetric, gynecologic and reproductive health through personalize clinical care to our patient',
+                    style: TextStyle(
+                      fontSize: isMobile ? 14 : 15,
+                      fontFamily: 'Regular',
+                      color: Colors.black87,
+                      height: 1.6,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            _StaffProfileCard(
-              name: 'Aprilyn Ay-Ayen',
-              role: 'Staff',
+            SizedBox(height: isMobile ? 24 : 32),
+            Center(
+              child: Wrap(
+                spacing: isMobile ? 16 : 24,
+                runSpacing: isMobile ? 16 : 24,
+                alignment: WrapAlignment.center,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: const [
+                  _StaffProfileCard(
+                    name: 'OB - Maureen R. Higoy MD',
+                    role: 'Obstetrician-Gynecologist',
+                  ),
+                  _StaffProfileCard(
+                    name: 'Girlie Hagos',
+                    role: 'Staff',
+                  ),
+                  _StaffProfileCard(
+                    name: 'Aprilyn Ay-Ayen',
+                    role: 'Staff',
+                  ),
+                ],
+              ),
             ),
           ],
         ),
-      ],
+      ),
     );
   }
 
@@ -376,17 +409,21 @@ class _AboutUsScreenState extends State<AboutUsScreen> {
             ],
           )
         else
-          Row(
+          Wrap(
+            spacing: 30,
+            runSpacing: 30,
+            alignment: WrapAlignment.center,
             children: [
-              Expanded(
+              SizedBox(
+                width: 430,
                 child: _buildServiceCard(
                   'assets/images/ob-gyne.png',
                   'OB-GYNE',
                   'Comprehensive obstetrics and gynecology services for women\'s health',
                 ),
               ),
-              const SizedBox(width: 30),
-              Expanded(
+              SizedBox(
+                width: 430,
                 child: _buildServiceCard(
                   'assets/images/ultra sound.png',
                   'ULTRASOUND',
@@ -509,9 +546,11 @@ class _StaffProfileCard extends StatelessWidget {
     final isMobile = context.isMobile;
 
     return Container(
+      width: isMobile ? double.infinity : 250,
       constraints: BoxConstraints(
         maxWidth: isMobile ? 160 : 260,
       ),
+      padding: EdgeInsets.symmetric(horizontal: isMobile ? 6 : 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
