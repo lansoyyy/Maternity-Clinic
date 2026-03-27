@@ -348,12 +348,11 @@ class _AboutUsScreenState extends State<AboutUsScreen> {
               ),
             ),
             SizedBox(height: isMobile ? 24 : 32),
-            Center(
-              child: Wrap(
-                spacing: isMobile ? 16 : 24,
-                runSpacing: isMobile ? 16 : 24,
+            if (isMobile)
+              Wrap(
+                spacing: 16,
+                runSpacing: 16,
                 alignment: WrapAlignment.center,
-                crossAxisAlignment: WrapCrossAlignment.center,
                 children: const [
                   _StaffProfileCard(
                     name: 'OB - Maureen R. Higoy MD',
@@ -368,8 +367,27 @@ class _AboutUsScreenState extends State<AboutUsScreen> {
                     role: 'Staff',
                   ),
                 ],
+              )
+            else
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  _StaffProfileCard(
+                    name: 'OB - Maureen R. Higoy MD',
+                    role: 'Obstetrician-Gynecologist',
+                  ),
+                  SizedBox(width: 32),
+                  _StaffProfileCard(
+                    name: 'Girlie Hagos',
+                    role: 'Staff',
+                  ),
+                  SizedBox(width: 32),
+                  _StaffProfileCard(
+                    name: 'Aprilyn Ay-Ayen',
+                    role: 'Staff',
+                  ),
+                ],
               ),
-            ),
           ],
         ),
       ),

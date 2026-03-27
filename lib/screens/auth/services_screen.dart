@@ -492,11 +492,29 @@ class _ServicesScreenState extends State<ServicesScreen> {
   Widget _buildAdditionalServices() {
     final isMobile = context.isMobile;
     final isTablet = context.isTablet;
-    final double cardWidth = isMobile
-        ? double.infinity
-        : isTablet
-            ? 260
-            : 240;
+
+    final cards = [
+      _buildAdditionalServiceCard(
+        Icons.medical_services,
+        'Laboratory Services',
+        'Complete laboratory testing and diagnostic services',
+      ),
+      _buildAdditionalServiceCard(
+        Icons.hotel,
+        'Comfortable Rooms',
+        'Clean and comfortable lying-in rooms for mothers',
+      ),
+      _buildAdditionalServiceCard(
+        Icons.people,
+        'Lactation Support',
+        'Breastfeeding guidance and lactation consultation',
+      ),
+      _buildAdditionalServiceCard(
+        Icons.school,
+        'Prenatal Classes',
+        'Educational sessions for expecting parents',
+      ),
+    ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -511,47 +529,53 @@ class _ServicesScreenState extends State<ServicesScreen> {
           ),
         ),
         const SizedBox(height: 30),
-        Center(
-          child: Wrap(
-            spacing: isMobile ? 14 : 20,
-            runSpacing: isMobile ? 14 : 20,
-            alignment: WrapAlignment.center,
+        if (isMobile)
+          Column(
             children: [
-              SizedBox(
-                width: cardWidth,
-                child: _buildAdditionalServiceCard(
-                  Icons.medical_services,
-                  'Laboratory Services',
-                  'Complete laboratory testing and diagnostic services',
-                ),
+              cards[0],
+              const SizedBox(height: 14),
+              cards[1],
+              const SizedBox(height: 14),
+              cards[2],
+              const SizedBox(height: 14),
+              cards[3],
+            ],
+          )
+        else if (isTablet)
+          Column(
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: cards[0]),
+                  const SizedBox(width: 20),
+                  Expanded(child: cards[1]),
+                ],
               ),
-              SizedBox(
-                width: cardWidth,
-                child: _buildAdditionalServiceCard(
-                  Icons.hotel,
-                  'Comfortable Rooms',
-                  'Clean and comfortable lying-in rooms for mothers',
-                ),
-              ),
-              SizedBox(
-                width: cardWidth,
-                child: _buildAdditionalServiceCard(
-                  Icons.people,
-                  'Lactation Support',
-                  'Breastfeeding guidance and lactation consultation',
-                ),
-              ),
-              SizedBox(
-                width: cardWidth,
-                child: _buildAdditionalServiceCard(
-                  Icons.school,
-                  'Prenatal Classes',
-                  'Educational sessions for expecting parents',
-                ),
+              const SizedBox(height: 20),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: cards[2]),
+                  const SizedBox(width: 20),
+                  Expanded(child: cards[3]),
+                ],
               ),
             ],
+          )
+        else
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: cards[0]),
+              const SizedBox(width: 20),
+              Expanded(child: cards[1]),
+              const SizedBox(width: 20),
+              Expanded(child: cards[2]),
+              const SizedBox(width: 20),
+              Expanded(child: cards[3]),
+            ],
           ),
-        ),
       ],
     );
   }
@@ -638,18 +662,16 @@ class _ServicesScreenState extends State<ServicesScreen> {
         ),
         const SizedBox(height: 30),
         if (screenWidth > 900) ...[
-          Wrap(
-            spacing: 24,
-            runSpacing: 24,
-            alignment: WrapAlignment.center,
-            crossAxisAlignment: WrapCrossAlignment.start,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(
-                width: screenWidth > 1180 ? 420 : 380,
+              Expanded(
+                flex: 35,
                 child: _buildServicesOffered(),
               ),
-              SizedBox(
-                width: screenWidth > 1180 ? 720 : 620,
+              const SizedBox(width: 24),
+              Expanded(
+                flex: 65,
                 child: Column(
                   children: [
                     Row(

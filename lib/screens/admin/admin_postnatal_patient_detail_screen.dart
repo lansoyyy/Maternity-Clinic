@@ -612,7 +612,7 @@ class _AdminPostnatalPatientDetailScreenState
 
   Widget _buildSidebar() {
     return Container(
-      width: context.isTablet ? 220 : 250,
+      width: 250,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [primary, secondary],
@@ -620,57 +620,61 @@ class _AdminPostnatalPatientDetailScreenState
           end: Alignment.bottomCenter,
         ),
       ),
-      child: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.only(top: 10, bottom: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // User Info
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.userName.toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontFamily: 'Bold',
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      widget.userRole.toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                        fontFamily: 'Medium',
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 30),
+          // User Info
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.userName.toUpperCase(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontFamily: 'Bold',
+                    letterSpacing: 0.5,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
-
-              // Menu Items
-              _buildMenuItem('DATA GRAPHS', false),
-              _buildMenuItem('APPOINTMENT MANAGEMENT', false),
-              _buildMenuItem('APPROVE SCHEDULES', false),
-              _buildMenuItem('PATIENT RECORDS', false),
-              if (widget.userRole.toLowerCase().trim() == 'admin') ...[
-                _buildMenuItem('HISTORY LOGS', false),
-                _buildMenuItem('ADD NEW STAFF/NURSE', false),
-                _buildMenuItem('CHANGE PASSWORD', false),
+                const SizedBox(height: 5),
+                Text(
+                  widget.userRole.toUpperCase(),
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                    fontFamily: 'Medium',
+                    letterSpacing: 0.5,
+                  ),
+                ),
               ],
-              _buildMenuItem('LOGOUT', false),
-            ],
+            ),
           ),
-        ),
+          const SizedBox(height: 20),
+
+          // Menu Items (scrollable)
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildMenuItem('DATA GRAPHS', false),
+                  _buildMenuItem('APPOINTMENT MANAGEMENT', false),
+                  _buildMenuItem('APPROVE SCHEDULES', false),
+                  _buildMenuItem('PATIENT RECORDS', false),
+                  if (widget.userRole.toLowerCase().trim() == 'admin') ...[
+                    _buildMenuItem('HISTORY LOGS', false),
+                    _buildMenuItem('ADD NEW STAFF/NURSE', false),
+                    _buildMenuItem('CHANGE PASSWORD', false),
+                  ],
+                  _buildMenuItem('LOGOUT', false),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -688,7 +692,7 @@ class _AdminPostnatalPatientDetailScreenState
         },
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
           decoration: BoxDecoration(
             color:
                 isActive ? Colors.white.withOpacity(0.2) : Colors.transparent,
@@ -703,12 +707,10 @@ class _AdminPostnatalPatientDetailScreenState
             title,
             style: TextStyle(
               color: Colors.white,
-              fontSize: context.responsiveFontSize(14),
+              fontSize: 14,
               fontFamily: isActive ? 'Bold' : 'Medium',
               height: 1.3,
             ),
-            softWrap: true,
-            maxLines: 2,
           ),
         ),
       ),
@@ -1265,17 +1267,10 @@ class _AdminPostnatalPatientDetailScreenState
       );
     }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final minWidth = constraints.maxWidth < 860
-            ? 860.0
-            : constraints.maxWidth;
-
-        return SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minWidth: minWidth),
-            child: Container(
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: IntrinsicWidth(
+        child: Container(
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(10),
@@ -1308,12 +1303,12 @@ class _AdminPostnatalPatientDetailScreenState
             ),
             child: Row(
               children: [
-                _buildTableHeaderCell('No.', flex: 1),
-                _buildTableHeaderCell('Date', flex: 2),
-                _buildTableHeaderCell('Day', flex: 2),
-                _buildTableHeaderCell('Time Slot', flex: 2),
-                _buildTableHeaderCell('Status', flex: 2),
-                _buildTableHeaderCell('Patient Type', flex: 2),
+                _buildTableHeaderCell('No.', width: 60),
+                _buildTableHeaderCell('Date', width: 140),
+                _buildTableHeaderCell('Day', width: 140),
+                _buildTableHeaderCell('Time Slot', width: 140),
+                _buildTableHeaderCell('Status', width: 130),
+                _buildTableHeaderCell('Patient Type', width: 140),
               ],
             ),
           ),
@@ -1343,10 +1338,8 @@ class _AdminPostnatalPatientDetailScreenState
           }).toList(),
         ],
           ),
-            ),
-          ),
-        );
-      },
+        ),
+      ),
     );
   }
 
@@ -1360,9 +1353,9 @@ class _AdminPostnatalPatientDetailScreenState
     }
   }
 
-  Widget _buildTableHeaderCell(String text, {int flex = 1}) {
-    return Expanded(
-      flex: flex,
+  Widget _buildTableHeaderCell(String text, {double width = 140}) {
+    return SizedBox(
+      width: width,
       child: Text(
         text,
         style: const TextStyle(
@@ -1406,12 +1399,12 @@ class _AdminPostnatalPatientDetailScreenState
       ),
       child: Row(
         children: [
-          _buildTableCell(no, flex: 1),
-          _buildTableCell(date, flex: 2),
-          _buildTableCell(day, flex: 2),
-          _buildTableCell(timeSlot, flex: 2),
-          Expanded(
-            flex: 2,
+          _buildTableCell(no, width: 60),
+          _buildTableCell(date, width: 140),
+          _buildTableCell(day, width: 140),
+          _buildTableCell(timeSlot, width: 140),
+          SizedBox(
+            width: 130,
             child: Text(
               status,
               style: TextStyle(
@@ -1422,15 +1415,15 @@ class _AdminPostnatalPatientDetailScreenState
               textAlign: TextAlign.center,
             ),
           ),
-          _buildTableCell(patientType, flex: 2),
+          _buildTableCell(patientType, width: 140),
         ],
       ),
     );
   }
 
-  Widget _buildTableCell(String text, {int flex = 1}) {
-    return Expanded(
-      flex: flex,
+  Widget _buildTableCell(String text, {double width = 140}) {
+    return SizedBox(
+      width: width,
       child: Text(
         text,
         style: TextStyle(
@@ -1444,10 +1437,6 @@ class _AdminPostnatalPatientDetailScreenState
   }
 
   Widget _buildDetailedAppointmentView(Map<String, dynamic> appointment) {
-    final String findings =
-        (appointment['clinicalFindings'] ?? appointment['findings'] ?? 'N/A')
-            .toString();
-
     return Container(
       margin: const EdgeInsets.only(top: 10),
       padding: const EdgeInsets.all(20),
@@ -1631,47 +1620,45 @@ class _AdminPostnatalPatientDetailScreenState
                 ),
                 const SizedBox(height: 10),
 
-                if (findings.trim().isNotEmpty && findings != 'N/A') ...[
-                  const Text(
-                    'Findings:',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontFamily: 'Bold',
-                      color: Colors.black87,
-                    ),
+                const Text(
+                  'Findings:',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontFamily: 'Bold',
+                    color: Colors.black87,
                   ),
-                  const SizedBox(height: 5),
-                  Text(
-                    findings,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontFamily: 'Regular',
-                      color: Colors.grey.shade700,
-                    ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  (appointment['clinicalFindings']?.toString() ?? '').isNotEmpty
+                      ? appointment['clinicalFindings'].toString()
+                      : 'Not recorded',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontFamily: 'Regular',
+                    color: Colors.grey.shade700,
                   ),
-                  const SizedBox(height: 10),
-                ],
-
-                if (appointment['recommendations'] != null &&
-                    appointment['recommendations'].toString().isNotEmpty) ...[
-                  const Text(
-                    'Personalized Recommendations:',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontFamily: 'Bold',
-                      color: Colors.black87,
-                    ),
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'Personalized Recommendations:',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontFamily: 'Bold',
+                    color: Colors.black87,
                   ),
-                  const SizedBox(height: 5),
-                  Text(
-                    appointment['recommendations']?.toString() ?? 'N/A',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontFamily: 'Regular',
-                      color: Colors.grey.shade700,
-                    ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  (appointment['recommendations']?.toString() ?? '').isNotEmpty
+                      ? appointment['recommendations'].toString()
+                      : 'Not recorded',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontFamily: 'Regular',
+                    color: Colors.grey.shade700,
                   ),
-                ],
+                ),
               ],
             ),
           ),
@@ -1681,59 +1668,34 @@ class _AdminPostnatalPatientDetailScreenState
   }
 
   Widget _buildDetailRow(String label, String value) {
-    final bool shouldStack = context.isMobile || context.isTablet;
-
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: shouldStack
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontFamily: 'Bold',
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontFamily: 'Regular',
-                    color: Colors.grey.shade700,
-                  ),
-                ),
-              ],
-            )
-          : Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  width: 140,
-                  child: Text(
-                    label,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontFamily: 'Bold',
-                      color: Colors.black87,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    value,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontFamily: 'Regular',
-                      color: Colors.grey.shade700,
-                    ),
-                  ),
-                ),
-              ],
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 140,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 12,
+                fontFamily: 'Bold',
+                color: Colors.black87,
+              ),
             ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 12,
+                fontFamily: 'Regular',
+                color: Colors.grey.shade700,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
