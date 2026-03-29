@@ -769,21 +769,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           const SizedBox(height: 20),
                         ] else ...[
                           // Desktop: Row of charts
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Expanded(
-                                child: _buildPrenatalPostnatalChart(),
-                              ),
-                              const SizedBox(width: 20),
-                              Expanded(
-                                child: _buildAgeGroupChart(),
-                              ),
-                              const SizedBox(width: 20),
-                              Expanded(
-                                child: _buildDailyPatientChart(),
-                              ),
-                            ],
+                          IntrinsicHeight(
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Expanded(
+                                  child: _buildPrenatalPostnatalChart(),
+                                ),
+                                const SizedBox(width: 20),
+                                Expanded(
+                                  child: _buildAgeGroupChart(),
+                                ),
+                                const SizedBox(width: 20),
+                                Expanded(
+                                  child: _buildDailyPatientChart(),
+                                ),
+                              ],
+                            ),
                           ),
                           const SizedBox(height: 30),
                         ],
@@ -3484,7 +3486,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           const SizedBox(height: 20),
           SizedBox(
             height: 200,
-            child: totalPatients > 0
+            child: (_ageGroupCounts.values.any((v) => v > 0))
                 ? PieChart(
                     PieChartData(
                       sectionsSpace: 2,
@@ -3546,7 +3548,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     ),
                   )
                 : const Center(
-                    child: Text('No patient data yet',
+                    child: Text('No patient age data available',
                         style: TextStyle(fontSize: 14, color: Colors.grey))),
           ),
           const SizedBox(height: 15),
@@ -3822,6 +3824,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         ),
                       ),
                   ],
+                ),
+              ),
+            ),
+          ] else ...[
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 40),
+                child: Text(
+                  'No patient history trend data available',
+                  style: TextStyle(fontSize: 14, color: Colors.grey),
                 ),
               ),
             ),

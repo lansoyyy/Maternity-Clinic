@@ -946,15 +946,15 @@ class _PrenatalHistoryCheckupScreenState
                 ),
                 child: Row(
                   children: [
-                    _buildTableHeaderCell('Visit No.', flex: 1),
-                    _buildTableHeaderCell('Date', flex: 2),
-                    _buildTableHeaderCell('Age of Gestation (weeks)', flex: 2),
-                    _buildTableHeaderCell('Weight (kg)', flex: 2),
-                    _buildTableHeaderCell('Blood Pressure (mmHg)', flex: 3),
-                    _buildTableHeaderCell('Fetal Heart Rate (bpm)', flex: 3),
-                    _buildTableHeaderCell('Fundal Height (cm)', flex: 3),
-                    _buildTableHeaderCell('Remarks / Observation', flex: 3),
-                    _buildTableHeaderCell('Risk Classification', flex: 3),
+                    _buildTableHeaderCell('Visit No.', width: 80),
+                    _buildTableHeaderCell('Date', width: 120),
+                    _buildTableHeaderCell('Age of Gestation (weeks)', width: 180),
+                    _buildTableHeaderCell('Weight (kg)', width: 110),
+                    _buildTableHeaderCell('Blood Pressure (mmHg)', width: 170),
+                    _buildTableHeaderCell('Fetal Heart Rate (bpm)', width: 160),
+                    _buildTableHeaderCell('Fundal Height (cm)', width: 150),
+                    _buildTableHeaderCell('Remarks / Observation', width: 200),
+                    _buildTableHeaderCell('Risk Classification', width: 160),
                   ],
                 ),
               ),
@@ -1201,9 +1201,9 @@ class _PrenatalHistoryCheckupScreenState
     );
   }
 
-  Widget _buildTableHeaderCell(String text, {int flex = 1}) {
-    return Expanded(
-      flex: flex,
+  Widget _buildTableHeaderCell(String text, {double width = 140.0}) {
+    return SizedBox(
+      width: width,
       child: Text(
         text,
         style: const TextStyle(
@@ -1317,23 +1317,23 @@ class _PrenatalHistoryCheckupScreenState
       ),
       child: Row(
         children: [
-          _buildTableCell(visitNo, flex: 1),
-          _buildTableCell(date, flex: 2),
-          _buildTableCell(gaText, flex: 2),
-          _buildTableCell(weightText, flex: 2),
-          _buildTableCell(bpText, flex: 3),
-          _buildTableCell(fhrText, flex: 3),
-          _buildTableCell(fundalText, flex: 3),
-          _buildTableCell(remarksText, flex: 3),
-          _buildTableCell(riskText, flex: 3),
+          _buildTableCell(visitNo, width: 80),
+          _buildTableCell(date, width: 120),
+          _buildTableCell(gaText, width: 180),
+          _buildTableCell(weightText, width: 110),
+          _buildTableCell(bpText, width: 170),
+          _buildTableCell(fhrText, width: 160),
+          _buildTableCell(fundalText, width: 150),
+          _buildTableCell(remarksText, width: 200),
+          _buildTableCell(riskText, width: 160),
         ],
       ),
     );
   }
 
-  Widget _buildTableCell(String text, {int flex = 1}) {
-    return Expanded(
-      flex: flex,
+  Widget _buildTableCell(String text, {double width = 140.0}) {
+    return SizedBox(
+      width: width,
       child: Text(
         text,
         style: TextStyle(
