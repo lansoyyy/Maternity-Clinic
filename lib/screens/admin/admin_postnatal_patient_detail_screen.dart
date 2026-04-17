@@ -1437,6 +1437,34 @@ class _AdminPostnatalPatientDetailScreenState
   }
 
   Widget _buildDetailedAppointmentView(Map<String, dynamic> appointment) {
+    // Blood pressure from postnatal checkup fields
+    String systolicBP =
+        appointment['postnatalBP_Systolic']?.toString() ?? 'N/A';
+    String diastolicBP =
+        appointment['postnatalBP_Diastolic']?.toString() ?? 'N/A';
+
+    // Fall back to combined postnatal BP field
+    if ((systolicBP == 'N/A' || diastolicBP == 'N/A') &&
+        appointment['postnatalBloodPressure'] != null) {
+      final bp = appointment['postnatalBloodPressure'].toString();
+      final parts = bp.split('/');
+      if (parts.length >= 2) {
+        systolicBP = parts[0].trim();
+        diastolicBP = parts[1].trim();
+      }
+    }
+
+    // Fall back to initial booking blood pressure
+    if ((systolicBP == 'N/A' || diastolicBP == 'N/A') &&
+        appointment['bloodPressure'] != null) {
+      final bp = appointment['bloodPressure'].toString();
+      final parts = bp.split('/');
+      if (parts.length >= 2) {
+        systolicBP = parts[0].trim();
+        diastolicBP = parts[1].trim();
+      }
+    }
+
     return Container(
       margin: const EdgeInsets.only(top: 10),
       padding: const EdgeInsets.all(20),
@@ -1536,18 +1564,16 @@ class _AdminPostnatalPatientDetailScreenState
           Row(
             children: [
               Expanded(
-                child: _buildDetailRow(
-                    'Current Weight:', '${appointment['weight'] ?? 'N/A'} kg'),
+                child: _buildDetailRow('Current Weight:',
+                    '${appointment['postnatalWeightKg'] ?? appointment['weight'] ?? 'N/A'} kg'),
               ),
               const SizedBox(width: 20),
               Expanded(
-                child: _buildDetailRow('Previous Weight:',
-                    '${appointment['previousWeight'] ?? 'N/A'} kg'),
+                child: _buildDetailRow(
+                    'Blood Pressure:', '$systolicBP/$diastolicBP mmHg'),
               ),
             ],
           ),
-          _buildDetailRow('Blood Pressure:',
-              '${appointment['systolicBP'] ?? 'N/A'}/${appointment['diastolicBP'] ?? 'N/A'} mmHg'),
 
           const SizedBox(height: 10),
           const Text(
@@ -1559,9 +1585,10 @@ class _AdminPostnatalPatientDetailScreenState
             ),
           ),
           const SizedBox(height: 5),
-          _buildDetailRow('Fundus Level:', appointment['fundusLevel'] ?? 'N/A'),
-          _buildDetailRow('Consistency:',
-              appointment['uterusConsistency'] == true ? 'Firm' : 'Soft'),
+          _buildDetailRow('Status:',
+              appointment['postnatalUterineInvolution'] ?? 'N/A'),
+          _buildDetailRow(
+              'Wound Status:', appointment['postnatalWoundStatus'] ?? 'N/A'),
 
           const SizedBox(height: 10),
           const Text(
@@ -1573,11 +1600,15 @@ class _AdminPostnatalPatientDetailScreenState
             ),
           ),
           const SizedBox(height: 5),
-          _buildDetailRow('Risk Level:',
-              appointment['riskLevel']?.toString().toUpperCase() ?? 'N/A'),
+          _buildDetailRow(
+              'Risk Level:',
+              (appointment['visitRiskStatus'] ?? appointment['riskStatus'])
+                      ?.toString()
+                      .toUpperCase() ??
+                  'N/A'),
 
-          if (appointment['remarks'] != null &&
-              appointment['remarks'].toString().isNotEmpty) ...[
+          if (appointment['postnatalRemarks'] != null &&
+              appointment['postnatalRemarks'].toString().isNotEmpty) ...[
             const SizedBox(height: 10),
             const Text(
               'Remarks/Observations:',
@@ -1589,7 +1620,7 @@ class _AdminPostnatalPatientDetailScreenState
             ),
             const SizedBox(height: 5),
             Text(
-              appointment['remarks']?.toString() ?? 'N/A',
+              appointment['postnatalRemarks'].toString(),
               style: TextStyle(
                 fontSize: 12,
                 fontFamily: 'Regular',
@@ -1630,8 +1661,8 @@ class _AdminPostnatalPatientDetailScreenState
                 ),
                 const SizedBox(height: 5),
                 Text(
-                  (appointment['clinicalFindings']?.toString() ?? '').isNotEmpty
-                      ? appointment['clinicalFindings'].toString()
+                  (appointment['findings']?.toString() ?? '').isNotEmpty
+                      ? appointment['findings'].toString()
                       : 'Not recorded',
                   style: TextStyle(
                     fontSize: 12,
@@ -1650,8 +1681,12 @@ class _AdminPostnatalPatientDetailScreenState
                 ),
                 const SizedBox(height: 5),
                 Text(
-                  (appointment['recommendations']?.toString() ?? '').isNotEmpty
-                      ? appointment['recommendations'].toString()
+                  (appointment['advice']?.toString() ??
+                              appointment['notes']?.toString() ??
+                              '')
+                          .isNotEmpty
+                      ? (appointment['advice'] ?? appointment['notes'])
+                          .toString()
                       : 'Not recorded',
                   style: TextStyle(
                     fontSize: 12,

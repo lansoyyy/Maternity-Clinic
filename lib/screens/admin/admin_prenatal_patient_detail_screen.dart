@@ -1454,20 +1454,37 @@ class _AdminPrenatalPatientDetailScreenState
   }
 
   Widget _buildDetailedAppointmentView(Map<String, dynamic> appointment) {
-    // Handle blood pressure - try to get systolic and diastolic separately
-    String systolicBP = appointment['systolicBP']?.toString() ?? 'N/A';
-    String diastolicBP = appointment['diastolicBP']?.toString() ?? 'N/A';
-    
-    // If separate fields are not available, try to parse from combined bloodPressure field
+    // Handle blood pressure from checkup fields
+    String systolicBP =
+        appointment['checkupBP_Systolic']?.toString() ?? 'N/A';
+    String diastolicBP =
+        appointment['checkupBP_Diastolic']?.toString() ?? 'N/A';
+
+    // Fall back to combined checkup BP field
     if ((systolicBP == 'N/A' || diastolicBP == 'N/A') &&
-        appointment['bloodPressure'] != null) {
-      final bp = appointment['bloodPressure'].toString();
+        appointment['checkupBloodPressure'] != null) {
+      final bp = appointment['checkupBloodPressure'].toString();
       final parts = bp.split('/');
       if (parts.length >= 2) {
-        systolicBP = parts[0];
-        diastolicBP = parts[1];
+        systolicBP = parts[0].trim();
+        diastolicBP = parts[1].trim();
       }
     }
+
+    // Calculate gestational age at appointment date from LMP
+    String gestationalAge = 'N/A';
+    if (_lmpDate != null) {
+      final DateTime referenceDate =
+          appointment['appointmentDate'] is Timestamp
+              ? (appointment['appointmentDate'] as Timestamp).toDate()
+              : DateTime.now();
+      final int days = referenceDate.difference(_lmpDate!).inDays;
+      if (days >= 0) gestationalAge = '${days ~/ 7}';
+    }
+
+    final String lmpDisplay = _lmpDate != null
+        ? '${_lmpDate!.year}-${_lmpDate!.month.toString().padLeft(2, '0')}-${_lmpDate!.day.toString().padLeft(2, '0')}'
+        : 'N/A';
 
     return Container(
       margin: const EdgeInsets.only(top: 10),
@@ -1494,18 +1511,19 @@ class _AdminPrenatalPatientDetailScreenState
           _buildDetailRow('Full Name:', appointment['fullName'] ?? 'N/A'),
           _buildDetailRow(
               'Appointment Type:', appointment['appointmentType'] ?? 'N/A'),
-          _buildDetailRow('Reason for Visit:', appointment['reason'] ?? 'N/A'),
+          _buildDetailRow('Reason for Visit:',
+              appointment['reasonForVisit'] ?? appointment['reason'] ?? 'N/A'),
+          _buildDetailRow('LMP Date:', lmpDisplay),
           _buildDetailRow(
-              'LMP Date:',
-              appointment['lmpDate'] != null
-                  ? _formatDate(appointment['lmpDate'])
-                  : 'N/A'),
-          _buildDetailRow('Age:', appointment['age'] ?? 'N/A'),
+              'Age:',
+              _computedAge?.toString() ??
+                  _userData?['age']?.toString() ??
+                  'N/A'),
           _buildDetailRow(
               'Pregnancy Count:',
-              appointment['firstPregnancy'] == true
+              _userData?['firstPregnancy'] == true
                   ? 'First Pregnancy'
-                  : '${appointment['pregnancyCount'] ?? 'N/A'}'),
+                  : '${_userData?['pregnancyCount'] ?? appointment['pregnancyCount'] ?? 'N/A'}'),
 
           const SizedBox(height: 10),
 
@@ -1521,8 +1539,8 @@ class _AdminPrenatalPatientDetailScreenState
           Row(
             children: [
               Expanded(
-                child: _buildDetailRow(
-                    'Current Weight:', '${appointment['weight'] ?? 'N/A'} kg'),
+                child: _buildDetailRow('Current Weight:',
+                    '${appointment['checkupWeightKg'] ?? 'N/A'} kg'),
               ),
               const SizedBox(width: 20),
               Expanded(
@@ -1535,17 +1553,16 @@ class _AdminPrenatalPatientDetailScreenState
             children: [
               Expanded(
                 child: _buildDetailRow('Fetal Heart Rate:',
-                    '${appointment['fetalHeartRate'] ?? 'N/A'} bpm'),
+                    '${appointment['checkupFetalHeartRateBpm'] ?? 'N/A'} bpm'),
               ),
               const SizedBox(width: 20),
               Expanded(
                 child: _buildDetailRow('Fundal Height:',
-                    '${appointment['fundalHeight'] ?? 'N/A'} cm'),
+                    '${appointment['checkupFundalHeightCm'] ?? 'N/A'} cm'),
               ),
             ],
           ),
-          _buildDetailRow('Gestational Age:',
-              '${appointment['gestationalAge'] ?? 'N/A'} weeks'),
+          _buildDetailRow('Gestational Age:', '$gestationalAge weeks'),
 
           const SizedBox(height: 10),
           const Text(
@@ -1557,11 +1574,15 @@ class _AdminPrenatalPatientDetailScreenState
             ),
           ),
           const SizedBox(height: 5),
-          _buildDetailRow('Risk Level:',
-              appointment['riskLevel']?.toString().toUpperCase() ?? 'N/A'),
+          _buildDetailRow(
+              'Risk Level:',
+              (appointment['visitRiskStatus'] ?? appointment['riskStatus'])
+                      ?.toString()
+                      .toUpperCase() ??
+                  'N/A'),
 
-          if (appointment['laboratoryResults'] != null &&
-              appointment['laboratoryResults'].toString().isNotEmpty) ...[
+          if (appointment['labRemarks'] != null &&
+              appointment['labRemarks'].toString().isNotEmpty) ...[
             const SizedBox(height: 10),
             const Text(
               'Laboratory Results:',
@@ -1573,7 +1594,7 @@ class _AdminPrenatalPatientDetailScreenState
             ),
             const SizedBox(height: 5),
             Text(
-              appointment['laboratoryResults']?.toString() ?? 'N/A',
+              appointment['labRemarks']?.toString() ?? 'N/A',
               style: TextStyle(
                 fontSize: 12,
                 fontFamily: 'Regular',
@@ -1582,8 +1603,8 @@ class _AdminPrenatalPatientDetailScreenState
             ),
           ],
 
-          if (appointment['remarks'] != null &&
-              appointment['remarks'].toString().isNotEmpty) ...[
+          if (appointment['checkupRemarks'] != null &&
+              appointment['checkupRemarks'].toString().isNotEmpty) ...[
             const SizedBox(height: 10),
             const Text(
               'Remarks/Observations:',
@@ -1595,7 +1616,7 @@ class _AdminPrenatalPatientDetailScreenState
             ),
             const SizedBox(height: 5),
             Text(
-              appointment['remarks']?.toString() ?? 'N/A',
+              appointment['checkupRemarks']?.toString() ?? 'N/A',
               style: TextStyle(
                 fontSize: 12,
                 fontFamily: 'Regular',
@@ -1635,8 +1656,8 @@ class _AdminPrenatalPatientDetailScreenState
                 ),
                 const SizedBox(height: 5),
                 Text(
-                  (appointment['clinicalFindings']?.toString() ?? '').isNotEmpty
-                      ? appointment['clinicalFindings'].toString()
+                  (appointment['findings']?.toString() ?? '').isNotEmpty
+                      ? appointment['findings'].toString()
                       : 'Not recorded',
                   style: TextStyle(
                     fontSize: 12,
@@ -1655,8 +1676,12 @@ class _AdminPrenatalPatientDetailScreenState
                 ),
                 const SizedBox(height: 5),
                 Text(
-                  (appointment['recommendations']?.toString() ?? '').isNotEmpty
-                      ? appointment['recommendations'].toString()
+                  (appointment['advice']?.toString() ??
+                              appointment['notes']?.toString() ??
+                              '')
+                          .isNotEmpty
+                      ? (appointment['advice'] ?? appointment['notes'])
+                          .toString()
                       : 'Not recorded',
                   style: TextStyle(
                     fontSize: 12,

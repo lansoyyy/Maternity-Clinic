@@ -769,23 +769,21 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           const SizedBox(height: 20),
                         ] else ...[
                           // Desktop: Row of charts
-                          IntrinsicHeight(
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Expanded(
-                                  child: _buildPrenatalPostnatalChart(),
-                                ),
-                                const SizedBox(width: 20),
-                                Expanded(
-                                  child: _buildAgeGroupChart(),
-                                ),
-                                const SizedBox(width: 20),
-                                Expanded(
-                                  child: _buildDailyPatientChart(),
-                                ),
-                              ],
-                            ),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: _buildPrenatalPostnatalChart(),
+                              ),
+                              const SizedBox(width: 20),
+                              Expanded(
+                                child: _buildAgeGroupChart(),
+                              ),
+                              const SizedBox(width: 20),
+                              Expanded(
+                                child: _buildDailyPatientChart(),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 30),
                         ],

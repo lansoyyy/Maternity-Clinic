@@ -990,7 +990,7 @@ class _PostnatalHistoryCheckupScreenState
     }
 
     String weightText = 'N/A';
-    final weightValue = appointment['checkupWeightKg'];
+    final weightValue = appointment['postnatalWeightKg'] ?? appointment['checkupWeightKg'];
     if (weightValue != null) {
       if (weightValue is num) {
         weightText = weightValue.toStringAsFixed(weightValue is int ? 0 : 1);
@@ -1005,12 +1005,12 @@ class _PostnatalHistoryCheckupScreenState
     }
 
     String bpText = '';
-    final bpValue = appointment['checkupBloodPressure'];
+    final bpValue = appointment['postnatalBloodPressure'] ?? appointment['checkupBloodPressure'];
     if (bpValue != null && bpValue.toString().trim().isNotEmpty) {
       bpText = bpValue.toString();
     } else {
-      final sys = appointment['checkupBP_Systolic'];
-      final dia = appointment['checkupBP_Diastolic'];
+      final sys = appointment['postnatalBP_Systolic'] ?? appointment['checkupBP_Systolic'];
+      final dia = appointment['postnatalBP_Diastolic'] ?? appointment['checkupBP_Diastolic'];
       if (sys != null && dia != null) {
         bpText = '${sys.toString()}/${dia.toString()}';
       }
@@ -1020,8 +1020,8 @@ class _PostnatalHistoryCheckupScreenState
     }
 
     String remarksText =
-        appointment['checkupRemarks']?.toString().trim().isNotEmpty == true
-            ? appointment['checkupRemarks'].toString()
+        (appointment['postnatalRemarks'] ?? appointment['checkupRemarks'])?.toString().trim().isNotEmpty == true
+            ? (appointment['postnatalRemarks'] ?? appointment['checkupRemarks']).toString()
             : (appointment['notes']?.toString() ?? '-');
 
     String riskText =
@@ -1170,7 +1170,7 @@ class _PostnatalHistoryCheckupScreenState
 
     // Weight (kg)
     String weightText = 'N/A';
-    final weightValue = appointment['checkupWeightKg'];
+    final weightValue = appointment['postnatalWeightKg'] ?? appointment['checkupWeightKg'];
     if (weightValue != null) {
       if (weightValue is num) {
         weightText = weightValue.toStringAsFixed(weightValue is int ? 0 : 1);
@@ -1186,12 +1186,12 @@ class _PostnatalHistoryCheckupScreenState
 
     // Blood Pressure
     String bpText = '';
-    final bpValue = appointment['checkupBloodPressure'];
+    final bpValue = appointment['postnatalBloodPressure'] ?? appointment['checkupBloodPressure'];
     if (bpValue != null && bpValue.toString().trim().isNotEmpty) {
       bpText = bpValue.toString();
     } else {
-      final sys = appointment['checkupBP_Systolic'];
-      final dia = appointment['checkupBP_Diastolic'];
+      final sys = appointment['postnatalBP_Systolic'] ?? appointment['checkupBP_Systolic'];
+      final dia = appointment['postnatalBP_Diastolic'] ?? appointment['checkupBP_Diastolic'];
       if (sys != null && dia != null) {
         bpText = '${sys.toString()}/${dia.toString()}';
       }
@@ -1202,8 +1202,8 @@ class _PostnatalHistoryCheckupScreenState
 
     // Remarks / Observation
     String remarksText =
-        appointment['checkupRemarks']?.toString().trim().isNotEmpty == true
-            ? appointment['checkupRemarks'].toString()
+        (appointment['postnatalRemarks'] ?? appointment['checkupRemarks'])?.toString().trim().isNotEmpty == true
+            ? (appointment['postnatalRemarks'] ?? appointment['checkupRemarks']).toString()
             : (appointment['notes']?.toString() ?? '-');
 
     // Risk Classification
