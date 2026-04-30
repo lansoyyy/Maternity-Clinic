@@ -696,7 +696,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         ] else ...[
                           // Desktop: Row of cards
                           Row(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Expanded(
                                 child: _buildStatCard(
